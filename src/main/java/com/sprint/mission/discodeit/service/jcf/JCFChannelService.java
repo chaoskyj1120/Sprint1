@@ -42,10 +42,13 @@ public class JCFChannelService implements ChannelService {
             System.out.println("채널이 null 입니다.");
             return;
         }
-
         if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
             System.out.printf("'%s'는 비활성 상태이므로 채널에 입장 할 수 없습니다.", user.getUserName());
             return; // 메서드 종료
+        }
+        if(channel.getUsers().contains(user)) {
+            System.out.printf("'%s'는 '%s' 채널에 이미 존재합니다.", user.getUserName(), channel.getChannelName());
+            return;
         }
         System.out.printf("'%s' 에 '%s' 이 입장했습니다.%n", channel.getChannelName(), user.getUserName());
         channel.addUser(user);

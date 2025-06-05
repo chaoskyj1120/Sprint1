@@ -58,7 +58,7 @@ public class JavaApplication {
         jcfUserService.printUser(user1);
         System.out.println();
         // 변경된 유저의 정보를 조회
-        System.out.println("5. 유저 삭제=================");
+        System.out.println("5. 유저 삭제(비활성화)=================");
         jcfUserService.deleteUser(user1); 
         System.out.println();
         // 유저 한 명을 삭제를 통해 비활성화
@@ -71,6 +71,13 @@ public class JavaApplication {
         jcfUserService.printDeactivatedUsers(); // 조회
         System.out.println();
         // 비활성화된 유저만 조회
+        System.out.println("6. 유저 활성화===============");
+        jcfUserService.restorationUser(user1);
+        System.out.println();
+        jcfUserService.printActiveUsers(); // 조회
+        System.out.println();
+        jcfUserService.printDeactivatedUsers(); // 조회
+        System.out.println();
     }
 
     public static void channelTestApplication() {
@@ -105,11 +112,14 @@ public class JavaApplication {
         System.out.println();
         // 생성된 채널 단일 조회
 
-        System.out.println("5. 채널 정보 수정, 유저 채널 입장=================");
+        System.out.println("5. 채널 정보 수정, 유저 채널 입장, 동일 유저가 중복 입장하려 할 때=================");
         jcfChannelService.userJoinChannel(user2, channel1); // user2 번이 1번 채널에 추가됨
         // 이미 만들어진 채널에 다른 유저가 입장
+        jcfChannelService.userJoinChannel(user2, channel1); // user2 번이 1번 채널에 추가됨
+        System.out.println();
         jcfChannelService.printUsersFromChannel(channel1);
         System.out.println();
+
         // 유저가 새로이 입장한 채널의 정보를 조회하여 성공적으로 유저가 입장했는지 확인
 
         System.out.println("6. 채널 정보 수정, 채널 이름 수정, 권한 없는 유저가 수정하려 할 떄=================");
@@ -161,7 +171,6 @@ public class JavaApplication {
     }
 
     public static void messageTestApplication() {
-
         UserService jcfUserService = Factory.getInstance().getUserService();
         ChannelService jcfChannelService = Factory.getInstance().getChannelService();
         MessageService jcfMessageService = Factory.getInstance().getMessageService();

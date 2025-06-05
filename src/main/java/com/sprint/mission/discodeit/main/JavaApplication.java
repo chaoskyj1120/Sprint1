@@ -11,7 +11,6 @@ import com.sprint.mission.discodeit.service.UserService;
 public class JavaApplication {
 
     public static void main(String[] args) {
-
         System.out.println("\n========== userService Test start ==========================================\n");
         userTestApplication();
         System.out.println("\n========== userService Test end ==========================================\n");
@@ -167,7 +166,6 @@ public class JavaApplication {
         jcfChannelService.printAllChannels();
         System.out.println();
         // 성공적으로 삭제되었는지를 확인하기위한 채널 전체 조회
-
     }
 
     public static void messageTestApplication() {

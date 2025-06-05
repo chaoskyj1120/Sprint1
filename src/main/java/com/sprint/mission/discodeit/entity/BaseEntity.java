@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.entity;
 
 import java.util.UUID;
 
-public class Parents {
+public class BaseEntity {
 
     private final long createdAt;
     private long updatedAt;
@@ -23,7 +23,7 @@ public class Parents {
     }
 
     // 생성자 만들기
-    public Parents() {
+    public BaseEntity() {
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = createdAt;
         this.id = UUID.randomUUID();

@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.entity;
 
-public class Message extends Parents{
+public class Message extends BaseEntity {
 
 
     private String messageContents;

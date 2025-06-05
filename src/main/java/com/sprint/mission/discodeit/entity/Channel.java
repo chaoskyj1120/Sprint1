@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.entity;
 
 import java.util.ArrayList;
 
-public class Channel extends Parents
+public class Channel extends BaseEntity
 {
     private String channelName;
     private User hostUser;

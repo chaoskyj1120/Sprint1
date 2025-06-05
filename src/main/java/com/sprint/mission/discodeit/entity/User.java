@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.entity;
 
 import java.util.ArrayList;
 
-public class User extends Parents{
+public class User extends BaseEntity {
 
     private String userName;
 

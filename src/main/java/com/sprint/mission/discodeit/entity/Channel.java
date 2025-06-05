@@ -47,6 +47,12 @@ public class Channel extends Parents
         }
     }
 
+    public void removeMessage(Message message) {
+        if (!messages.contains(message)) {
+            messages.remove(message);
+        }
+    }
+
     public void addUser(User user) {
         if (!users.contains(user)) {
             users.add(user);
@@ -56,10 +62,11 @@ public class Channel extends Parents
 
     public void removeUser(User user) {
         if (users.contains(user)) {
-            users.remove(user);
+            users.remove(user); //!!!!!!!!!!!!!!!!! 오류 왜 남?
             user.removeChannel(this);
         }
     }
+
 
     public void clearUsers(){
         users.clear();
@@ -71,13 +78,6 @@ public class Channel extends Parents
 
     public ArrayList<User> getUsers() {
         return users;
-    }
-
-    public void removeMessage(Message message) {
-        if (messages.contains(message)) {
-            messages.remove(message);
-            message.getUser().removeMessage(message);
-        }
     }
 
     @Override

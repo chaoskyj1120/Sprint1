@@ -6,7 +6,7 @@ public class Message extends Parents{
     private String messageContents;
     private User user;
     private Channel channel;
-
+;
 
     public Message(User user, Channel channel, String contents) {
         super();
@@ -36,8 +36,10 @@ public class Message extends Parents{
         user.addMessage(this);
         channel.addMessage(this);
     }
-
-
+    
+    public void deleteMessage() {
+        user.removeMessage(this);
+    }
 
     @Override
     public String toString() {

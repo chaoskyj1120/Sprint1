@@ -11,6 +11,10 @@ import com.sprint.mission.discodeit.service.UserService;
 public class JavaApplication {
 
     public static void main(String[] args) {
+
+    }
+
+    public static void sprint1Application() {
         System.out.println("\n========== userService Test start ==========================================\n");
         userTestApplication();
         System.out.println("\n========== userService Test end ==========================================\n");

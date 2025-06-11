@@ -21,11 +21,6 @@ application {
 
 }
 
-javafx {
-    version = "21.0.1" // 사용 중인 JavaFX SDK 버전에 맞게 조정
-    modules = [ 'javafx.controls', 'javafx.fxml' ] // 필요한 모듈만 적으면 됨
-}
-
 test {
     useJUnitPlatform()
 }

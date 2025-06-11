@@ -15,7 +15,6 @@ public class JCFChannelRepository implements ChannelRepository {
     private static final JCFChannelRepository instance = new JCFChannelRepository();
 
     private final ArrayList<Channel> data; // channelData
-    // data를 많이 참조하고 있는데 본 클래스에서 data를 못 다루는건 문제가 나중에 생길지도?
 
     public JCFChannelRepository() {
         data = new ArrayList<>();

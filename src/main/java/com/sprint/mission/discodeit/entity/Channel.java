@@ -1,21 +1,19 @@
 package com.sprint.mission.discodeit.entity;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Channel extends BaseEntity
-{
+public class Channel extends BaseEntity implements Serializable {
     private String channelName;
     private User hostUser;
 
-    private ArrayList<Message> messages;
-    private ArrayList<User> users;
+    private final ArrayList<Message> messages = new ArrayList<>();
+    private final ArrayList<User> users  = new ArrayList<>();
 
     public Channel(User hostUser, String name) {
         super();
         this.channelName = name;
         this.hostUser = hostUser;
-        this.messages = new ArrayList<>();
-        this.users = new ArrayList<>();
     }
 
     public String getChannelName() {
@@ -94,5 +92,4 @@ public class Channel extends BaseEntity
                 .append('}');
         return sb.toString();
     }
-
 }

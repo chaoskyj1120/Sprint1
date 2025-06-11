@@ -1,17 +1,18 @@
-package com.sprint.mission.discodeit.main;
+package com.sprint.mission.discodeit.run;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.factory.Factory;
+import com.sprint.mission.discodeit.factory.ServiceFactory;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
 
-public class JavaApplication {
+public class Sprint1Application {
 
     public static void main(String[] args) {
-
+        sprint1Application(); 
+        // sprint1 떄 만든 코드로써 저장 로직이 변경 되었으므로 data 폴던안의 파일들을 전부 삭제하면 돌아간다. -- sprint2 개발 중
     }
 
     public static void sprint1Application() {
@@ -19,10 +20,12 @@ public class JavaApplication {
         userTestApplication();
         System.out.println("\n========== userService Test end ==========================================\n");
         // userService 테스트
+
         System.out.println("\n========== channelService Test start ==========================================\n");
         channelTestApplication();
         System.out.println("\n========== channelService Test end ==========================================\n");
         // channelService 테스트
+
         System.out.println("\n========== messageService Test start ==========================================\n");
         messageTestApplication();
         System.out.println("\n========== messageService Test end ==========================================\n");
@@ -30,15 +33,9 @@ public class JavaApplication {
     }
 
     public static void userTestApplication() {
-        UserService jcfUserService = Factory.getInstance().getUserService();
-        /*
-        [ ] 등록
-        [ ] 조회(단건, 다건)
-        [ ] 수정
-        [ ] 수정된 데이터 조회
-        [ ] 삭제
-        [ ] 조회를 통해 삭제되었는지 확인
-        */
+
+        UserService jcfUserService = ServiceFactory.getInstance().getUserService();
+        
         System.out.println("1. 유저 등록=================");
         User user1 = jcfUserService.createUser("권용진-1");
         User user2 = jcfUserService.createUser("권용진-2");
@@ -75,7 +72,7 @@ public class JavaApplication {
         System.out.println();
         // 비활성화된 유저만 조회
         System.out.println("6. 유저 활성화===============");
-        jcfUserService.restorationUser(user1);
+        jcfUserService.restoreUser(user1);
         System.out.println();
         jcfUserService.printActiveUsers(); // 조회
         System.out.println();
@@ -84,8 +81,8 @@ public class JavaApplication {
     }
 
     public static void channelTestApplication() {
-        UserService jcfUserService = Factory.getInstance().getUserService();
-        ChannelService jcfChannelService = Factory.getInstance().getChannelService();
+        UserService jcfUserService = ServiceFactory.getInstance().getUserService();
+        ChannelService jcfChannelService = ServiceFactory.getInstance().getChannelService();
         /*
         [ ] 등록
         [ ] 조회(단건, 다건)
@@ -116,9 +113,9 @@ public class JavaApplication {
         // 생성된 채널 단일 조회
 
         System.out.println("5. 채널 정보 수정, 유저 채널 입장, 동일 유저가 중복 입장하려 할 때=================");
-        jcfChannelService.userJoinChannel(user2, channel1); // user2 번이 1번 채널에 추가됨
+        jcfChannelService.addUserToChannel(user2, channel1); // user2 번이 1번 채널에 추가됨
         // 이미 만들어진 채널에 다른 유저가 입장
-        jcfChannelService.userJoinChannel(user2, channel1); // user2 번이 1번 채널에 추가됨
+        jcfChannelService.addUserToChannel(user2, channel1); // user2 번이 1번 채널에 추가됨
         System.out.println();
         jcfChannelService.printUsersFromChannel(channel1);
         System.out.println();
@@ -141,13 +138,13 @@ public class JavaApplication {
         // 변경된 채널 이름 조회
 
         System.out.println("7. 채널 정보 수정, 채널 내 유저 퇴장=================");
-        jcfChannelService.userLeaveChannel(user2, channel1);
+        jcfChannelService.leaveUserFromChannel(user2, channel1);
         jcfChannelService.printChannel(channel1);
         System.out.println();
         // 채널에 참여해 있던 유저가 해당 채널을 떠났을 때 해당 채널의 정보를 조회하여 성공적으로 유저가 채널을 빠져나갔는지 확인
 
         System.out.println("8. 채널 정보 수정, 채널 주인 변경, 권한 없는 유저가 수정하려 할 떄=================");
-        jcfChannelService.userJoinChannel(user2, channel1); // 위에서 퇴장했으니 다시 입장시켜서
+        jcfChannelService.addUserToChannel(user2, channel1); // 위에서 퇴장했으니 다시 입장시켜서
         jcfChannelService.updateHostUser(user2, channel1, user1);
         // 채널의 주인을 변경하려는 시도, 채널 주인이 아니면 채널의 주인을 다른 유저로 변경할 수 없다.
         jcfChannelService.updateHostUser(user1, channel1, user2);
@@ -173,9 +170,9 @@ public class JavaApplication {
     }
 
     public static void messageTestApplication() {
-        UserService jcfUserService = Factory.getInstance().getUserService();
-        ChannelService jcfChannelService = Factory.getInstance().getChannelService();
-        MessageService jcfMessageService = Factory.getInstance().getMessageService();
+        UserService jcfUserService = ServiceFactory.getInstance().getUserService();
+        ChannelService jcfChannelService = ServiceFactory.getInstance().getChannelService();
+        MessageService jcfMessageService = ServiceFactory.getInstance().getMessageService();
         /*
         [ ] 등록
         [ ] 조회(단건, 다건)
@@ -231,7 +228,7 @@ public class JavaApplication {
         System.out.println();
 
         System.out.println("9. 유저 삭제시 메시지도 동시 삭제=================");
-        jcfChannelService.userJoinChannel(user2, channel1);
+        jcfChannelService.addUserToChannel(user2, channel1);
         Message message4 = jcfMessageService.createMessage(user2, channel1, "삭제 될 유저의 테스트 메시지 입니다."); // 메세지 등록
         jcfMessageService.printAllMessage(); // 전체 조회
         System.out.println();
@@ -242,7 +239,7 @@ public class JavaApplication {
         System.out.println("10. 삭제되어 비활성화 된 유저가 메시지를 생성하고자 할 때=================");
         jcfMessageService.createMessage(user2, channel1, "삭제된 유저의 테스트 메시지입니다.");
         System.out.println();
-        jcfUserService.restorationUser(user2); // 이전 단게에서 user2는 삭제된 상태이므로 다시 활성화 상태로 바꿔준다
+        jcfUserService.restoreUser(user2); // 이전 단게에서 user2는 삭제된 상태이므로 다시 활성화 상태로 바꿔준다
         jcfMessageService.createMessage(user2, channel1, "복구된 유저의 테스트 메시지입니다.");
         jcfMessageService.printAllMessage(); // 전체 조회
         System.out.println();

@@ -1,28 +1,68 @@
-package com.sprint.mission.discodeit.service.jcf;
+package com.sprint.mission.discodeit.service.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.service.MessageService;
 
+import java.io.*;
 import java.util.ArrayList;
 
-public class JCFMessageService implements MessageService {
-
-    private static JCFMessageService instance = new JCFMessageService();
+public class FileMessageService implements MessageService {
+    private static final FileMessageService instance = new FileMessageService();
     private final ArrayList<Message> data;
 
-    public JCFMessageService() {
-       data = new ArrayList<>();
+    public FileMessageService() {
+        this.data = loadMessages();
     }
-
-    public static JCFMessageService getInstance() {
+    public ArrayList<Message> getMessages() {
+        return data;
+    }
+    public static FileMessageService getInstance() {
         return instance;
     }
 
+    public void saveMessages(){
+        System.out.println("메세지 리스트 저장");
+        String filePath = "./data/messages.ser";
+
+        // ArrayList<Message> 직렬화및 저장
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+            oos.writeObject(data);
+            System.out.println("Message 리스트가 직렬화되어 '" + filePath + "' 파일에 저장되었습니다.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public ArrayList<Message> loadMessages(){
+        ArrayList<Message> deserializedMessages = null;
+        System.out.println("메세지 리스트 불러오기");
+        String filePath = "./data/messages.ser"; // 유저 직렬화
+
+        if (!new File(filePath).exists() || new File(filePath).length() == 0) {
+            return new ArrayList<Message>(); // 해당 파일이 없으면 빈 ArrayList를 반환
+        }
+
+        // ArrayList<Message> 역직렬화및 반환
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
+            deserializedMessages = (ArrayList<Message>) ois.readObject();
+            /*
+            System.out.println("역직렬화된 Message 리스트 정보:");
+
+            for (Message message : deserializedMessages) {
+                System.out.println("------------");
+                System.out.println("Message: " + message.toString());
+            }*/
+
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return deserializedMessages;
+    }
+
     @Override
-    public Message createMessage(User user, Channel channel, String contents) {
+    public Message createMessage(User user, Channel channel, String contents){
         if(channel == null) {
             System.out.println("채널이 null 입니다.");
             return null;
@@ -37,11 +77,12 @@ public class JCFMessageService implements MessageService {
         data.add(newMessage);
         newMessage.registerMessageToUserAndChannel(user, channel);
 
+        saveMessages();
         return newMessage;
     }
 
     @Override
-    public void deleteMessage(User user, Message message) {
+    public void deleteMessage(User user, Message message){
         if(message == null) {
             System.out.println("메세지가 null 입니다.");
             return;
@@ -61,10 +102,12 @@ public class JCFMessageService implements MessageService {
         message.getChannel().getMessages().remove(message); // 채널에서 메세지 삭제
         user.removeMessage(message);
         data.remove(message);
+
+        saveMessages();
     }
 
     @Override
-    public void updateMessage(User user, Message message, String newContents) {
+    public void updateMessage(User user, Message message, String newContents){
         if(message == null) {
             System.out.println("메세지가 null 입니다.");
             return;
@@ -82,6 +125,8 @@ public class JCFMessageService implements MessageService {
         System.out.printf("이전 메세지: %s%n", message.getMessageContents());
         System.out.printf("현재 메세지: %s%n", newContents);
         message.updateMessageContent(newContents);
+
+        saveMessages();
     }
 
     @Override

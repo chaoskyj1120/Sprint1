@@ -1,12 +1,12 @@
 package com.sprint.mission.discodeit.entity;
 
-public class Message extends BaseEntity {
+import java.io.Serializable;
 
+public class Message extends BaseEntity implements Serializable {
 
     private String messageContents;
     private User user;
     private Channel channel;
-
 
     public Message(User user, Channel channel, String contents) {
         super();
@@ -37,17 +37,15 @@ public class Message extends BaseEntity {
         channel.addMessage(this);
     }
 
-
-
     @Override
     public String toString() {
         return "Message{" +
-                "messageId=" + getId() +
-                ", messageContents='" + messageContents + '\'' +
-                ", user=" + user.getId() +
-                ", channel=" + channel.getId() +
-                ", createdAt=" + getCreatedAt() +
-                ", updatedAt=" + getUpdatedAt() +
+                "\nmessageId=" + getId() +
+                "\nmessageContents='" + messageContents + '\'' +
+                "\nuser=" + user.getId() +
+                "\nchannel=" + channel.getId() +
+                "\ncreatedAt=" + getCreatedAt() +
+                "\nupdatedAt=" + getUpdatedAt() +
                 '}';
     }
 }

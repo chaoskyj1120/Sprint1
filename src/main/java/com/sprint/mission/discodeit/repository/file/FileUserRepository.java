@@ -1,0 +1,115 @@
+package com.sprint.mission.discodeit.repository.file;
+
+import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.repository.UserRepository;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Optional;
+
+public class FileUserRepository implements UserRepository, Serializable {
+
+    private static final FileUserRepository instance = new FileUserRepository();
+    private final ArrayList<User> data;
+
+    public FileUserRepository() {
+        this.data = loadUsers();
+    }
+    public ArrayList<User> getUsers() {
+        return data;
+    }
+    public static FileUserRepository getInstance() {
+        return instance;
+    }
+
+    public void saveUsers() {
+        System.out.println("유저 리스트 저장");
+        String filePath = "./data/users.ser";
+
+        // ArrayList<User> 직렬화및 저장
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+            oos.writeObject(data);
+            System.out.println("User 리스트가 직렬화되어 '" + filePath + "' 파일에 저장되었습니다.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public ArrayList<User> loadUsers() {
+        ArrayList<User> deserializedUsers = null;
+        System.out.println("유저 리스트 불러오기");
+        String filePath = "./data/users.ser"; // 유저 직렬화
+
+        if (!new File(filePath).exists() || new File(filePath).length() == 0) {
+            return new ArrayList<User>(); // 해당 파일이 없으면 빈 ArrayList를 반환
+        }
+        // ArrayList<User> 역직렬화및 반환
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
+            deserializedUsers = (ArrayList<User>) ois.readObject();
+
+            /*
+            System.out.println("역직렬화된 User 리스트 정보:");
+            for (User user : deserializedUsers) {
+                System.out.println("------------");
+                System.out.println("User: " + user.toString());
+            }*/
+
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return deserializedUsers;
+    }
+
+    @Override
+    public User createUser(String userName) {
+        User user = new User(userName); // 직접 생성
+        System.out.printf("유저 추가 \n유저 이름: '%s', 유저 ID: '%s'\n", user.getUserName() ,user.getId());
+        data.add(user);
+        return user;
+    }
+
+    @Override
+    public void updateUser(User user, String newName) {
+        System.out.println("유저의 이름을 변경합니다.");
+        System.out.printf("변경 전: '%s', 변경 후: '%s' \n", user.getUserName(), newName);
+        user.setUserName(newName);
+    }
+
+    @Override
+    public void deleteUser(User user) {
+        Optional<Channel> hostChannel = user.getChannels().stream()
+                .filter(channel -> channel.getHostUser().equals(user))
+                .findFirst();
+
+        if (hostChannel.isPresent()) {
+            System.out.printf("'%s'는 '%s' 채널의 호스트이므로 유저를 삭제할 수 없습니다.\n",user.getUserName(), hostChannel.get().getChannelName());
+            return; //메서드 종료
+        }
+
+        System.out.printf("유저 삭제 \n유저 이름: '%s', 유저 ID: '%s'\n", user.getUserName(), user.getId());
+
+        user.setStatus(UserStatus.DEACTIVE);
+        user.getChannels().stream()
+                .map(channel -> {
+                    channel.removeUser(user);
+                    return channel;
+                });
+        user.clearChannels();
+        user.getMessages().stream()
+                .map(message -> {
+                    message.getChannel().removeMessage(message);
+                    return message;
+                });
+        user.clearMessages();
+        // 상세한 주석은 service에
+    }
+
+    @Override
+    public void restoreUser(User user) {
+        System.out.printf("'%s' 유저를 복구합니다. %n", user.getUserName());
+        user.setStatus(UserStatus.ACTIVE);
+    }
+
+}

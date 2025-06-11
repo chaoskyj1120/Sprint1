@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 
 public interface MessageService {
+
     Message createMessage(User user, Channel channel, String contents);
     void deleteMessage(User user, Message message);
     void updateMessage(User user, Message message, String newContents);

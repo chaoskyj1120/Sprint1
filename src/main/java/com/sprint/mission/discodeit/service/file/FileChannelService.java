@@ -1,25 +1,68 @@
-package com.sprint.mission.discodeit.service.jcf;
+package com.sprint.mission.discodeit.service.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
+import java.io.*;
 import java.util.ArrayList;
 
-public class JCFChannelService implements ChannelService {
+public class FileChannelService implements ChannelService {
 
-    private static final JCFChannelService instance = new JCFChannelService();
+    private static final FileChannelService instance = new FileChannelService();
+    private final ArrayList<Channel> data;
 
-    private final ArrayList<Channel> data; // channelData
-    // data를 많이 참조하고 있는데 본 클래스에서 data를 못 다루는건 문제가 나중에 생길지도?
-
-    public JCFChannelService() {
-        data = new ArrayList<>();
+    public FileChannelService() {
+        this.data = loadChannels();
+    }
+    public ArrayList<Channel> getChannels() {
+        return data;
     }
 
-    public static JCFChannelService getInstance() {
+    public static FileChannelService getInstance() {
         return instance;
+    }
+
+    public void saveChannels(){
+        System.out.println("채널 리스트 저장");
+        String filePath = "./data/channels.ser";
+
+        // ArrayList<Channel> 직렬화및 저장
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
+            oos.writeObject(data);
+            System.out.println("Channel 리스트가 직렬화되어 '" + filePath + "' 파일에 저장되었습니다.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public ArrayList<Channel> loadChannels(){
+        ArrayList<Channel> deserializedChannels = null;
+        System.out.println("채널 리스트 불러오기");
+        String filePath = "./data/channels.ser"; // 유저 직렬화
+
+        if (!new File(filePath).exists() || new File(filePath).length() == 0) {
+            return new ArrayList<Channel>(); // 해당 파일이 없으면 빈 ArrayList를 반환
+        }
+
+        // ArrayList<Channel> 역직렬화및 반환
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
+            deserializedChannels = (ArrayList<Channel>) ois.readObject();
+
+            /*
+            System.out.println("역직렬화된 Channel 리스트 정보:");
+
+            for (Channel channel : deserializedChannels) {
+                System.out.println("------------");
+                System.out.println("Channel: " + channel.toString());
+            }*/
+
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return deserializedChannels;
     }
 
     @Override
@@ -34,6 +77,9 @@ public class JCFChannelService implements ChannelService {
         System.out.printf("채널 생성 - 채널 주인: %s, 채널 이름: %s, 채널 ID: %s%n",
                 user.getId(), channelName, channel.getId());
         user.addChannel(channel);
+
+        FileChannelRepository.getInstance().saveChannels();
+        saveChannels();
         return channel;
     }
 
@@ -54,6 +100,8 @@ public class JCFChannelService implements ChannelService {
         System.out.printf("'%s' 에 '%s' 이 입장했습니다.%n", channel.getChannelName(), user.getUserName());
         channel.addUser(user);
         user.addChannel(channel);
+
+        saveChannels();
     }
 
     @Override
@@ -77,6 +125,7 @@ public class JCFChannelService implements ChannelService {
             System.out.printf("'%s' 채널은 유저 수가 0이므로 삭제합니다.%n", channel.getChannelName());
             data.remove(channel);
         }
+        saveChannels();
     }
 
     @Override
@@ -97,6 +146,7 @@ public class JCFChannelService implements ChannelService {
             System.out.printf("'%s' 은 '%s' 채널 주인이 아닙니다.%n",
                     user.getUserName(), channel.getChannelName());
         }
+        saveChannels();
     }
 
     @Override
@@ -129,14 +179,16 @@ public class JCFChannelService implements ChannelService {
 
         channel.getUsers()
                 .stream()
-                .map(userInChannel -> {
-                    userInChannel.removeChannel(channel);
-                    return userInChannel;
-                });// user는 매개변수 이름이기 때문에 userInChannel 변수명 사용
+                .map(u -> {
+                    u.removeChannel(channel);
+                    return u;
+                });
 
         channel.clearUsers();
         channel.clearMessages();
         data.remove(channel);
+
+        saveChannels();
     }
 
     @Override
@@ -159,15 +211,15 @@ public class JCFChannelService implements ChannelService {
             System.out.printf("'%s'는 '%s' 채널에 존재하지 않아서 권한이 없습니다.%n", newHostUser.getUserName(), channel.getChannelName());
             return;
         }
-
-        if (!channel.getHostUser().equals(oldHostUser)) {
+        if (channel.getHostUser().equals(oldHostUser)) {
+            System.out.printf("'%s' 채널 주인을 변경합니다. 새 주인: '%s'%n",
+                    channel.getChannelName(), newHostUser.getUserName());
+            channel.updateHostUser(newHostUser);
+        } else {
             System.out.printf("'%s' 은 '%s' 채널 주인이 아닙니다.%n",
                     oldHostUser.getUserName(), channel.getChannelName());
         }
-
-        System.out.printf("'%s' 채널 주인을 변경합니다. 새 주인: '%s'%n",
-                channel.getChannelName(), newHostUser.getUserName());
-        channel.updateHostUser(newHostUser);
+        saveChannels();
     }
 
     @Override
@@ -198,4 +250,5 @@ public class JCFChannelService implements ChannelService {
 
         channel.getUsers().forEach(u -> System.out.println(u.getUserName()));
     }
+
 }

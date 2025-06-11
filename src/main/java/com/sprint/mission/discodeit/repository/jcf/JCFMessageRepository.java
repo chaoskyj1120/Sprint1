@@ -1,33 +1,33 @@
-package com.sprint.mission.discodeit.service.jcf;
+package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 
 import java.util.ArrayList;
 
-public class JCFMessageService implements MessageService {
+public class JCFMessageRepository implements MessageRepository {
 
-    private static JCFMessageService instance = new JCFMessageService();
+    private static JCFMessageRepository instance = new JCFMessageRepository();
     private final ArrayList<Message> data;
 
-    public JCFMessageService() {
+    public JCFMessageRepository() {
        data = new ArrayList<>();
     }
 
-    public static JCFMessageService getInstance() {
+    public static JCFMessageRepository getInstance() {
         return instance;
     }
 
-    @Override
     public Message createMessage(User user, Channel channel, String contents) {
         if(channel == null) {
             System.out.println("채널이 null 입니다.");
             return null;
         }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
             System.out.printf("'%s' 비활성 상태라 메세지를 작성할 수 없습니다.", user.getUserName());
             return null;
         }
@@ -40,13 +40,12 @@ public class JCFMessageService implements MessageService {
         return newMessage;
     }
 
-    @Override
     public void deleteMessage(User user, Message message) {
         if(message == null) {
             System.out.println("메세지가 null 입니다.");
             return;
         }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
             System.out.printf("'%s' 비활성 상태라 메세지를 삭제할 수 없습니다.", user.getUserName());
             return;
         }
@@ -63,13 +62,12 @@ public class JCFMessageService implements MessageService {
         data.remove(message);
     }
 
-    @Override
     public void updateMessage(User user, Message message, String newContents) {
         if(message == null) {
             System.out.println("메세지가 null 입니다.");
             return;
         }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
             System.out.printf("'%s' 비활성 상태라 메세지를 업데이트할 수 없습니다.", user.getUserName());
             return;
         }
@@ -114,7 +112,7 @@ public class JCFMessageService implements MessageService {
                 .filter(message -> message.getUser().getStatus().equals(UserStatus.ACTIVE))
                 .toList().size());
         data
-                .stream().filter(message -> message.getUser().getStatus().equals(UserStatus.ACTIVE))
+                .stream().filter(message -> message.getUser().getStatus().equals(User.UserStatus.ACTIVE))
                 .forEach(message -> System.out.printf("작성자: %s, 내용: %s%n", message.getUser().getUserName(), message.getMessageContents()));
     }
 

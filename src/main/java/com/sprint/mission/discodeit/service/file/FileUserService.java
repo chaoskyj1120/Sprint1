@@ -111,9 +111,7 @@ public class FileUserService implements UserService{
                 });
         user.clearMessages();
 
-        saveUsers();
-        FileMessageRepository.getInstance().saveMessages();
-        FileChannelRepository.getInstance().saveChannels();
+        FileMessageService.getInstance().saveMessages();
         // 채널과 메세지들도 변경되었으니 변경
     }
 

@@ -70,4 +70,11 @@ public class JCFUserRepository implements UserRepository {
         System.out.printf("'%s' 유저를 복구합니다. %n", user.getUserName());
         user.setStatus(UserStatus.ACTIVE);
     }
+
+    public void printAllUsers() {
+        System.out.printf("전체 유저 조회(탈퇴 유저 포함), 유저 수: %d \n", data.size());
+        data
+                .forEach(user -> System.out.printf("유저 이름: '%s', 유저 ID: '%s'\n", user.getUserName(), user.getId()));
+        //제대로 레포지터리가 작동하는지를 확인하기위한 메소드
+    }
 }

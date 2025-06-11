@@ -8,14 +8,14 @@ import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
 
-public class Sprint1Application {
+public class TestJCFServiceApplication {
 
     public static void main(String[] args) {
-        sprint1Application(); 
+        testJCFService();
         // sprint1 떄 만든 코드로써 저장 로직이 변경 되었으므로 data 폴던안의 파일들을 전부 삭제하면 돌아간다. -- sprint2 개발 중
     }
 
-    public static void sprint1Application() {
+    public static void testJCFService() {
         System.out.println("\n========== userService Test start ==========================================\n");
         userTestApplication();
         System.out.println("\n========== userService Test end ==========================================\n");

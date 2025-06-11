@@ -5,8 +5,6 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.service.MessageService;
-
 import java.util.ArrayList;
 
 public class JCFMessageRepository implements MessageRepository {
@@ -15,19 +13,20 @@ public class JCFMessageRepository implements MessageRepository {
     private final ArrayList<Message> data;
 
     public JCFMessageRepository() {
-       data = new ArrayList<>();
+        data = new ArrayList<>();
     }
 
     public static JCFMessageRepository getInstance() {
         return instance;
     }
 
+    @Override
     public Message createMessage(User user, Channel channel, String contents) {
         if(channel == null) {
             System.out.println("채널이 null 입니다.");
             return null;
         }
-        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s' 비활성 상태라 메세지를 작성할 수 없습니다.", user.getUserName());
             return null;
         }
@@ -40,12 +39,13 @@ public class JCFMessageRepository implements MessageRepository {
         return newMessage;
     }
 
+    @Override
     public void deleteMessage(User user, Message message) {
         if(message == null) {
             System.out.println("메세지가 null 입니다.");
             return;
         }
-        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s' 비활성 상태라 메세지를 삭제할 수 없습니다.", user.getUserName());
             return;
         }
@@ -62,12 +62,13 @@ public class JCFMessageRepository implements MessageRepository {
         data.remove(message);
     }
 
+    @Override
     public void updateMessage(User user, Message message, String newContents) {
         if(message == null) {
             System.out.println("메세지가 null 입니다.");
             return;
         }
-        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s' 비활성 상태라 메세지를 업데이트할 수 없습니다.", user.getUserName());
             return;
         }
@@ -82,45 +83,12 @@ public class JCFMessageRepository implements MessageRepository {
         message.updateMessageContent(newContents);
     }
 
-    @Override
-    public void printMessagesByChannel(Channel channel) {
-        if(channel == null) {
-            System.out.println("채널이 null 입니다.");
-            return;
-        }
-        System.out.printf("%s 채널의 메세지를 조회합니다. 메시지 수: %d%n",
-                channel.getChannelName(), channel.getMessages().size());
-        data.stream()
-                .filter(message -> message.getChannel().equals(channel))
-                .forEach(message -> System.out.printf("작성자: %s, 내용: %s%n",
-                        message.getUser().getUserName(), message.getMessageContents()));
-    }
-
-    @Override
-    public void printMessage(Message message) {
-        if(message == null) {
-            System.out.println("메세지가 null 입니다.");
-            return;
-        }
-        System.out.printf("메세지 ID: %s 의 정보를 출력합니다.%n", message.getId());
-        System.out.println(message.toString());
-    }
-
-    @Override
     public void printAllMessage() {
         System.out.printf("전체 메시지를 출력합니다. 메세지 수: %d%n", data.stream()
                 .filter(message -> message.getUser().getStatus().equals(UserStatus.ACTIVE))
                 .toList().size());
         data
-                .stream().filter(message -> message.getUser().getStatus().equals(User.UserStatus.ACTIVE))
+                .stream().filter(message -> message.getUser().getStatus().equals(UserStatus.ACTIVE))
                 .forEach(message -> System.out.printf("작성자: %s, 내용: %s%n", message.getUser().getUserName(), message.getMessageContents()));
-    }
-
-    @Override
-    public void printAllMessageByUser(User user) {
-        System.out.printf("%s이 작성한 모든 메세지를 출력합니다. 메시지 수: %d%n",
-                user.getUserName(), user.getMessages().size());
-        user.getMessages()
-                .forEach(message -> System.out.printf("내용: %s%n", message.getMessageContents()));
     }
 }

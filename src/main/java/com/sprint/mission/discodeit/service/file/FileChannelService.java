@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.repository.file.FileUserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.io.*;
@@ -36,6 +37,7 @@ public class FileChannelService implements ChannelService {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        FileUserService.getInstance().saveUsers();
     }
 
     public ArrayList<Channel> loadChannels(){
@@ -78,7 +80,6 @@ public class FileChannelService implements ChannelService {
                 user.getId(), channelName, channel.getId());
         user.addChannel(channel);
 
-        FileChannelRepository.getInstance().saveChannels();
         saveChannels();
         return channel;
     }
@@ -211,14 +212,17 @@ public class FileChannelService implements ChannelService {
             System.out.printf("'%s'는 '%s' 채널에 존재하지 않아서 권한이 없습니다.%n", newHostUser.getUserName(), channel.getChannelName());
             return;
         }
-        if (channel.getHostUser().equals(oldHostUser)) {
-            System.out.printf("'%s' 채널 주인을 변경합니다. 새 주인: '%s'%n",
-                    channel.getChannelName(), newHostUser.getUserName());
-            channel.updateHostUser(newHostUser);
-        } else {
+
+        if (!channel.getHostUser().equals(oldHostUser)) {
             System.out.printf("'%s' 은 '%s' 채널 주인이 아닙니다.%n",
                     oldHostUser.getUserName(), channel.getChannelName());
+            return;
         }
+
+        System.out.printf("'%s' 채널 주인을 변경합니다. 새 주인: '%s'%n",
+                channel.getChannelName(), newHostUser.getUserName());
+        channel.updateHostUser(newHostUser);
+
         saveChannels();
     }
 

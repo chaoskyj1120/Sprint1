@@ -10,51 +10,57 @@ import com.sprint.mission.discodeit.service.UserService;
 
 import java.io.*;
 
-public class Sprint2Application implements Serializable {
+public class TestFileServiceApplication implements Serializable {
     public static void main(String[] args) {
-        sprint1Application();
+        testFileService();
         // sprint1 떄 만든 코드로써 저장 로직이 변경 되었으므로 data 폴던안의 파일들을 전부 삭제하면 돌아간다. -- sprint2 개발 중
     }
 
-    public static void sprint1Application() {
+    public static void testFileService() {
+
         /*
-        System.out.println("***************************************************************");
+        System.out.println("**************************************************************  *");
         System.out.println("\n========== userService Test start ==========================================\n");
         userTestApplication();
         System.out.println("\n========== userService Test end ==========================================\n");
-        // userService 테스트
 
+        System.out.println("\n========== load userService Test start ==========================================\n");
+        loadUserTestApplication();
+        System.out.println("\n========== load userService Test end ==========================================\n");
+        System.out.println("***************************************************************");*/
+
+        // userService 테스트
+        /*
+        System.out.println("***************************************************************");
         System.out.println("\n========== channelService Test start ==========================================\n");
         //channelTestApplication();
         System.out.println("\n========== channelService Test end ==========================================\n");
         // channelService 테스트
 
-        System.out.println("\n========== messageService Test start ==========================================\n");
-        //messageTestApplication();
-        System.out.println("\n========== messageService Test end ==========================================\n");
-        // messageService 테스트
-        */
-
-        
-        System.out.println("***************************************************************");
-        System.out.println("\n========== load userService Test start ==========================================\n");
-        loadUserTestApplication();
-        System.out.println("\n========== load userService Test end ==========================================\n");
-        // userService 테스트
-        /*
         System.out.println("\n========== load channelService Test start ==========================================\n");
         //loadChannelTestApplication();
         System.out.println("\n========== load channelService Test end ==========================================\n");
-        // channelService 테스트
-
-        System.out.println("\n========== load messageService Test start ==========================================\n");
-        //loadMessageTestApplication();
-        System.out.println("\n========== load messageService Test end ==========================================\n");
-        // messageService 테스트
         System.out.println("***************************************************************");
+        // channelService 테스트
+        */
+
+        System.out.println("***************************************************************");
+        System.out.println("\n========== messageService Test start ==========================================\n");
+        messageTestApplication();
+        System.out.println("\n========== messageService Test end ==========================================\n");
+        // messageService 테스트
+
+        System.out.println("***************************************************************");
+        System.out.println("\n========== load messageService Test start ==========================================\n");
+        loadMessageTestApplication();
+        System.out.println("\n========== load messageService Test end ==========================================\n");
+        System.out.println("***************************************************************");
+        // messageService 테스트
+
         // 데이터를 계속 추가히나까 저장되는게 점점 더 많아진다.
         // 현재 출력되는게 정상
-        // 좀 더 정상적으로 볼려면 testApplication을 하나씩 만 사용해야된다.*/
+        // 좀 더 정상적으로 볼려면 testApplication을 하나씩 만 사용해야된다.
+        // data 폴더 내의 파일들을 모두 지워야 보기편하다.
     }
 
     public static void userTestApplication() {
@@ -205,6 +211,7 @@ public class Sprint2Application implements Serializable {
         fileChannelService.printAllChannels();
         System.out.println();
     }
+
     public static void messageTestApplication() {
         UserService fileUserService = ServiceFactory.getInstance().getFileUserService();
         ChannelService fileChannelService = ServiceFactory.getInstance().getFileChannelService();

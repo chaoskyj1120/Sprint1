@@ -2,27 +2,32 @@ package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.service.jcf.JCFChannelService;
 
 import java.util.ArrayList;
 
 public class JCFChannelRepository implements ChannelRepository {
 
     private static final JCFChannelRepository instance = new JCFChannelRepository();
-    private final FileChannelRepository fileChannelRepository;
 
     private final ArrayList<Channel> data; // channelData
     // data를 많이 참조하고 있는데 본 클래스에서 data를 못 다루는건 문제가 나중에 생길지도?
 
     public JCFChannelRepository() {
-        fileChannelRepository = new FileChannelRepository();
-        data = fileChannelRepository.getChannels();
+        data = new ArrayList<>();
     }
 
+    public static JCFChannelRepository getInstance() {
+        return instance;
+    }
+
+    @Override
     public Channel createChannel(User user, String channelName) {
-        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s'는 비활성 상태이므로 채널을 생성할 수 없습니다.", user.getUserName());
             return null;
         }
@@ -35,12 +40,13 @@ public class JCFChannelRepository implements ChannelRepository {
         return channel;
     }
 
-    public void userJoinChannel(User user, Channel channel) {
+    @Override
+    public void addUserToChannel(User user, Channel channel) {
         if(channel == null) {
             System.out.println("채널이 null 입니다.");
             return;
         }
-        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s'는 비활성 상태이므로 채널에 입장 할 수 없습니다.", user.getUserName());
             return; // 메서드 종료
         }
@@ -53,12 +59,13 @@ public class JCFChannelRepository implements ChannelRepository {
         user.addChannel(channel);
     }
 
-    public void userLeaveChannel(User user, Channel channel) {
+    @Override
+    public void leaveUserFromChannel(User user, Channel channel) {
         if(channel == null) {
             System.out.println("채널이 null 입니다.");
             return;
         }
-        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s'는 비활성 상태 입니다.", user.getUserName());
             return; // 메서드 종료
         }
@@ -75,12 +82,13 @@ public class JCFChannelRepository implements ChannelRepository {
         }
     }
 
+    @Override
     public void updateChannelName(User user, Channel channel, String newName) {
         if(channel == null) {
             System.out.println("채널이 null 입니다.");
             return;
         }
-        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s'는 비활성 상태이므로 채널의 이름을 변경할 수 없습니다.%n", user.getUserName());
             return; // 메서드 종료
         }
@@ -94,12 +102,13 @@ public class JCFChannelRepository implements ChannelRepository {
         }
     }
 
+    @Override
     public void deleteChannel(User user, Channel channel) {
         if(channel == null) {
             System.out.println("채널이 null 입니다.");
             return;
         }
-        if(user.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s'는 이미 비활성 상태입니다. 따라서 '%s' 채널을 삭제할 수 없습니다.%n", user.getUserName(), channel.getChannelName());
             return; // 메서드 종료
         }
@@ -123,27 +132,28 @@ public class JCFChannelRepository implements ChannelRepository {
 
         channel.getUsers()
                 .stream()
-                .map(u -> {
-                    u.removeChannel(channel);
-                    return u;
-                });
+                .map(userInChannel -> {
+                    userInChannel.removeChannel(channel);
+                    return userInChannel;
+                });// user는 매개변수 이름이기 때문에 userInChannel 변수명 사용
 
         channel.clearUsers();
         channel.clearMessages();
         data.remove(channel);
     }
 
+    @Override
     public void updateHostUser(User oldHostUser, Channel channel, User newHostUser) {
         if(channel == null) {
             System.out.println("채널이 null 입니다.");
             return;
         }
-        if(oldHostUser.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(oldHostUser.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s'는 비활성 상태이므로 권한이 없습니다.%n", oldHostUser.getUserName());
             return;
         }
 
-        if(newHostUser.getStatus().equals(User.UserStatus.DEACTIVE)) {
+        if(newHostUser.getStatus().equals(UserStatus.DEACTIVE)) {
             System.out.printf("'%s'는 비활성 상태이므로 권한이 없습니다.%n", newHostUser.getUserName());
             return;
         }
@@ -152,14 +162,19 @@ public class JCFChannelRepository implements ChannelRepository {
             System.out.printf("'%s'는 '%s' 채널에 존재하지 않아서 권한이 없습니다.%n", newHostUser.getUserName(), channel.getChannelName());
             return;
         }
-        if (channel.getHostUser().equals(oldHostUser)) {
-            System.out.printf("'%s' 채널 주인을 변경합니다. 새 주인: '%s'%n",
-                    channel.getChannelName(), newHostUser.getUserName());
-            channel.updateHostUser(newHostUser);
-        } else {
+
+        if (!channel.getHostUser().equals(oldHostUser)) {
             System.out.printf("'%s' 은 '%s' 채널 주인이 아닙니다.%n",
                     oldHostUser.getUserName(), channel.getChannelName());
         }
+
+        System.out.printf("'%s' 채널 주인을 변경합니다. 새 주인: '%s'%n",
+                channel.getChannelName(), newHostUser.getUserName());
+        channel.updateHostUser(newHostUser);
     }
-    // data를 다뤄야 하나?
+
+    public void printAllChannels() {
+        System.out.printf("전체 채널 조회, 채널 수: %d%n", data.size());
+        data.forEach(channel -> System.out.println(channel.getChannelName()));
+    }
 }

@@ -3,7 +3,11 @@ package com.sprint.mission.discodeit.service.file;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.repository.file.FileUserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import com.sprint.mission.discodeit.service.UserService;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -33,6 +37,8 @@ public class FileMessageService implements MessageService {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        FileChannelService.getInstance().saveChannels(); //메시지가 변경되면 채널과 유저 둘 다변경 되어야 함
     }
 
     public ArrayList<Message> loadMessages(){

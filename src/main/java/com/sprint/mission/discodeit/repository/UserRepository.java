@@ -1,13 +1,15 @@
 package com.sprint.mission.discodeit.repository;
 
-import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public interface UserRepository {
+
+    User createUser(String userName);
     void updateUser(User user, String newUserName);
     void deleteUser(User user);
     void restoreUser(User user);
-    User createUser(String userName);
+
+    List<User> getUsers();
 }

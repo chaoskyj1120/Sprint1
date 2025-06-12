@@ -91,4 +91,9 @@ public class JCFMessageRepository implements MessageRepository {
                 .stream().filter(message -> message.getUser().getStatus().equals(UserStatus.ACTIVE))
                 .forEach(message -> System.out.printf("작성자: %s, 내용: %s%n", message.getUser().getUserName(), message.getMessageContents()));
     }
+
+    @Override
+    public ArrayList<Message> getMessages() {
+        return data;
+    }
 }

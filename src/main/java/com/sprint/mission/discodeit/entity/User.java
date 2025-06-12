@@ -29,7 +29,16 @@ public class User extends BaseEntity implements Serializable {
     }
 
     public void addChannel(Channel channel) {
+        for (Channel c : channels) {
+            if(c.getId().equals(channel.getId())) {
+                // 같은 걸 찾믕
+                System.out.println("동일 채널이 안에 있네요");
+                return;
+            }
+        }
+
         if(!channels.contains(channel)) {
+            System.out.println("1231231"+channel.getUsers());
             channels.add(channel);
             channel.addUser(this);
         }
@@ -54,6 +63,7 @@ public class User extends BaseEntity implements Serializable {
 
     public void removeMessage(Message message) {
         if(messages.contains(message)) {
+            System.out.println("메세지 삭제 성공적 유저 에서");
             this.messages.remove(message);
             message.getChannel().getMessages().remove(message);
         }
@@ -87,7 +97,8 @@ public class User extends BaseEntity implements Serializable {
                 "\nuserName='" + userName  +
                 //", createdAt=" + getCreatedAt() +
                 //", updatedAt=" + getUpdatedAt() +
-                "\nchannels=" + channels.stream().map(channel -> channel.getId()).toList() +
+                //"\nchannels=" + channels.stream().map(Channel::toString).toList() +
+                "\nmessages=" + messages.stream().map(Message::toString).toList() +
                 '}';
     }
 }

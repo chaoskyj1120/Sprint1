@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 public class JCFUserRepository implements UserRepository {
+
+    private static final String CHANNEL_FILE_PATH = "./data/channels.ser";
     private static final JCFUserRepository instance = new JCFUserRepository();
     private final ArrayList<User> data;
 
@@ -76,5 +78,10 @@ public class JCFUserRepository implements UserRepository {
         data
                 .forEach(user -> System.out.printf("유저 이름: '%s', 유저 ID: '%s'\n", user.getUserName(), user.getId()));
         //제대로 레포지터리가 작동하는지를 확인하기위한 메소드
+    }
+
+    @Override
+    public ArrayList<User> getUsers() {
+        return data;
     }
 }

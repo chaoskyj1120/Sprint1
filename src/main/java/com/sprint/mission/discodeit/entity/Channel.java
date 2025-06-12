@@ -46,6 +46,13 @@ public class Channel extends BaseEntity implements Serializable {
     }
 
     public void addUser(User user) {
+        for (User u : users) {
+            if (u.getId().equals(user.getId())) {
+                // 같은 걸 찾믕
+                //System.out.println("동일 유저가 안에 있네요");
+                return;
+            }
+        }
         if (!users.contains(user)) {
             users.add(user);
             user.addChannel(this);
@@ -83,12 +90,12 @@ public class Channel extends BaseEntity implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append("Channel{")
                 .append("channelId=").append(getId())
-                .append(", channelName='").append(channelName).append('\'')
-                .append(", hostUserId=").append(hostUser.getId())
-                .append(", createdAt=").append(getCreatedAt())
-                .append(", updatedAt=").append(getUpdatedAt())
-                .append(", messageIds=").append(messages.stream().map(Message::getId).toList())
-                .append(", userIds=").append(users.stream().map(User::getId).toList())
+                .append("\nchannelName='").append(channelName).append('\'')
+                .append("\nhostUserId=").append(hostUser.getId())
+                //.append("\ncreatedAt=").append(getCreatedAt())
+                //.append("\nupdatedAt=").append(getUpdatedAt())
+                .append("\nmessageIds=").append(messages.stream().map(Message::getId).toList())
+                .append("\nuserIds=").append(users.stream().map(User::getId).toList())
                 .append('}');
         return sb.toString();
     }

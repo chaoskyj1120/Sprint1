@@ -176,4 +176,9 @@ public class JCFChannelRepository implements ChannelRepository {
         System.out.printf("전체 채널 조회, 채널 수: %d%n", data.size());
         data.forEach(channel -> System.out.println(channel.getChannelName()));
     }
+
+    @Override
+    public ArrayList<Channel> getAllChannels() {
+        return data;
+    }
 }

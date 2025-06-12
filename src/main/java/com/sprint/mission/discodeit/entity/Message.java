@@ -44,8 +44,8 @@ public class Message extends BaseEntity implements Serializable {
                 "\nmessageContents='" + messageContents + '\'' +
                 "\nuser=" + user.getId() +
                 "\nchannel=" + channel.getId() +
-                "\ncreatedAt=" + getCreatedAt() +
-                "\nupdatedAt=" + getUpdatedAt() +
+                //"\ncreatedAt=" + getCreatedAt() +
+                //"\nupdatedAt=" + getUpdatedAt() +
                 '}';
     }
 }

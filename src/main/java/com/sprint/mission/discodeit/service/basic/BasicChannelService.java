@@ -2,61 +2,57 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.factory.RepositoryFactory;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class BasicChannelService implements ChannelService {
 
-    private static final BasicChannelService instance = new BasicChannelService();
-    private final FileChannelRepository fileChannelRepository;
-    private final ArrayList<Channel> data; // channelData
-    // data를 많이 참조하고 있는데 본 클래스에서 data를 못 다루는건 문제가 나중에 생길지도?
+    private final ChannelRepository channelRepository;
 
-    public BasicChannelService() {
-        fileChannelRepository = FileChannelRepository.getInstance();
-        data = fileChannelRepository.getChannels();
-    }
-
-    public static BasicChannelService getInstance() {
-        return instance;
+    public BasicChannelService(ChannelRepository channelRepository) {
+        this.channelRepository = channelRepository;
     }
 
     @Override
     public Channel createChannel(User user, String channelName) {
-        return fileChannelRepository.createChannel(user, channelName);
+        return channelRepository.createChannel(user, channelName);
     }
 
     @Override
     public void addUserToChannel(User user, Channel channel) {
-        fileChannelRepository.addUserToChannel(user, channel);
+        channelRepository.addUserToChannel(user, channel);
     }
 
     @Override
     public void leaveUserFromChannel(User user, Channel channel) {
-        fileChannelRepository.leaveUserFromChannel(user, channel);
+        channelRepository.leaveUserFromChannel(user, channel);
     }
 
     @Override
     public void updateChannelName(User user, Channel channel, String newName) {
-        fileChannelRepository.updateChannelName(user, channel, newName);
+        channelRepository.updateChannelName(user, channel, newName);
     }
 
     @Override
     public void deleteChannel(User user, Channel channel) {
-        fileChannelRepository.deleteChannel(user, channel);
+        channelRepository.deleteChannel(user, channel);
     }
 
     @Override
     public void updateHostUser(User oldHostUser, Channel channel, User newHostUser) {
-        fileChannelRepository.updateHostUser(oldHostUser, channel, newHostUser);
+        channelRepository.updateHostUser(oldHostUser, channel, newHostUser);
     }
 
     @Override
     public void printAllChannels() {
-        System.out.printf("전체 채널 조회, 채널 수: %d%n", data.size());
-        data.forEach(channel -> System.out.println(channel.getChannelName()));
+        List<Channel> channels = channelRepository.getAllChannels();
+        System.out.printf("전체 채널 조회, 채널 수: %d%n", channels.size());
+        channels.forEach(channel -> System.out.printf("채널 명: %s, 채널 ID: %s, 채널내 유저 수: %d%n", channel.getChannelName(), channel.getId(), channel.getUsers().size()));
     }
 
     @Override

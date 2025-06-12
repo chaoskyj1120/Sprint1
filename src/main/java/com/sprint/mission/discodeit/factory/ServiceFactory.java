@@ -1,5 +1,8 @@
 package com.sprint.mission.discodeit.factory;
 
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
@@ -35,17 +38,14 @@ public class ServiceFactory {
     }
 
     private ServiceFactory() {
+        /*
         userService = JCFUserService.getInstance();
         channelService = JCFChannelService.getInstance();
         messageService = JCFMessageService.getInstance();
 
         fileUserService = FileUserService.getInstance();
         fileChannelService = FileChannelService.getInstance();
-        fileMessageService = FileMessageService.getInstance();
-
-        basicUserService = BasicUserService.getInstance();
-        basicChannelService = BasicChannelService.getInstance();
-        basicMessageService = BasicMessageService.getInstance();
+        fileMessageService = FileMessageService.getInstance();*/ //sprint2에서는 안 쓰는 코드
     }
 
     public UserService getUserService() {
@@ -70,13 +70,13 @@ public class ServiceFactory {
         return fileMessageService;
     }
 
-    public BasicUserService getBasicUserService() {
-        return basicUserService;
+    public BasicUserService getBasicUserService(UserRepository userRepository) {
+        return new BasicUserService(userRepository);
     }
-    public BasicChannelService getBasicChannelService() {
-        return basicChannelService;
+    public BasicChannelService getBasicChannelService(ChannelRepository channelRepository) {
+        return new BasicChannelService(channelRepository);
     }
-    public BasicMessageService getBasicMessageService() {
-        return basicMessageService;
+    public BasicMessageService getBasicMessageService(MessageRepository messageRepository) {
+        return new BasicMessageService(messageRepository);
     }
 }

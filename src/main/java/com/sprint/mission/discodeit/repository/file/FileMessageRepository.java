@@ -5,141 +5,192 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.service.file.FileMessageService;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class FileMessageRepository implements MessageRepository, Serializable {
 
+    private static final String USER_FILE_PATH = "./data/message.ser";
     private static final FileMessageRepository instance = new FileMessageRepository();
-    private final ArrayList<Message> data;
 
-    public FileMessageRepository() {
-        this.data = loadMessages();
-    }
-    public ArrayList<Message> getMessages() {
-        return data;
-    }
+    public FileMessageRepository() {}
+
     public static FileMessageRepository getInstance() {
         return instance;
     }
 
-    public void saveMessages(){
-        System.out.println("메세지 리스트 저장");
-        String filePath = "./data/messages.ser";
+    private List<Message> loadMessages(){
+        File file = new File(USER_FILE_PATH);
 
-        // ArrayList<Message> 직렬화및 저장
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(data);
-            System.out.println("Message 리스트가 직렬화되어 '" + filePath + "' 파일에 저장되었습니다.");
+        if (!file.exists() || file.length() == 0) {
+            return new ArrayList<Message>(); // 해당 파일이 없거나 비어 있다면 빈 ArrayList를 반환
+        }
+        // ArrayList<User> 역직렬화및 반환
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(USER_FILE_PATH))) {
+            return (List<Message>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    public void saveMessages(List<Message> messages){
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(USER_FILE_PATH))) {
+            oos.writeObject(messages);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        FileChannelRepository.getInstance().saveChannels();
-    }
-
-    public ArrayList<Message> loadMessages(){
-        ArrayList<Message> deserializedMessages = null;
-        System.out.println("메세지 리스트 불러오기");
-        String filePath = "./data/messages.ser"; // 유저 직렬화
-
-        if (!new File(filePath).exists() || new File(filePath).length() == 0) {
-            return new ArrayList<Message>(); // 해당 파일이 없으면 빈 ArrayList를 반환
-        }
-
-        // ArrayList<Message> 역직렬화및 반환
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
-            deserializedMessages = (ArrayList<Message>) ois.readObject();
-            /*
-            System.out.println("역직렬화된 Message 리스트 정보:");
-
-            for (Message message : deserializedMessages) {
-                System.out.println("------------");
-                System.out.println("Message: " + message.toString());
-            }*/
-
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return deserializedMessages;
     }
 
     @Override
     public Message createMessage(User user, Channel channel, String contents){
         if(channel == null) {
-            System.out.println("채널이 null 입니다.");
+            //System.out.println("채널이 null 입니다.");
             return null;
         }
         if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s' 비활성 상태라 메세지를 작성할 수 없습니다.", user.getUserName());
+            //System.out.printf("'%s' 비활성 상태라 메세지를 작성할 수 없습니다.", user.getUserName());
             return null;
         }
-        System.out.printf("메세지를 추가합니다. User: %s, ChannelId: %s, Contents: %s%n",
-                user.getId(), channel.getId(), contents);
+        //System.out.printf("메세지를 추가합니다. User: %s, ChannelId: %s, Contents: %s%n", user.getId(), channel.getId(), contents);
+        List<Message> messages = loadMessages();
         Message newMessage = new Message(user, channel, contents);
-        data.add(newMessage);
         newMessage.registerMessageToUserAndChannel(user, channel);
+        messages.add(newMessage);
 
-        saveMessages();
+        List<User> users = FileUserRepository.getInstance().getUsers();
+
+        for(User userFromFile : users) {
+            if(userFromFile.getId().equals(user.getId())) {
+                userFromFile.addMessage(newMessage);
+                break;
+            }
+        }
+
+        List<Channel> channels = FileChannelRepository.getInstance().getAllChannels();
+        for(Channel channelFromFile : channels) {
+            if(channelFromFile.getId().equals(channel.getId())) {
+                channelFromFile.addMessage(newMessage);
+            }
+        }
+
+        saveMessages(messages);
+        FileUserRepository.getInstance().saveUsers(users);
+        FileChannelRepository.getInstance().saveChannels(channels);
+
         return newMessage;
     }
 
     @Override
     public void deleteMessage(User user, Message message){
         if(message == null) {
-            System.out.println("메세지가 null 입니다.");
             return;
         }
         if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s' 비활성 상태라 메세지를 삭제할 수 없습니다.", user.getUserName());
             return;
         }
-        if (user.getId().equals(message.getUser().getId())) {
-            System.out.printf("메세지를 삭제합니다. User: %s, MessageId: %s, Contents: %s%n",
-                    user.getUserName(), message.getId(), message.getMessageContents());
-        } else {
-            System.out.printf("'%s' 은 '%s' 메시지 주인이 아닙니다%n",
-                    user.getUserName(), message.getId());
+        if (!user.getId().equals(message.getUser().getId())) {
             return;
         }
-        message.getChannel().getMessages().remove(message); // 채널에서 메세지 삭제
-        user.removeMessage(message);
-        data.remove(message);
+        List<Message> messagesFromFile = loadMessages();
+        messagesFromFile.remove(message);
+        for( Message messageFromFile : messagesFromFile) {
+            if(messageFromFile.getId().equals(message.getId())) {
+                messagesFromFile.remove(messageFromFile);
+                break;
+            }
+        }
 
-        saveMessages();
+
+        List<User> usersFromFile = FileUserRepository.getInstance().getUsers();
+        for(User userFromFile : usersFromFile) {
+            if(userFromFile.getId().equals(user.getId())) {
+                for( Message messageFromUserFromFile : userFromFile.getMessages()) {
+                    if(messageFromUserFromFile.getId().equals(message.getId())) {
+                        userFromFile.removeMessage(messageFromUserFromFile);
+                        break;
+                    }
+                }
+            }
+        }
+
+        List<Channel> channelsFromFile = FileChannelRepository.getInstance().getAllChannels();
+        for(Channel channelFromFile : channelsFromFile) {
+            if(channelFromFile.getId().equals(message.getChannel().getId())) {
+                for( Message messageFromChannelFromFile : channelFromFile.getMessages()) {
+                    if(messageFromChannelFromFile.getId().equals(message.getId())) {
+                        channelFromFile.removeMessage(messageFromChannelFromFile);
+                        break;
+                    }
+                }
+            }
+        }
+
+        saveMessages(messagesFromFile);
+        FileUserRepository.getInstance().saveUsers(usersFromFile);
+        FileChannelRepository.getInstance().saveChannels(channelsFromFile);
     }
 
     @Override
     public void updateMessage(User user, Message message, String newContents){
         if(message == null) {
-            System.out.println("메세지가 null 입니다.");
+            //System.out.println("메세지가 null 입니다.");
             return;
         }
         if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s' 비활성 상태라 메세지를 업데이트할 수 없습니다.", user.getUserName());
+            //System.out.printf("'%s' 비활성 상태라 메세지를 업데이트할 수 없습니다.", user.getUserName());
             return;
         }
         if(!user.equals(message.getUser())) {
-            System.out.printf("'%s'는 '%s' 메시지의 주인이 아닙니다. 따라서 해당 메시지를 '%s'로 바꾸는 것은 불가능합니다.", user.getUserName(), message.getMessageContents(), newContents);
+            //System.out.printf("'%s'는 '%s' 메시지의 주인이 아닙니다. 따라서 해당 메시지를 '%s'로 바꾸는 것은 불가능합니다.", user.getUserName(), message.getMessageContents(), newContents);
             return;
         }
 
-        System.out.println("메세지를 업데이트 합니다.");
-        System.out.printf("이전 메세지: %s%n", message.getMessageContents());
-        System.out.printf("현재 메세지: %s%n", newContents);
-        message.updateMessageContent(newContents);
+        List<Message> messagesFromFile = loadMessages();
+        for (Message messageFromFile : messagesFromFile) {
+            if(messageFromFile.getId().equals(message.getId())) {
+                messageFromFile.updateMessageContent(newContents);
+                break;
+            }
+        }
 
-        saveMessages();
+        List<User> usersFromFile = FileUserRepository.getInstance().getUsers();
+        for (User userFromFile : usersFromFile) {
+            if(userFromFile.getId().equals(user.getId())) {
+                // 유저를 찾음
+                for(Message messageFromUser : userFromFile.getMessages()) {
+                    if(messageFromUser.getId().equals(message.getId())) {
+                        messageFromUser.updateMessageContent(newContents);
+                        break;
+                    }
+                }
+            }
+        } //이야 화살이 미쳤구만
+        // 유저 파일에서 원하는 유저 찾기 -> 유저의 메세지들에서 원하는 메세지 찾기 -> 해당 메세지가 맞다면 변환
+
+        List<Channel> channelsFromFile = FileChannelRepository.getInstance().getAllChannels();
+        for (Channel channelFromFile : channelsFromFile) {
+            if(channelFromFile.getId().equals(message.getChannel().getId())) {
+                // 속한 채널 찾음
+                for(Message messageFromChannelFromFile : channelFromFile.getMessages()) {
+                    if(messageFromChannelFromFile.getId().equals(message.getId())) {
+                        messageFromChannelFromFile.updateMessageContent(newContents);
+                        break;
+                    }
+                }
+            }
+        }
+
+        saveMessages(messagesFromFile);
+        FileUserRepository.getInstance().saveUsers(usersFromFile);
+        FileChannelRepository.getInstance().saveChannels(channelsFromFile);
     }
 
-    public void printAllMessage() {
-        System.out.printf("전체 메시지를 출력합니다. 메세지 수: %d%n", data.stream()
-                .filter(message -> message.getUser().getStatus().equals(UserStatus.ACTIVE))
-                .toList().size());
-        data
-                .stream().filter(message -> message.getUser().getStatus().equals(UserStatus.ACTIVE))
-                .forEach(message -> System.out.printf("작성자: %s, 내용: %s%n", message.getUser().getUserName(), message.getMessageContents()));
+    @Override
+    public List<Message> getMessages() {
+        return loadMessages();
     }
+
 }

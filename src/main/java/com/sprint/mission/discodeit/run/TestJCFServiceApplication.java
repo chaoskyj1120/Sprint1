@@ -11,7 +11,7 @@ import com.sprint.mission.discodeit.service.UserService;
 public class TestJCFServiceApplication {
 
     public static void main(String[] args) {
-        testJCFService();
+        testJCFService(); // sprint1 때 만든 코드 내용들
         // sprint1 떄 만든 코드로써 저장 로직이 변경 되었으므로 data 폴던안의 파일들을 전부 삭제하면 돌아간다. -- sprint2 개발 중
     }
 

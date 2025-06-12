@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -8,229 +9,204 @@ import com.sprint.mission.discodeit.service.file.FileChannelService;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class FileChannelRepository implements ChannelRepository, Serializable {
 
+    private static final String CHANNEL_FILE_PATH = "./data/channels.ser";
     private static final FileChannelRepository instance = new FileChannelRepository();
-    private final ArrayList<Channel> data;
 
-    public FileChannelRepository() {
-        this.data = loadChannels();
-    }
-    public ArrayList<Channel> getChannels() {
-        return data;
-    }
-
+    public FileChannelRepository() {}
     public static FileChannelRepository getInstance() {
         return instance;
     }
 
-    public void saveChannels(){
-        System.out.println("채널 리스트 저장");
-        String filePath = "./data/channels.ser";
+    private List<Channel> loadChannels() {
+        File file = new File(CHANNEL_FILE_PATH);
+        if (!file.exists() || file.length() == 0) {
+            return new ArrayList<>();
+        }
 
-        // ArrayList<Channel> 직렬화및 저장
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(data);
-            System.out.println("Channel 리스트가 직렬화되어 '" + filePath + "' 파일에 저장되었습니다.");
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            return (List<Channel>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    
+    public void saveChannels(List<Channel> channels) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(CHANNEL_FILE_PATH))) {
+            oos.writeObject(channels);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
-        FileUserRepository.getInstance().saveUsers(); //채널을 변경하면 유저도 변경되니까 유저 파일도 변경
     }
-
-    public ArrayList<Channel> loadChannels(){
-        ArrayList<Channel> deserializedChannels = null;
-        System.out.println("채널 리스트 불러오기");
-        String filePath = "./data/channels.ser"; // 유저 직렬화
-
-        if (!new File(filePath).exists() || new File(filePath).length() == 0) {
-            return new ArrayList<Channel>(); // 해당 파일이 없으면 빈 ArrayList를 반환
-        }
-
-        // ArrayList<Channel> 역직렬화및 반환
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
-            deserializedChannels = (ArrayList<Channel>) ois.readObject();
-
-            /*
-            System.out.println("역직렬화된 Channel 리스트 정보:");
-
-            for (Channel channel : deserializedChannels) {
-                System.out.println("------------");
-                System.out.println("Channel: " + channel.toString());
-            }*/
-
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return deserializedChannels;
-    }
-
+    
     @Override
     public Channel createChannel(User user, String channelName) {
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s'는 비활성 상태이므로 채널을 생성할 수 없습니다.", user.getUserName());
-            return null;
-        }
-        Channel channel = new Channel(user, channelName);
-        data.add(channel);
+        if (user.getStatus() == UserStatus.DEACTIVE) return null;
 
-        System.out.printf("채널 생성 - 채널 주인: %s, 채널 이름: %s, 채널 ID: %s%n",
-                user.getId(), channelName, channel.getId());
-        user.addChannel(channel);
+        List<Channel> channels = loadChannels();
+        Channel channel = new Channel(user, channelName);
+
+        channel.addUser(user);
+        channels.add(channel);
         
-        saveChannels();
+        saveChannels(channels);
+
+        List<User> users = FileUserRepository.getInstance().getUsers();
+
+
+        for (User userFromFile : users) {
+            if(userFromFile.getId().equals(user.getId())) {
+                System.out.println("\n1231412 - 1"+channel+"\n");
+                userFromFile.addChannel(channel); // 여기가 문제네, 중복 뭔데 왜 중복제거 안하는데
+                System.out.println("\n1231412 - 2"+channel+"\n");
+                break;
+            }
+        }
+
+        FileUserRepository.getInstance().saveUsers(users); // 채널을 생성하면 자동으로 유저 정보도 재저장
+        // 무한루프 이거 어떻게 해결할 수 있을까??
         return channel;
     }
 
     @Override
-    public void addUserToChannel(User user, Channel channel) {
-        if(channel == null) {
-            System.out.println("채널이 null 입니다.");
-            return;
-        }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s'는 비활성 상태이므로 채널에 입장 할 수 없습니다.", user.getUserName());
-            return; // 메서드 종료
-        }
-        if(channel.getUsers().contains(user)) {
-            System.out.printf("'%s'는 '%s' 채널에 이미 존재합니다.", user.getUserName(), channel.getChannelName());
-            return;
-        }
-        System.out.printf("'%s' 에 '%s' 이 입장했습니다.%n", channel.getChannelName(), user.getUserName());
-        channel.addUser(user);
-        user.addChannel(channel);
+    public void deleteChannel(User user, Channel channel) {
+        if (user.getStatus() == UserStatus.DEACTIVE || channel == null) return;
 
-        saveChannels();
+        List<Channel> channels = loadChannels();
+        channels.removeIf(ch -> ch.getId().equals(channel.getId()) && ch.getHostUser().getId().equals(user.getId()));
+
+        // 유저 리스트에서 해당 유저 찾아서 채널 삭제 및 메시지 삭제
+        List<User> users = FileUserRepository.getInstance().getUsers();
+        users.stream()
+                .filter(u -> u.getId().equals(user.getId()))
+                .findFirst()
+                .ifPresent(userFromFile -> {
+                    userFromFile.removeChannel(channel);
+                    userFromFile.getMessages().removeIf(message -> message.getChannel().getId().equals(channel.getId()));
+                });
+
+        // 메시지 리스트에서 해당 채널과 관련된 메시지 모두 삭제 (removeIf 사용)
+        List<Message> messages = FileMessageRepository.getInstance().getMessages();
+        messages.removeIf(message -> message.getChannel().getId().equals(channel.getId()));
+
+        // 메세지는 어떻게하지? 메세지 전부 삭제
+        saveChannels(channels);
+        FileUserRepository.getInstance().saveUsers(users);
+        FileMessageRepository.getInstance().saveMessages(messages);
+    }
+
+    @Override
+    public void addUserToChannel(User user, Channel channel) {
+        if (user.getStatus() == UserStatus.DEACTIVE || channel == null) return;
+
+        List<Channel> channels = loadChannels();
+        for (Channel ch : channels) {
+            if (ch.getId().equals(channel.getId()) &&
+                    ch.getUsers().stream().noneMatch(u -> u.getId().equals(user.getId()))) {
+
+                ch.addUser(user);
+                break;
+            }
+        }
+
+        List<User> users = FileUserRepository.getInstance().getUsers();
+        for (User userFromFile : users) {
+            if(userFromFile.getId().equals(user.getId())) {
+                userFromFile.addChannel(channel);
+                break;
+            }
+        }
+
+        saveChannels(channels);
+        FileUserRepository.getInstance().saveUsers(users);
     }
 
     @Override
     public void leaveUserFromChannel(User user, Channel channel) {
-        if(channel == null) {
-            System.out.println("채널이 null 입니다.");
-            return;
+        if (user.getStatus() == UserStatus.DEACTIVE || channel == null) return;
+
+        List<Channel> channels = loadChannels();
+        channels.removeIf(ch -> {
+            if (ch.equals(channel)) {
+                ch.removeUser(user);
+                return ch.getUsers().isEmpty(); // 유저 다 나가면 삭제
+            }
+            return false;
+        });
+
+        List<User> users = FileUserRepository.getInstance().getUsers();
+        for (User userFromFile : users) {
+            if(userFromFile.getId().equals(user.getId())) {
+                userFromFile.removeChannel(channel);
+                break;
+            }
         }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s'는 비활성 상태 입니다.", user.getUserName());
-            return; // 메서드 종료
-        }
-        if(!channel.getUsers().contains(user)) {
-            System.out.printf("'%s'는 '%s' 채널에 존재 하지 않아서 퇴장할 수 없습니다.%n", user.getUserName(), channel.getChannelName());
-            return; // 메서드 종료
-        }
-        System.out.printf("'%s' 유저가 '%s' 채널을 떠났습니다.%n", user.getUserName(), channel.getChannelName());
-        channel.removeUser(user);
-        user.removeChannel(channel);
-        if (channel.getUsers().isEmpty()) {
-            System.out.printf("'%s' 채널은 유저 수가 0이므로 삭제합니다.%n", channel.getChannelName());
-            data.remove(channel);
-        }
-        saveChannels();
+
+        saveChannels(channels);
+        FileUserRepository.getInstance().saveUsers(users);
     }
 
     @Override
     public void updateChannelName(User user, Channel channel, String newName) {
-        if(channel == null) {
-            System.out.println("채널이 null 입니다.");
-            return;
-        }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s'는 비활성 상태이므로 채널의 이름을 변경할 수 없습니다.%n", user.getUserName());
-            return; // 메서드 종료
-        }
-        if (channel.getHostUser().equals(user)) {
-            System.out.printf("'%s' 채널의 이름이 '%s' 으로 변경되었습니다.%n",
-                    channel.getChannelName(), newName);
-            channel.updateChannelName(newName);
-        } else {
-            System.out.printf("'%s' 은 '%s' 채널 주인이 아닙니다.%n",
-                    user.getUserName(), channel.getChannelName());
-        }
-        saveChannels();
-        FileMessageRepository.getInstance().saveMessages();
-    }
+        if (user.getStatus() == UserStatus.DEACTIVE || channel == null) return;
 
-    @Override
-    public void deleteChannel(User user, Channel channel) {
-        if(channel == null) {
-            System.out.println("채널이 null 입니다.");
-            return;
-        }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s'는 이미 비활성 상태입니다. 따라서 '%s' 채널을 삭제할 수 없습니다.%n", user.getUserName(), channel.getChannelName());
-            return; // 메서드 종료
-        }
-        if(!channel.getUsers().contains(user)) {
-            System.out.printf("'%s'는 '%s' 채널에 존재하지 않아서 권한이 없습니다.%n", user.getUserName(), channel.getChannelName());
-            return;
-        }
+        List<Channel> channels = loadChannels();
+        channels.stream()
+                .filter(ch -> ch.getId().equals(channel.getId()) && ch.getHostUser().getId().equals(user.getId()))
+                .findFirst()
+                .ifPresent(ch -> ch.updateChannelName(newName));
 
-        if (!user.equals(channel.getHostUser())) {
-            System.out.printf("'%s'는 '%s' 채널의 주인이 아니어서 지울 수 있는 권한이 없습니다.%n", user.getUserName(), channel.getChannelName());
-            return;
-        }
-
-        System.out.printf("채널 삭제: %s%n", channel.getChannelName());
-        channel.getMessages()
-                .stream()
-                .map(message -> {
-                    message.getUser().removeMessage(message);
-                    return message;
+        List<User> users = FileUserRepository.getInstance().getUsers();
+        users.stream()
+                .filter(userFromFile -> userFromFile.getId().equals(user.getId()))
+                .findFirst()
+                .ifPresent(userFromFile -> {
+                    userFromFile.getChannels().removeIf(ch -> ch.getId().equals(channel.getId()));
+                    userFromFile.getChannels().add(channel);
                 });
-
-        channel.getUsers()
-                .stream()
-                .map(u -> {
-                    u.removeChannel(channel);
-                    return u;
-                });
-
-        channel.clearUsers();
-        channel.clearMessages();
-        data.remove(channel);
-
-        saveChannels();
-        FileMessageRepository.getInstance().saveMessages(); // 채널을 변경하면 메시지도 벼경
+        saveChannels(channels);
+        FileUserRepository.getInstance().saveUsers(users);
     }
 
     @Override
     public void updateHostUser(User oldHostUser, Channel channel, User newHostUser) {
-        if(channel == null) {
-            System.out.println("채널이 null 입니다.");
+        if (channel == null || oldHostUser.getStatus() == UserStatus.DEACTIVE || newHostUser.getStatus() == UserStatus.DEACTIVE)
             return;
-        }
-        if(oldHostUser.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s'는 비활성 상태이므로 권한이 없습니다.%n", oldHostUser.getUserName());
-            return;
-        }
 
-        if(newHostUser.getStatus().equals(UserStatus.DEACTIVE)) {
-            System.out.printf("'%s'는 비활성 상태이므로 권한이 없습니다.%n", newHostUser.getUserName());
-            return;
+        List<Channel> channels = loadChannels();
+        for (Channel ch : channels) {
+            if (ch.equals(channel) && ch.getHostUser().equals(oldHostUser) && ch.getUsers().contains(newHostUser)) {
+                ch.updateHostUser(newHostUser);
+                break;
+            }
         }
 
-        if(!channel.getUsers().contains(newHostUser)) {
-            System.out.printf("'%s'는 '%s' 채널에 존재하지 않아서 권한이 없습니다.%n", newHostUser.getUserName(), channel.getChannelName());
-            return;
+        List<User> users = FileUserRepository.getInstance().getUsers();
+        for (User userFromFile : users) {
+            if(userFromFile.getId().equals(oldHostUser.getId())) {
+                userFromFile.getChannels().removeIf(ch -> ch.equals(channel));
+                userFromFile.getChannels().add(channel);
+                break;
+            }
         }
+        // 원하는 채널을 찾고 유저한테서 해당 채널을 지우고 정보가 바뀐 같은 채널을 유저한테 집어 넣음
+        
+        saveChannels(channels);
+        FileUserRepository.getInstance().saveUsers(users);
+    }
 
-        if (!channel.getHostUser().equals(oldHostUser)) {
-            System.out.printf("'%s' 은 '%s' 채널 주인이 아닙니다.%n",
-                    oldHostUser.getUserName(), channel.getChannelName());
-            return;
-        }
-
-        System.out.printf("'%s' 채널 주인을 변경합니다. 새 주인: '%s'%n",
-                channel.getChannelName(), newHostUser.getUserName());
-        channel.updateHostUser(newHostUser);
-
-        saveChannels();
-        FileMessageRepository.getInstance().saveMessages();
+    @Override
+    public List<Channel> getAllChannels() {
+        return loadChannels();
     }
 
     public void printAllChannels() {
-        System.out.printf("전체 채널 조회, 채널 수: %d%n", data.size());
-        data.forEach(channel -> System.out.println(channel.getChannelName()));
+        System.out.printf("전체 채널 조회, 채널 수: %d%n", loadChannels().size());
+        loadChannels().forEach(channel -> System.out.println(channel.getChannelName()));
+        // 테스트용으로 남겨둔 메소드, 레퍼지토리에는 없어야 됨, 개발 중이므로 남겨둠, 나중에 본 메소드 지우기
     }
 }

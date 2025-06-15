@@ -60,15 +60,12 @@ public class FileChannelRepository implements ChannelRepository, Serializable {
 
         for (User userFromFile : users) {
             if(userFromFile.getId().equals(user.getId())) {
-                System.out.println("\n1231412 - 1"+channel+"\n");
-                userFromFile.addChannel(channel); // 여기가 문제네, 중복 뭔데 왜 중복제거 안하는데
-                System.out.println("\n1231412 - 2"+channel+"\n");
+                userFromFile.addChannel(channel);
                 break;
             }
         }
 
         FileUserRepository.getInstance().saveUsers(users); // 채널을 생성하면 자동으로 유저 정보도 재저장
-        // 무한루프 이거 어떻게 해결할 수 있을까??
         return channel;
     }
 
@@ -93,7 +90,6 @@ public class FileChannelRepository implements ChannelRepository, Serializable {
         List<Message> messages = FileMessageRepository.getInstance().getMessages();
         messages.removeIf(message -> message.getChannel().getId().equals(channel.getId()));
 
-        // 메세지는 어떻게하지? 메세지 전부 삭제
         saveChannels(channels);
         FileUserRepository.getInstance().saveUsers(users);
         FileMessageRepository.getInstance().saveMessages(messages);
@@ -204,9 +200,4 @@ public class FileChannelRepository implements ChannelRepository, Serializable {
         return loadChannels();
     }
 
-    public void printAllChannels() {
-        System.out.printf("전체 채널 조회, 채널 수: %d%n", loadChannels().size());
-        loadChannels().forEach(channel -> System.out.println(channel.getChannelName()));
-        // 테스트용으로 남겨둔 메소드, 레퍼지토리에는 없어야 됨, 개발 중이므로 남겨둠, 나중에 본 메소드 지우기
-    }
 }

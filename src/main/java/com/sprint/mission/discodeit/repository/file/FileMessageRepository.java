@@ -157,6 +157,7 @@ public class FileMessageRepository implements MessageRepository, Serializable {
         }
 
         List<User> usersFromFile = FileUserRepository.getInstance().getUsers();
+        /*
         for (User userFromFile : usersFromFile) {
             if(userFromFile.getId().equals(user.getId())) {
                 // 유저를 찾음
@@ -167,10 +168,17 @@ public class FileMessageRepository implements MessageRepository, Serializable {
                     }
                 }
             }
-        } //이야 화살이 미쳤구만
-        // 유저 파일에서 원하는 유저 찾기 -> 유저의 메세지들에서 원하는 메세지 찾기 -> 해당 메세지가 맞다면 변환
+        }*/
+        usersFromFile.stream()
+                .filter(u -> u.getId().equals(user.getId()))
+                .flatMap(u -> u.getMessages().stream())
+                .filter(m -> m.getId().equals(message.getId()))
+                .findFirst()
+                .ifPresent(m -> m.updateMessageContent(newContents));
+        // 위 for문을 stream으로 변환함
 
         List<Channel> channelsFromFile = FileChannelRepository.getInstance().getAllChannels();
+        /*
         for (Channel channelFromFile : channelsFromFile) {
             if(channelFromFile.getId().equals(message.getChannel().getId())) {
                 // 속한 채널 찾음
@@ -181,7 +189,15 @@ public class FileMessageRepository implements MessageRepository, Serializable {
                     }
                 }
             }
-        }
+        }*/
+        // 끔찍한 코드 개선 요망!!
+
+        channelsFromFile.stream()
+                .filter(ch -> ch.getId().equals(message.getChannel().getId()))
+                .flatMap(ch -> ch.getMessages().stream())
+                .filter(msg -> msg.getId().equals(message.getId()))
+                .findFirst()
+                .ifPresent(msg -> msg.updateMessageContent(newContents));
 
         saveMessages(messagesFromFile);
         FileUserRepository.getInstance().saveUsers(usersFromFile);

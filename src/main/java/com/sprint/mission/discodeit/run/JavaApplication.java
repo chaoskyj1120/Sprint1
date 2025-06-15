@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 public class JavaApplication {
     public static void main(String[] args) {
         testFileService();
-        // sprint1 떄 만든 코드로써 저장 로직이 변경 되었으므로 data 폴던안의 파일들을 전부 삭제하면 돌아간다. -- sprint2 개발 중
     }
 
     public static void testFileService() {
@@ -119,9 +118,6 @@ public class JavaApplication {
                     message.getChannel().getChannelName()
             );
         }
-        
-        // 유저의 정보가 삭제되거나 변경되도 나머지가 정상적으로 반영됬는지 확인 필요 -> messaageTest 뒤에 붙혀 작서
-
     }
 
     public static void userTestApplication(UserService userService) {

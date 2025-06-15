@@ -88,8 +88,6 @@ public class FileUserRepository implements UserRepository, Serializable {
 
         //users.forEach(u -> System.out.println(u.getUserName()));
 
-
-
         saveUsers(users);
         FileChannelRepository.getInstance().saveChannels(channelsFromFile);
         FileMessageRepository.getInstance().saveMessages(messagesFromFile);
@@ -130,8 +128,6 @@ public class FileUserRepository implements UserRepository, Serializable {
                 break;
             }
         }
-
-        //--------------
         List<Channel> channelsFromFile = FileChannelRepository.getInstance().getAllChannels();
 
         user.getChannels().forEach(userChannel ->
@@ -148,7 +144,6 @@ public class FileUserRepository implements UserRepository, Serializable {
                 user.getMessages().stream()
                         .anyMatch(messageFromUser -> messageFromUser.getId().equals(messageFromFile.getId()))
         );
-
 
         saveUsers(users);
         FileChannelRepository.getInstance().saveChannels(channelsFromFile);
@@ -169,13 +164,7 @@ public class FileUserRepository implements UserRepository, Serializable {
 
     @Override
     public List<User> getUsers() {
-        return loadUsers(); //서비스에서 사용됨, 사실 loadUsers랑 같은거라 지워도 될듯
+        return loadUsers();
     }
 
-    public void printAllUsers() {
-        System.out.printf("전체 유저 조회(탈퇴 유저 포함), 유저 수: %d \n", this.loadUsers().size());
-        this.loadUsers()
-                .forEach(user -> System.out.printf("유저 이름: '%s', 유저 ID: '%s'\n", user.getUserName(), user.getId()));
-        //제대로 레포지터리가 작동하는지를 확인하기위한 메소드, 나중에 코드 완성되면 지우기
-    }
 }

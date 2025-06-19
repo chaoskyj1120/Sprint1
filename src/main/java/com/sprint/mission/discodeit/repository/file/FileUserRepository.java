@@ -5,21 +5,17 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public class FileUserRepository implements UserRepository, Serializable {
 
     private static final String USER_FILE_PATH = "./data/user.ser";
-    private static final FileUserRepository instance = new FileUserRepository();
-
-    public FileUserRepository() {}
-    public static FileUserRepository getInstance() {
-        return instance;
-    }
 
     public List<User> loadUsers() {
         File file = new File(USER_FILE_PATH);
@@ -66,31 +62,7 @@ public class FileUserRepository implements UserRepository, Serializable {
             }
         }
 
-        // 채널에 있는 유저 이름 변경
-        List<Channel> channelsFromFile = FileChannelRepository.getInstance().getAllChannels();
-
-        // 채널에 있는 유저의 이름 변경
-        channelsFromFile.stream()
-                .filter(channel -> user.getChannels().stream()
-                        .anyMatch(userChannel -> userChannel.getId().equals(channel.getId())))
-                .forEach(channel ->
-                        channel.getUsers().stream()
-                                .filter(u -> u.getId().equals(user.getId()))
-                                .forEach(u -> u.setUserName(newName))
-                );
-
-        List<Message> messagesFromFile = FileMessageRepository.getInstance().getMessages();
-
-        messagesFromFile.stream()
-                .filter(msg -> user.getMessages().stream()
-                        .anyMatch(userMsg -> userMsg.getId().equals(msg.getId())))
-                .forEach(msg -> msg.getUser().setUserName(newName));
-
-        //users.forEach(u -> System.out.println(u.getUserName()));
-
         saveUsers(users);
-        FileChannelRepository.getInstance().saveChannels(channelsFromFile);
-        FileMessageRepository.getInstance().saveMessages(messagesFromFile);
     }
 
     @Override
@@ -128,26 +100,8 @@ public class FileUserRepository implements UserRepository, Serializable {
                 break;
             }
         }
-        List<Channel> channelsFromFile = FileChannelRepository.getInstance().getAllChannels();
-
-        user.getChannels().forEach(userChannel ->
-                channelsFromFile.stream()
-                        .filter(fileChannel -> fileChannel.getId().equals(userChannel.getId()))
-                        .forEach(matchedChannel ->
-                                matchedChannel.getUsers().removeIf(u -> u.getId().equals(user.getId()))
-                        )
-        );
-
-        List<Message> messagesFromFile = FileMessageRepository.getInstance().getMessages();
-
-        messagesFromFile.removeIf(messageFromFile ->
-                user.getMessages().stream()
-                        .anyMatch(messageFromUser -> messageFromUser.getId().equals(messageFromFile.getId()))
-        );
 
         saveUsers(users);
-        FileChannelRepository.getInstance().saveChannels(channelsFromFile);
-        FileMessageRepository.getInstance().saveMessages(messagesFromFile);
     }
 
     @Override

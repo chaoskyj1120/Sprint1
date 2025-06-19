@@ -5,21 +5,16 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class FileMessageRepository implements MessageRepository, Serializable {
 
     private static final String USER_FILE_PATH = "./data/message.ser";
-    private static final FileMessageRepository instance = new FileMessageRepository();
-
-    public FileMessageRepository() {}
-
-    public static FileMessageRepository getInstance() {
-        return instance;
-    }
 
     private List<Message> loadMessages(){
         File file = new File(USER_FILE_PATH);
@@ -60,26 +55,7 @@ public class FileMessageRepository implements MessageRepository, Serializable {
         newMessage.registerMessageToUserAndChannel(user, channel);
         messages.add(newMessage);
 
-        List<User> users = FileUserRepository.getInstance().getUsers();
-
-        for(User userFromFile : users) {
-            if(userFromFile.getId().equals(user.getId())) {
-                userFromFile.addMessage(newMessage);
-                break;
-            }
-        }
-
-        List<Channel> channels = FileChannelRepository.getInstance().getAllChannels();
-        for(Channel channelFromFile : channels) {
-            if(channelFromFile.getId().equals(channel.getId())) {
-                channelFromFile.addMessage(newMessage);
-            }
-        }
-
         saveMessages(messages);
-        FileUserRepository.getInstance().saveUsers(users);
-        FileChannelRepository.getInstance().saveChannels(channels);
-
         return newMessage;
     }
 
@@ -103,34 +79,7 @@ public class FileMessageRepository implements MessageRepository, Serializable {
             }
         }
 
-
-        List<User> usersFromFile = FileUserRepository.getInstance().getUsers();
-        for(User userFromFile : usersFromFile) {
-            if(userFromFile.getId().equals(user.getId())) {
-                for( Message messageFromUserFromFile : userFromFile.getMessages()) {
-                    if(messageFromUserFromFile.getId().equals(message.getId())) {
-                        userFromFile.removeMessage(messageFromUserFromFile);
-                        break;
-                    }
-                }
-            }
-        }
-
-        List<Channel> channelsFromFile = FileChannelRepository.getInstance().getAllChannels();
-        for(Channel channelFromFile : channelsFromFile) {
-            if(channelFromFile.getId().equals(message.getChannel().getId())) {
-                for( Message messageFromChannelFromFile : channelFromFile.getMessages()) {
-                    if(messageFromChannelFromFile.getId().equals(message.getId())) {
-                        channelFromFile.removeMessage(messageFromChannelFromFile);
-                        break;
-                    }
-                }
-            }
-        }
-
         saveMessages(messagesFromFile);
-        FileUserRepository.getInstance().saveUsers(usersFromFile);
-        FileChannelRepository.getInstance().saveChannels(channelsFromFile);
     }
 
     @Override
@@ -156,52 +105,7 @@ public class FileMessageRepository implements MessageRepository, Serializable {
             }
         }
 
-        List<User> usersFromFile = FileUserRepository.getInstance().getUsers();
-        /*
-        for (User userFromFile : usersFromFile) {
-            if(userFromFile.getId().equals(user.getId())) {
-                // 유저를 찾음
-                for(Message messageFromUser : userFromFile.getMessages()) {
-                    if(messageFromUser.getId().equals(message.getId())) {
-                        messageFromUser.updateMessageContent(newContents);
-                        break;
-                    }
-                }
-            }
-        }*/
-        usersFromFile.stream()
-                .filter(u -> u.getId().equals(user.getId()))
-                .flatMap(u -> u.getMessages().stream())
-                .filter(m -> m.getId().equals(message.getId()))
-                .findFirst()
-                .ifPresent(m -> m.updateMessageContent(newContents));
-        // 위 for문을 stream으로 변환함
-
-        List<Channel> channelsFromFile = FileChannelRepository.getInstance().getAllChannels();
-        /*
-        for (Channel channelFromFile : channelsFromFile) {
-            if(channelFromFile.getId().equals(message.getChannel().getId())) {
-                // 속한 채널 찾음
-                for(Message messageFromChannelFromFile : channelFromFile.getMessages()) {
-                    if(messageFromChannelFromFile.getId().equals(message.getId())) {
-                        messageFromChannelFromFile.updateMessageContent(newContents);
-                        break;
-                    }
-                }
-            }
-        }*/
-        // 끔찍한 코드 개선 요망!!
-
-        channelsFromFile.stream()
-                .filter(ch -> ch.getId().equals(message.getChannel().getId()))
-                .flatMap(ch -> ch.getMessages().stream())
-                .filter(msg -> msg.getId().equals(message.getId()))
-                .findFirst()
-                .ifPresent(msg -> msg.updateMessageContent(newContents));
-
         saveMessages(messagesFromFile);
-        FileUserRepository.getInstance().saveUsers(usersFromFile);
-        FileChannelRepository.getInstance().saveChannels(channelsFromFile);
     }
 
     @Override

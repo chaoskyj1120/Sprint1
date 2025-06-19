@@ -11,6 +11,9 @@ import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.basic.BasicChannelService;
+import com.sprint.mission.discodeit.service.basic.BasicMessageService;
+import com.sprint.mission.discodeit.service.basic.BasicUserService;
 
 import java.io.File;
 import java.util.stream.Collectors;
@@ -21,42 +24,17 @@ public class JavaApplication {
     }
 
     public static void testFileService() {
-        UserRepository JCFUserRepository = RepositoryFactory.getInstance().getJCFUserRepository();
-        UserRepository FileUserRepository = RepositoryFactory.getInstance().getFileUserRepository();
 
-        ChannelRepository JCFChannelRepository = RepositoryFactory.getInstance().getJCFChannelRepository();
-        ChannelRepository FileChannelRepository = RepositoryFactory.getInstance().getFileChannelRepository();
+        UserRepository userRepository = RepositoryFactory.getInstance().getFileUserRepository();
+        ChannelRepository channelRepository = RepositoryFactory.getInstance().getFileChannelRepository();
+        MessageRepository messageRepository = RepositoryFactory.getInstance().getFileMessageRepository();
 
-        MessageRepository JCFMessageRepository = RepositoryFactory.getInstance().getJCFMessageRepository();
-        MessageRepository FileMessageRepository = RepositoryFactory.getInstance().getFileMessageRepository();
         // 레포지터리 생성
         System.out.println("============================================================");
-
-        UserService basicUserServiceForJCF = ServiceFactory.getInstance().getBasicUserService(JCFUserRepository);
-        ChannelService basicChannelServiceForJCF = ServiceFactory.getInstance().getBasicChannelService(JCFChannelRepository);
-        MessageService basicMessageServiceForJCF = ServiceFactory.getInstance().getBasicMessageService(JCFMessageRepository);
-        // JCF를 사용하는 베이직 서비스 생성
-        
-        /*
-        System.out.println("---------JCF User Repository");
-        userTestApplication(basicUserServiceForJCF);
-        loadUserTestApplication(basicUserServiceForJCF);
-
-        System.out.println("---------JCF Channel Repository");
-        channelTestApplication(basicUserServiceForJCF, basicChannelServiceForJCF);
-        loadChannelTestApplication(basicUserServiceForJCF, basicChannelServiceForJCF);
-
-        System.out.println("---------JCF Message Repository");
-         messageTestApplication(basicUserServiceForJCF, basicChannelServiceForJCF, basicMessageServiceForJCF);
-        loadMessageTestApplication(basicUserServiceForJCF, basicChannelServiceForJCF, basicMessageServiceForJCF);
-        */
-        
-        
-        System.out.println("============================================================");
         deleteAllFilesInDataFolder(); // data폴더의 하위 파일들 삭제, 원활한 테스틀 위함
-        UserService basicUserServiceForFile = ServiceFactory.getInstance().getBasicUserService(FileUserRepository);
-        ChannelService basicChannelServiceForFile = ServiceFactory.getInstance().getBasicChannelService(FileChannelRepository);
-        MessageService basicMessageServiceForFile = ServiceFactory.getInstance().getBasicMessageService(FileMessageRepository);
+        UserService basicUserServiceForFile = ServiceFactory.getInstance().getBasicUserService(userRepository);
+        ChannelService basicChannelServiceForFile = ServiceFactory.getInstance().getBasicChannelService(channelRepository);
+        MessageService basicMessageServiceForFile = ServiceFactory.getInstance().getBasicMessageService(messageRepository);
 
         /*
         System.out.println("---------File User Repository");
@@ -74,7 +52,7 @@ public class JavaApplication {
         //loadMessageTestApplication(basicUserServiceForFile, basicChannelServiceForFile, basicMessageServiceForFile);
 
 
-        for (User user : FileUserRepository.getUsers()) {
+        for (User user : userRepository.getUsers()) {
             String channelIds = user.getChannels().stream()
                     .map(channel -> channel.getId().toString())
                     .collect(Collectors.joining(", "));
@@ -92,7 +70,7 @@ public class JavaApplication {
         System.out.println();
         System.out.println();
 
-        for (Channel channel : FileChannelRepository.getAllChannels()) {
+        for (Channel channel : channelRepository.getAllChannels()) {
             String userIds = channel.getUsers().stream()
                     .map(user -> user.getUserName().toString())
                     .collect(Collectors.joining(", "));
@@ -109,7 +87,7 @@ public class JavaApplication {
         System.out.println();
         System.out.println();
 
-        for (Message message : FileMessageRepository.getMessages()) {
+        for (Message message : messageRepository.getMessages()) {
             System.out.printf("메세지 ID: %s, 메세지를 가지고 있는 유저 ID와 이름: %s|%s, 메세지를 가지고 있는 채널 ID와 이름: %s|%s%n",
                     message.getId(),
                     message.getUser().getId(),

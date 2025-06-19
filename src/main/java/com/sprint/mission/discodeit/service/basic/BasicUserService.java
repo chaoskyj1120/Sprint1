@@ -5,15 +5,15 @@ import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.factory.RepositoryFactory;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@RequiredArgsConstructor // NOTE 생성자 lombok에서 생성 final이 붙은 필드를 매개변수로 받아 생성자에서 주입
+@Service
 public class BasicUserService implements UserService {
     private final UserRepository userRepository;
-
-    public BasicUserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Override
     public User createUser(String userName) {
@@ -37,7 +37,6 @@ public class BasicUserService implements UserService {
 
     @Override
     public void printActiveUsers(){
-        // status를 판별하는 식을 추가
         List<User> data = userRepository.getUsers();
 
         System.out.printf("전체 유저 조회(탈퇴 유저 미포함), 총 유저 수: %d \n", (data.stream()

@@ -6,17 +6,17 @@ import com.sprint.mission.discodeit.factory.RepositoryFactory;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@RequiredArgsConstructor
+@Service
 public class BasicChannelService implements ChannelService {
 
     private final ChannelRepository channelRepository;
-
-    public BasicChannelService(ChannelRepository channelRepository) {
-        this.channelRepository = channelRepository;
-    }
 
     @Override
     public Channel createChannel(User user, String channelName) {

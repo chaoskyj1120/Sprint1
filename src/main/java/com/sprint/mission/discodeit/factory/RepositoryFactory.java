@@ -30,9 +30,6 @@ public class RepositoryFactory {
         jcfChannelRepository = JCFChannelRepository.getInstance();
         jcfMessageRepository = JCFMessageRepository.getInstance();
 
-        fileUserRepository = FileUserRepository.getInstance();
-        fileChannelRepository = FileChannelRepository.getInstance();
-        fileMessageRepository = FileMessageRepository.getInstance();
     }
 
     public JCFUserRepository getJCFUserRepository() {

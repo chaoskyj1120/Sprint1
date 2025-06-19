@@ -1,8 +1,11 @@
 package com.sprint.mission.discodeit.entity;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 
+@Getter
 public class Channel extends BaseEntity implements Serializable {
     private String channelName;
     private User hostUser;
@@ -16,26 +19,14 @@ public class Channel extends BaseEntity implements Serializable {
         this.hostUser = hostUser;
     }
 
-    public String getChannelName() {
-        return channelName;
-    }
-
     public void updateChannelName(String channelName) {
         super.updateUpdatedAt();
         this.channelName = channelName;
     }
 
-    public User getHostUser() {
-        return hostUser;
-    }
-
     public void updateHostUser(User newHostUser) {
         updateUpdatedAt();
         this.hostUser = newHostUser;
-    }
-
-    public ArrayList<Message> getMessages() {
-        return messages;
     }
 
     public void addMessage(Message message) {
@@ -72,10 +63,6 @@ public class Channel extends BaseEntity implements Serializable {
 
     public void clearMessages() {
         messages.clear();
-    }
-
-    public ArrayList<User> getUsers() {
-        return users;
     }
 
     public void removeMessage(Message message) {

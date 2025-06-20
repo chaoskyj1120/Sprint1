@@ -3,8 +3,6 @@ package com.sprint.mission.discodeit;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.factory.RepositoryFactory;
-import com.sprint.mission.discodeit.factory.ServiceFactory;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -39,24 +37,21 @@ public class DiscodeitApplication {
 
 		// 레포지터리 생성
 		System.out.println("============================================================");
-		deleteAllFilesInDataFolder(); // data폴더의 하위 파일들 삭제, 원활한 테스틀 위함
-        
+
         System.out.println("---------File User Repository");
+		deleteAllFilesInDataFolder();
         userTestApplication(basicUserService);
         loadUserTestApplication(basicUserService);
-
+		/*
         System.out.println("---------File Channel Repository");
+		deleteAllFilesInDataFolder();
         channelTestApplication(basicUserService, basicChannelService);
         loadChannelTestApplication(basicUserService, basicChannelService);
 
 		System.out.println("---------File Message Repository");
+		deleteAllFilesInDataFolder();
 		messageTestApplication(basicUserService, basicChannelService, basicMessageService);
-		loadMessageTestApplication(basicUserService, basicChannelService, basicMessageService);
-		loadMessageTestApplication(basicUserService, basicChannelService, basicMessageService);
-
-		printUserDetails(userRepository);
-		printChannelDetails(channelRepository);
-		printMessageDetails(messageRepository);
+		loadMessageTestApplication(basicUserService, basicChannelService, basicMessageService);*/
 	}
 
 	public static void userTestApplication(UserService userService) {
@@ -64,8 +59,11 @@ public class DiscodeitApplication {
 		// sprint2 이므로 file 서비스를 이용하게 될것
 		System.out.println("\n========== userService Test start ==========================================\n");
 		System.out.println("1. 유저 등록=================");
-		User user1 = userService.createUser("권용진-1");
-		User user2 = userService.createUser("권용진-2");
+
+		String profilePicture1Path = null;
+		String profilePicture2Path = null; // 나중에서 이미지 선택 로직 추가, 이미지의 경로를 추가하면 좋을 듯
+		User user1 = userService.createUser("id1", "pw1", "권용진-1", "kwon1@email.com", profilePicture1Path);
+		User user2 = userService.createUser("id1", "pw1", "권용진-2", "kwon2@email.com", profilePicture2Path);
 		System.out.println(); // 가독성을 위한 줄바꾸
 		// 두 명의 유저를 등록
 
@@ -115,12 +113,12 @@ public class DiscodeitApplication {
 		System.out.println();
 		System.out.println("\n========== load userService Test end ==========================================\n");
 	}
-
+	/*
 	public static void channelTestApplication(UserService userService, ChannelService channelService) {
 		System.out.println("\n========== channelService Test start ==========================================\n");
 		System.out.println("1. 유저 생성=================");
-		User user1 = userService.createUser("권용진-1");
-		User user2 = userService.createUser("권용진-2");
+		User user1 = userService.createUser("id1", "pw1", "권용진-1");
+		User user2 = userService.createUser("id2", "pw2", "권용진-2");
 		System.out.println();
 		// 채널을 만들기 위한 유저 생성
 
@@ -210,8 +208,8 @@ public class DiscodeitApplication {
 	public static void messageTestApplication(UserService userService, ChannelService channelService, MessageService messageService) {
 		System.out.println("\n========== messageService Test start ==========================================\n");
 		System.out.println("1. 유저 생성=================");
-		User user1 = userService.createUser("권용진-1");
-		User user2 = userService.createUser("권용진-2");
+		User user1 = userService.createUser("id1", "pw1", "권용진-1", "kwon1@email.com");
+		User user2 = userService.createUser("id2", "pw2", "권용진-2");
 		System.out.println(); // 가독성을 위한 개행
 		// 메세지를 생성하기 위한 유저 생성
 		System.out.println("2. 채널 생성=================");
@@ -305,7 +303,7 @@ public class DiscodeitApplication {
 		messageService.printAllMessage();
 		System.out.println();
 		System.out.println("\n========== load messageService Test end ==========================================\n");
-	}
+	}*/
 	public static void deleteAllFilesInDataFolder() {
 		File folder = new File("./data");
 
@@ -326,56 +324,6 @@ public class DiscodeitApplication {
 				boolean deleted = file.delete();
 				System.out.printf("파일 %s 삭제 %s%n", file.getName(), deleted ? "성공" : "실패");
 			}
-		}
-	}
-
-	public static void printUserDetails(UserRepository userRepository) {
-		for (User user : userRepository.getUsers()) {
-			String channelIds = user.getChannels().stream()
-					.map(channel -> channel.getId().toString())
-					.collect(Collectors.joining(", "));
-			String messageIds = user.getMessages().stream()
-					.map(message -> message.getId().toString())
-					.collect(Collectors.joining(", "));
-			String messageContents = user.getMessages().stream()
-					.map(Message::getMessageContents)
-					.collect(Collectors.joining(", "));
-
-			System.out.printf("유저 ID: %s, 유저 이름: %s, 유저가 속한 채널들 목록: [%s], 유저가 작성한 메시지 종류및 내용: [%s | %s] %n",
-					user.getId(), user.getUserName(), channelIds, messageIds, messageContents);
-		}
-		System.out.println();
-		System.out.println();
-	}
-
-	public static void printChannelDetails(ChannelRepository channelRepository) {
-		for (Channel channel : channelRepository.getAllChannels()) {
-			String userNames = channel.getUsers().stream()
-					.map(User::getUserName)
-					.collect(Collectors.joining(", "));
-			String messageContents = channel.getMessages().stream()
-					.map(Message::getMessageContents)
-					.collect(Collectors.joining(", "));
-			String messageIds = channel.getMessages().stream()
-					.map(message -> message.getId().toString())
-					.collect(Collectors.joining(", "));
-
-			System.out.printf("채널 ID: %s, 채널 이름: %s, 채널이 가지고 있는 유저 목록: [%s], 채널에 연관된 메시지 종류: [%s | %s]%n",
-					channel.getId(), channel.getChannelName(), userNames, messageIds, messageContents);
-		}
-		System.out.println();
-		System.out.println();
-	}
-
-	public static void printMessageDetails(MessageRepository messageRepository) {
-		for (Message message : messageRepository.getMessages()) {
-			System.out.printf("메세지 ID: %s, 메세지를 가지고 있는 유저 ID와 이름: %s|%s, 메세지를 가지고 있는 채널 ID와 이름: %s|%s%n",
-					message.getId(),
-					message.getUser().getId(),
-					message.getUser().getUserName(),
-					message.getChannel().getId(),
-					message.getChannel().getChannelName()
-			);
 		}
 	}
 }

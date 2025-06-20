@@ -2,14 +2,14 @@ package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.factory.RepositoryFactory;
+import com.sprint.mission.discodeit.entity.UserActivationState;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -17,20 +17,28 @@ import java.util.List;
 public class BasicChannelService implements ChannelService {
 
     private final ChannelRepository channelRepository;
+    private final UserRepository userRepository;
+    private final MessageRepository messageRepository;
 
     @Override
     public Channel createChannel(User user, String channelName) {
-        return channelRepository.createChannel(user, channelName);
-    }
+        if (user.getStatus() == UserActivationState.DEACTIVE) return null;
 
-    @Override
-    public void addUserToChannel(User user, Channel channel) {
-        channelRepository.addUserToChannel(user, channel);
-    }
+        Channel channel = new Channel(user, channelName);
+        channel.addUser(user);
 
-    @Override
-    public void leaveUserFromChannel(User user, Channel channel) {
-        channelRepository.leaveUserFromChannel(user, channel);
+        List<User> usersFromFile = userRepository.loadUsers();
+        for (User userFromFile : usersFromFile) {
+            if(userFromFile.equalsId(user)) {
+                userFromFile.addChannel(channel);
+                break;
+            }
+        }
+
+        channelRepository.createChannel(channel);
+        userRepository.saveUsers(usersFromFile);
+
+        return channelRepository.getChannelById(channel.getId());
     }
 
     @Override
@@ -40,8 +48,62 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void deleteChannel(User user, Channel channel) {
-        channelRepository.deleteChannel(user, channel);
+        if (user.getStatus() == UserActivationState.DEACTIVE || channel == null) return;
+
+        if (!channel.getHostUserId().equals(user.getId())) {
+            System.out.println("채널을 삭제할 권한이 없습니다.");
+            return;
+        }
+
+        // 채널에서 유저 제거 같은 비즈니스 로직 수행
+        List<User> users = userRepository.loadUsers();
+        for (User u : users) {
+            u.removeChannel(channel);
+        }
+
+        userRepository.saveUsers(users);
+        channelRepository.deleteChannel(channel);
     }
+
+    @Override
+    public void addUserToChannel(User user, Channel channel) {
+        if (user.getStatus() == UserActivationState.DEACTIVE){
+            System.out.println("유저 상태가 비활성입니다.");
+            return;
+        }
+
+        if (channel == null) {
+            System.out.println("채널이 Null 입니다.");
+            return;
+        }
+
+        List<User> usersFromFile = userRepository.loadUsers();
+        for (User userFromFile : usersFromFile) {
+            if (userFromFile.equalsId(user)) {
+                userFromFile.addChannel(channel); // 채널 추가
+                break; // 유저를 찾았으니 루프 종료
+            }
+        }
+
+        userRepository.saveUsers(usersFromFile);
+        channelRepository.addUserToChannel(user, channel);
+    }
+
+    @Override
+    public void leaveUserFromChannel(User user, Channel channel) {
+        if (user.getStatus() == UserActivationState.DEACTIVE || channel == null) return;
+        List<User> usersFromFile = userRepository.loadUsers();
+
+        for (User userFromFile : usersFromFile) {
+            if (userFromFile.equalsId(user)) {
+                userFromFile.removeChannel(channel);
+            }
+        }
+
+        userRepository.saveUsers(usersFromFile);
+        channelRepository.leaveUserFromChannel(user, channel);
+    }
+
 
     @Override
     public void updateHostUser(User oldHostUser, Channel channel, User newHostUser) {
@@ -50,9 +112,9 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void printAllChannels() {
-        List<Channel> channels = channelRepository.getAllChannels();
+        List<Channel> channels = channelRepository.loadChannels();
         System.out.printf("전체 채널 조회, 채널 수: %d%n", channels.size());
-        channels.forEach(channel -> System.out.printf("채널 명: %s, 채널 ID: %s, 채널내 유저 수: %d%n", channel.getChannelName(), channel.getId(), channel.getUsers().size()));
+        channels.forEach(channel -> System.out.printf("채널 명: %s, 채널 ID: %s, 채널내 유저 수: %d%n", channel.getChannelName(), channel.getId(), channel.getUserIds().size()));
     }
 
     @Override
@@ -61,8 +123,8 @@ public class BasicChannelService implements ChannelService {
             System.out.println("채널이 null 입니다.");
             return;
         }
-        System.out.printf("채널 단일 조회, 채널 이름: %s, 채널 내 유저 수 %d%n", channel.getChannelName(), channel.getUsers().size());
-        System.out.printf("채절 주인: '%s', 채널 내 유저 들=%s%n", channel.getHostUser().getUserName(), channel.getUsers());
+        System.out.printf("채널 단일 조회, 채널 이름: %s, 채널 내 유저 수 %d%n", channel.getChannelName(), channel.getUserIds().size());
+        System.out.printf("채절 주인: '%s', 채널 내 유저 들=%s%n", channel.getHostUserId(), channel.getUserIds());
         //System.out.println(channel.toString());
     }
 
@@ -73,9 +135,9 @@ public class BasicChannelService implements ChannelService {
             return;
         }
         System.out.printf("%s 채널 내 유저 검색, 채널 내 유저 수: %d%n",
-                channel.getChannelName(), channel.getUsers().size());
+                channel.getChannelName(), channel.getUserIds().size());
 
-        channel.getUsers().forEach(u -> System.out.println(u.getUserName()));
+        channel.getUserIds().forEach(System.out::println);
     }
 
 }

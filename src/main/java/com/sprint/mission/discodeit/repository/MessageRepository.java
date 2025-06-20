@@ -4,13 +4,16 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public interface MessageRepository {
-    Message createMessage(User user, Channel channel, String contents);
+    void createMessage(Message message);
     void deleteMessage(User user, Message message);
     void updateMessage(User user, Message message, String newContents);
 
-    List<Message> getMessages();
+    List<Message> loadMessages();
+    void saveMessages(List<Message> messages);
+
+    Message getMessageById(UUID id);
 }

@@ -3,20 +3,50 @@ package com.sprint.mission.discodeit.entity;
 import lombok.Getter;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 @Getter
 public class Channel extends BaseEntity implements Serializable {
     private String channelName;
-    private User hostUser;
+    private UUID hostUserId;
 
-    private final ArrayList<Message> messages = new ArrayList<>();
-    private final ArrayList<User> users  = new ArrayList<>();
+    private final Set<UUID> messageIds = new HashSet<>();
+    private final Set<UUID> userIds  = new HashSet<>();
 
     public Channel(User hostUser, String name) {
         super();
         this.channelName = name;
-        this.hostUser = hostUser;
+        this.hostUserId = hostUser.getId();
+    }
+
+    public void addUser(User user) {
+        if (!userIds.add(user.getId())) {
+            System.out.println("User: " + user.getId() + ", already exists!");
+            return;
+        }
+        user.addChannel(this);
+    }
+
+    public void removeUser(User user) {
+        if (!userIds.remove(user.getId())) {
+            System.out.println("User: " + user.getId() + ", isn't exists!");
+            return;
+        }
+        user.removeChannel(this);
+    }
+
+    public void addMessage(Message message) {
+        if (!messageIds.add(message.getId())) {
+            System.out.println("Message: " + message.getId() + ", already exists!");
+        }
+    }
+
+    public void removeMessage(Message message) {
+        if (!messageIds.remove(message.getId())) {
+            System.out.println("Message: " + message.getId() + ", isn't exists!");
+        }
     }
 
     public void updateChannelName(String channelName) {
@@ -26,64 +56,14 @@ public class Channel extends BaseEntity implements Serializable {
 
     public void updateHostUser(User newHostUser) {
         updateUpdatedAt();
-        this.hostUser = newHostUser;
+        this.hostUserId = newHostUser.getId();
     }
 
-    public void addMessage(Message message) {
-        if (!messages.contains(message)) {
-            messages.add(message);
-            message.getUser().addMessage(message);
-        }
+    public void clearUserIds(){
+        userIds.clear();
     }
 
-    public void addUser(User user) {
-        for (User u : users) {
-            if (u.getId().equals(user.getId())) {
-                // 같은 걸 찾믕
-                //System.out.println("동일 유저가 안에 있네요");
-                return;
-            }
-        }
-        if (!users.contains(user)) {
-            users.add(user);
-            user.addChannel(this);
-        }
-    }
-
-    public void removeUser(User user) {
-        if (users.contains(user)) {
-            users.remove(user);
-            user.removeChannel(this);
-        }
-    }
-
-    public void clearUsers(){
-        users.clear();
-    }
-
-    public void clearMessages() {
-        messages.clear();
-    }
-
-    public void removeMessage(Message message) {
-        if (messages.contains(message)) {
-            messages.remove(message);
-            message.getUser().removeMessage(message);
-        }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Channel{")
-                .append("channelId=").append(getId())
-                .append("\nchannelName='").append(channelName).append('\'')
-                .append("\nhostUserId=").append(hostUser.getId())
-                //.append("\ncreatedAt=").append(getCreatedAt())
-                //.append("\nupdatedAt=").append(getUpdatedAt())
-                .append("\nmessageIds=").append(messages.stream().map(Message::getId).toList())
-                .append("\nuserIds=").append(users.stream().map(User::getId).toList())
-                .append('}');
-        return sb.toString();
+    public void clearMessageIds() {
+        messageIds.clear();
     }
 }

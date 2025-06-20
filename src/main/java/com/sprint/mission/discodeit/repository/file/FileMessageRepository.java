@@ -3,20 +3,27 @@ package com.sprint.mission.discodeit.repository.file;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.entity.UserActivationState;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+@RequiredArgsConstructor
 @Repository
 public class FileMessageRepository implements MessageRepository, Serializable {
 
     private static final String USER_FILE_PATH = "./data/message.ser";
 
-    private List<Message> loadMessages(){
+    @Override
+    public List<Message> loadMessages(){
         File file = new File(USER_FILE_PATH);
 
         if (!file.exists() || file.length() == 0) {
@@ -31,6 +38,7 @@ public class FileMessageRepository implements MessageRepository, Serializable {
         }
     }
 
+    @Override
     public void saveMessages(List<Message> messages){
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(USER_FILE_PATH))) {
             oos.writeObject(messages);
@@ -40,77 +48,50 @@ public class FileMessageRepository implements MessageRepository, Serializable {
     }
 
     @Override
-    public Message createMessage(User user, Channel channel, String contents){
-        if(channel == null) {
-            //System.out.println("채널이 null 입니다.");
-            return null;
-        }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            //System.out.printf("'%s' 비활성 상태라 메세지를 작성할 수 없습니다.", user.getUserName());
-            return null;
-        }
+    public void createMessage(Message message){
         //System.out.printf("메세지를 추가합니다. User: %s, ChannelId: %s, Contents: %s%n", user.getId(), channel.getId(), contents);
         List<Message> messages = loadMessages();
-        Message newMessage = new Message(user, channel, contents);
-        newMessage.registerMessageToUserAndChannel(user, channel);
-        messages.add(newMessage);
-
+        messages.add(message);
         saveMessages(messages);
-        return newMessage;
     }
 
     @Override
     public void deleteMessage(User user, Message message){
-        if(message == null) {
-            return;
-        }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
-            return;
-        }
-        if (!user.getId().equals(message.getUser().getId())) {
-            return;
-        }
         List<Message> messagesFromFile = loadMessages();
-        messagesFromFile.remove(message);
-        for( Message messageFromFile : messagesFromFile) {
-            if(messageFromFile.getId().equals(message.getId())) {
-                messagesFromFile.remove(messageFromFile);
-                break;
-            }
-        }
-
+        messagesFromFile.removeIf(msg -> msg.equalsId(message));
         saveMessages(messagesFromFile);
     }
 
     @Override
-    public void updateMessage(User user, Message message, String newContents){
-        if(message == null) {
+    public void updateMessage(User user, Message message, String newContents) {
+        if (message == null) {
             //System.out.println("메세지가 null 입니다.");
             return;
         }
-        if(user.getStatus().equals(UserStatus.DEACTIVE)) {
+        if (user.getStatus().equals(UserActivationState.DEACTIVE)) {
             //System.out.printf("'%s' 비활성 상태라 메세지를 업데이트할 수 없습니다.", user.getUserName());
             return;
         }
-        if(!user.equals(message.getUser())) {
+        if (!user.getId().equals(message.getAuthorId())) {
             //System.out.printf("'%s'는 '%s' 메시지의 주인이 아닙니다. 따라서 해당 메시지를 '%s'로 바꾸는 것은 불가능합니다.", user.getUserName(), message.getMessageContents(), newContents);
             return;
         }
 
         List<Message> messagesFromFile = loadMessages();
         for (Message messageFromFile : messagesFromFile) {
-            if(messageFromFile.getId().equals(message.getId())) {
+            if (messageFromFile.equalsId(message)) {
                 messageFromFile.updateMessageContent(newContents);
                 break;
             }
         }
-
         saveMessages(messagesFromFile);
     }
 
     @Override
-    public List<Message> getMessages() {
-        return loadMessages();
+    public Message getMessageById(UUID messageId){
+        return loadMessages().stream()
+                .filter(msg -> msg.getId().equals(messageId))
+                .findFirst()
+                .orElse(null);
     }
-
 }

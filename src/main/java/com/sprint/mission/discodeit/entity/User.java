@@ -4,61 +4,60 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 @Getter
 public class User extends BaseEntity implements Serializable {
 
+    private String idForLogin;
+    private String passwordForLogin;
     private String userName;
+    private String email;
+    private UUID profileId; // 프로필 사진에 대한 것으로 BinaryContents를 참조하기 위한 필드
 
-    private ArrayList<Channel> channels = new ArrayList<>();;
-    private ArrayList<Message> messages = new ArrayList<>();;
+    private final Set<UUID> channelIds = new HashSet<>();
+    private final Set<UUID> messageIds = new HashSet<>();
 
     @Setter
-    private UserStatus status;
-    // 유저가 회원가입 상태인지 탈퇴 상태인지를 판별
-    // 유저 조회 할 때 조회 되지는 않지만 데이터를 완전 삭제하지 않은 상태이다.
+    private UserActivationState status = UserActivationState.ACTIVE;
 
-    public User(String userName) {
+    public User(String idForLogin, String passwordForLogin, String userName, String email, UUID profileId) {
         super();
+        this.idForLogin = idForLogin;
+        this.passwordForLogin = passwordForLogin;
         this.userName = userName;
-        this.status = UserStatus.ACTIVE;
+        this.email = email;
+        this.profileId = profileId;
     }
 
     public void addChannel(Channel channel) {
-        for (Channel c : channels) {
-            if(c.getId().equals(channel.getId())) {
-                // 같은 걸 찾믕
-                System.out.println("동일 채널이 안에 있네요");
-                return;
-            }
+        if (!channelIds.add(channel.getId())) {
+            // 값이 추가되면 true 반환함 따라서 추가 안되면 메시지를 발행
+            System.out.println("Channel: " + channel.getId() + ", already exists");
+            return; // 순환참조를 방지하기위한 메소드 종료
         }
-
-        if(!channels.contains(channel)) {
-            System.out.println("1231231"+channel.getUsers());
-            channels.add(channel);
-            channel.addUser(this);
-        }
+        channel.addUser(this);
     }
 
     public void removeChannel(Channel channel) {
-        if(channels.contains(channel)) {
-            channels.remove(channel);
-            channel.removeUser(this);
+        if  (!channelIds.remove(channel.getId())) {
+            System.out.println("Channel: " + channel.getId() + ", isn't exists");
+            return;
         }
+        channel.removeUser(this);
     }
 
     public void addMessage(Message message) {
-        if(!this.messages.contains(message)) {
-            this.messages.add(message);
+        if (!messageIds.add(message.getId())) {
+            System.out.println("Message: " + message.getId() + ", already exists");
         }
     }
 
     public void removeMessage(Message message) {
-        if(messages.contains(message)) {
-            System.out.println("메세지 삭제 성공적 유저 에서");
-            this.messages.remove(message);
-            message.getChannel().getMessages().remove(message);
+        if (!messageIds.remove(message.getId())) {
+            System.out.println("Message: " + message.getId() + ", isn't exists");
         }
     }
 
@@ -67,23 +66,11 @@ public class User extends BaseEntity implements Serializable {
         updateUpdatedAt();
     }
 
-    public void clearChannels() {
-        channels.clear();
+    public void clearChannelIds() {
+        channelIds.clear();
     }
 
-    public void clearMessages() {
-        messages.clear();
-    }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "userId=" + getId() +
-                "\nuserName='" + userName  +
-                //", createdAt=" + getCreatedAt() +
-                //", updatedAt=" + getUpdatedAt() +
-                //"\nchannels=" + channels.stream().map(Channel::toString).toList() +
-                "\nmessages=" + messages.stream().map(Message::toString).toList() +
-                '}';
+    public void clearMessageIds() {
+        messageIds.clear();
     }
 }

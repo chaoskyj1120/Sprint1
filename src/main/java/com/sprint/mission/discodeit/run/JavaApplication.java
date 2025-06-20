@@ -3,20 +3,14 @@ package com.sprint.mission.discodeit.run;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.factory.RepositoryFactory;
-import com.sprint.mission.discodeit.factory.ServiceFactory;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.basic.BasicChannelService;
-import com.sprint.mission.discodeit.service.basic.BasicMessageService;
-import com.sprint.mission.discodeit.service.basic.BasicUserService;
 
 import java.io.File;
-import java.util.stream.Collectors;
 
 public class JavaApplication {
     public static void main(String[] args) {
@@ -24,7 +18,7 @@ public class JavaApplication {
     }
 
     public static void testFileService() {
-
+        /*
         UserRepository userRepository = RepositoryFactory.getInstance().getFileUserRepository();
         ChannelRepository channelRepository = RepositoryFactory.getInstance().getFileChannelRepository();
         MessageRepository messageRepository = RepositoryFactory.getInstance().getFileMessageRepository();
@@ -45,59 +39,14 @@ public class JavaApplication {
         channelTestApplication(basicUserServiceForFile, basicChannelServiceForFile);
         loadChannelTestApplication(basicUserServiceForFile, basicChannelServiceForFile);*/
 
-
+        /*
         System.out.println("---------File Message Repository");
         messageTestApplication(basicUserServiceForFile, basicChannelServiceForFile, basicMessageServiceForFile);
         loadMessageTestApplication(basicUserServiceForFile, basicChannelServiceForFile, basicMessageServiceForFile);
         //loadMessageTestApplication(basicUserServiceForFile, basicChannelServiceForFile, basicMessageServiceForFile);
-
-
-        for (User user : userRepository.getUsers()) {
-            String channelIds = user.getChannels().stream()
-                    .map(channel -> channel.getId().toString())
-                    .collect(Collectors.joining(", "));
-            String messageIds = user.getMessages().stream()
-                    .map(message -> message.getId().toString())
-                    .collect(Collectors.joining(", "));
-            String messageContents = user.getMessages().stream()
-                    .map(Message::getMessageContents)
-                    .collect(Collectors.joining(", "));
-
-            System.out.printf("유저 ID: %s, 유저 이름: %s, 유저가 속한 채널들 목록: [%s], 유저가 작성한 메시지 종류및 내용: [%s | %s] %n",
-                    user.getId(), user.getUserName(), channelIds, messageIds, messageContents);
-        }
-
-        System.out.println();
-        System.out.println();
-
-        for (Channel channel : channelRepository.getAllChannels()) {
-            String userIds = channel.getUsers().stream()
-                    .map(user -> user.getUserName().toString())
-                    .collect(Collectors.joining(", "));
-            String messageIds = channel.getMessages().stream()
-                    .map(Message::getMessageContents)
-                    .collect(Collectors.joining(", "));
-            String messageContents = channel.getMessages().stream()
-                    .map(message -> message.getId().toString())
-                    .collect(Collectors.joining(", "));
-            System.out.printf("채널 ID: %s, 채널 이름: %s, 채널이 가지고 있는 유저 목록: [%s], 채널에 연관된 메시지 종류: [%s | %s]%n",
-                    channel.getId(), channel.getChannelName(), userIds, messageIds, messageContents);
-        }
-
-        System.out.println();
-        System.out.println();
-
-        for (Message message : messageRepository.getMessages()) {
-            System.out.printf("메세지 ID: %s, 메세지를 가지고 있는 유저 ID와 이름: %s|%s, 메세지를 가지고 있는 채널 ID와 이름: %s|%s%n",
-                    message.getId(),
-                    message.getUser().getId(),
-                    message.getUser().getUserName(),
-                    message.getChannel().getId(),
-                    message.getChannel().getChannelName()
-            );
-        }
+        */
     }
-
+    /*
     public static void userTestApplication(UserService userService) {
 
         // sprint2 이므로 file 서비스를 이용하게 될것
@@ -366,5 +315,5 @@ public class JavaApplication {
                 System.out.printf("파일 %s 삭제 %s%n", file.getName(), deleted ? "성공" : "실패");
             }
         }
-    }
+    }*/
 }

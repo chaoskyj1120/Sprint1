@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.dto.UserCreateDTO;
 import com.sprint.mission.discodeit.dto.UserLoggedDataDTO;
 import com.sprint.mission.discodeit.dto.UserUpdateDTO;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserStatus;
 
 import java.util.List;
 
@@ -21,4 +22,7 @@ public interface UserService {
 
     List<UserLoggedDataDTO> findAll();
     UserLoggedDataDTO findUserById(String userIdForLogin);
+
+    void logOutUser(User user);
+    UserStatus isOnline(User user);
 }

@@ -52,7 +52,6 @@ public class DiscodeitApplication {
 		UserLoginDataDTO loginUser1 = basicAuthService.logInUser(loginRequestDTO);
 		System.out.println(loginUser1.getUserName() + "님이 로그인에 성공했습니다.");
 
-
 		/*
 		System.out.println(user1.getProfileId());
 		BinaryContentsRepository binaryContentsRepository = context.getBean(BinaryContentsRepository.class);
@@ -60,7 +59,7 @@ public class DiscodeitApplication {
 		testImgBySave(user1ProfileImg.getBinaryData()); 이미지 제대로 저장되었는지 확인
 		*/
 
-		List<UserLoggedDataDTO> userLoggedDataDTOS = authService.getLoggedUserStatuses();
+		List<UserLoggedDataDTO> userLoggedDataDTOS = userService.findAll();
 		System.out.println("=== 전체 유저 로그인 상태 ===");
 		userLoggedDataDTOS.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
 		System.out.println();

@@ -10,7 +10,4 @@ import java.util.List;
 
 public interface AuthService {
     UserLoginDataDTO logInUser(LoginRequestDTO loginRequestDTO);
-    void logOutUser(User user);
-    UserStatus isOnline(User user);
-    List<UserLoggedDataDTO> getLoggedUserStatuses();
 }

@@ -1,16 +1,16 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserActivationState;
+import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Service
@@ -19,6 +19,8 @@ public class BasicChannelService implements ChannelService {
     private final ChannelRepository channelRepository;
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
+    private final ReadStatusRepository readStatusRepository;
+
 
     @Override
     public Channel createChannel(User user, String channelName) {
@@ -59,7 +61,12 @@ public class BasicChannelService implements ChannelService {
         List<User> users = userRepository.loadUsers();
         for (User u : users) {
             u.removeChannel(channel);
+            u.getMessageIds().removeIf(messageId -> channel.getMessageIds().contains(messageId));
         }
+
+        List<Message> messagesFromFile = messageRepository.loadMessages();
+        messagesFromFile.removeIf(messageFromFile -> channel.getMessageIds().contains(messageFromFile.getId()));
+        messageRepository.saveMessages(messagesFromFile);
 
         userRepository.saveUsers(users);
         channelRepository.deleteChannel(channel);
@@ -138,6 +145,45 @@ public class BasicChannelService implements ChannelService {
                 channel.getChannelName(), channel.getUserIds().size());
 
         channel.getUserIds().forEach(System.out::println);
+    }
+
+
+    public Channel enterChanner(User user, Channel chanel){
+        // 채널에 가입된 유저가 채널에 입장했을 떄 / 가입이랑 다름
+        // 채널을 반환해야 하나?
+        // TODO ReadStatus를 추가 또는 변경
+
+        return null;
+    }
+
+    public void exitChanner(User user, Channel channel){
+        // 채널에 가입된 유저가 채널을 퇴장했을 때 / 탈퇴랑 다름
+        // 퇴장할 떄 업데이터 해야 함
+        updateReadStatus(user, channel);
+    }
+
+    public void updateReadStatus(User user, Channel channel) {
+        List<ReadStatus> readStatuses = readStatusRepository.loadReadStatuses();
+        Set<UUID> messageIds = channel.getMessageIds();
+        UUID lastMessageId = messageIds.isEmpty() ? null : new ArrayList<>(messageIds).get(messageIds.size() - 1);
+
+        Optional<ReadStatus> matchedReadStatus = readStatuses.stream()
+                .filter(readStatus -> readStatus.equalsId(user) && readStatus.equalsId(channel))
+                .findFirst();
+
+        ReadStatus targetReadStatus;
+
+        if (matchedReadStatus.isEmpty()) {
+            targetReadStatus = new ReadStatus(user.getId(), channel.getHostUserId());
+            readStatuses.add(targetReadStatus); // 새로 만든 ReadStatus를 리스트에 추가
+            readStatusRepository.createReadStatus(targetReadStatus); // 저장소에도 생성
+        } else {
+            targetReadStatus = matchedReadStatus.get();
+        }
+
+        targetReadStatus.setMessageId(lastMessageId);
+
+        readStatusRepository.saveReadStatuses(readStatuses); // 전체 리스트 저장
     }
 
 }

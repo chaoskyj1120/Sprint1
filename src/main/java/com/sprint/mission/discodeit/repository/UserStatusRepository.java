@@ -12,4 +12,5 @@ public interface UserStatusRepository {
 
     List<UserStatus> loadUserStatuses();
     void saveStatuses(List<UserStatus> userStatuses);
+    void delete(UUID userId);
 }

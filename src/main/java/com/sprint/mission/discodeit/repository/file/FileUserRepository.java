@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserActivationState;
+import com.sprint.mission.discodeit.dto.UserUpdateDTO;
+import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -53,16 +53,7 @@ public class FileUserRepository implements UserRepository, Serializable {
     }
 
     @Override
-    public void updateUser(User user, String newName) {
-        List<User> users = loadUsers();
-        user.setUserName(newName);
-
-        for (User userFromFile : users) {
-            if (userFromFile.equalsId(user)) {
-                userFromFile.setUserName(newName);
-                break;
-            }
-        }
+    public void updateUser(List<User> users) {
         saveUsers(users);
     }
 
@@ -74,6 +65,7 @@ public class FileUserRepository implements UserRepository, Serializable {
             if (userFromFile.equalsId(user)) {
                 userFromFile.setStatus(UserActivationState.DEACTIVE);
                 userFromFile.clearChannelIds();
+                usersFromFile.remove(userFromFile);
                 break; // 유저 찾았으니 루프 종료
             }
         }

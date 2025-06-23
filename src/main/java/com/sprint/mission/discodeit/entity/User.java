@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+@Setter
 @Getter
 public class User extends BaseEntity implements Serializable {
 

@@ -8,7 +8,7 @@ import java.util.UUID;
 public interface UserRepository {
 
     void createUser(User user);
-    void updateUser(User user, String newUserName);
+    void updateUser(List<User> users);
     void deleteUser(User user);
     void restoreUser(User user);
 

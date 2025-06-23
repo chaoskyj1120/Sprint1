@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Repository
@@ -44,6 +45,13 @@ public class FileUserStatusRepository implements UserStatusRepository, Serializa
     public void createUserStatus(UserStatus userStatus) {
         List<UserStatus> userStatuses = loadUserStatuses();
         userStatuses.add(userStatus);
+        saveStatuses(userStatuses);
+    }
+
+    @Override
+    public void delete(UUID userId){
+        List<UserStatus> userStatuses = loadUserStatuses();
+        userStatuses.removeIf(userStatus -> userStatus.getUserId().equals(userId));
         saveStatuses(userStatuses);
     }
 }

@@ -12,9 +12,8 @@ import java.util.UUID;
 @Getter
 public class User extends BaseEntity implements Serializable {
 
-    private String idForLogin;
-    private String passwordForLogin;
     private String userName;
+    private String password;
     private String email;
     private UUID profileId; // 프로필 사진에 대한 것으로 BinaryContents를 참조하기 위한 필드
 
@@ -24,10 +23,10 @@ public class User extends BaseEntity implements Serializable {
     @Setter
     private UserActivationState status = UserActivationState.ACTIVE;
 
-    public User(String idForLogin, String passwordForLogin, String userName, String email, UUID profileId) {
+    public User(String userName, String password, String email, UUID profileId) {
         super();
-        this.idForLogin = idForLogin;
-        this.passwordForLogin = passwordForLogin;
+        this.userName = userName;
+        this.password = password;
         this.userName = userName;
         this.email = email;
         this.profileId = profileId;
@@ -36,7 +35,7 @@ public class User extends BaseEntity implements Serializable {
     public void addChannel(Channel channel) {
         if (!channelIds.add(channel.getId())) {
             // 값이 추가되면 true 반환함 따라서 추가 안되면 메시지를 발행
-            System.out.println("Channel: " + channel.getId() + ", already exists");
+           // System.out.println("Channel: " + channel.getId() + ", already exists");
             return; // 순환참조를 방지하기위한 메소드 종료
         }
         channel.addUser(this);
@@ -44,7 +43,7 @@ public class User extends BaseEntity implements Serializable {
 
     public void removeChannel(Channel channel) {
         if  (!channelIds.remove(channel.getId())) {
-            System.out.println("Channel: " + channel.getId() + ", isn't exists");
+           // System.out.println("Channel: " + channel.getId() + ", isn't exists");
             return;
         }
         channel.removeUser(this);
@@ -52,13 +51,13 @@ public class User extends BaseEntity implements Serializable {
 
     public void addMessage(Message message) {
         if (!messageIds.add(message.getId())) {
-            System.out.println("Message: " + message.getId() + ", already exists");
+           // System.out.println("Message: " + message.getId() + ", already exists");
         }
     }
 
     public void removeMessage(Message message) {
         if (!messageIds.remove(message.getId())) {
-            System.out.println("Message: " + message.getId() + ", isn't exists");
+            //System.out.println("Message: " + message.getId() + ", isn't exists");
         }
     }
 

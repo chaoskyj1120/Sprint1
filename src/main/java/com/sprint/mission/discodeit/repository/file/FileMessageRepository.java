@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -56,42 +57,55 @@ public class FileMessageRepository implements MessageRepository, Serializable {
     }
 
     @Override
-    public void deleteMessage(User user, Message message){
+    public void deleteMessageByMessageId(UUID messageId){
         List<Message> messagesFromFile = loadMessages();
-        messagesFromFile.removeIf(msg -> msg.equalsId(message));
+        messagesFromFile.removeIf(msg -> msg.equalsId(messageId));
         saveMessages(messagesFromFile);
     }
 
     @Override
-    public void updateMessage(User user, Message message, String newContents) {
-        if (message == null) {
-            //System.out.println("메세지가 null 입니다.");
-            return;
-        }
-        if (user.getStatus().equals(UserActivationState.DEACTIVE)) {
-            //System.out.printf("'%s' 비활성 상태라 메세지를 업데이트할 수 없습니다.", user.getUserName());
-            return;
-        }
-        if (!user.getId().equals(message.getAuthorId())) {
-            //System.out.printf("'%s'는 '%s' 메시지의 주인이 아닙니다. 따라서 해당 메시지를 '%s'로 바꾸는 것은 불가능합니다.", user.getUserName(), message.getMessageContents(), newContents);
-            return;
-        }
+    public void deleteMessagesByChannelId(UUID channelId){
 
         List<Message> messagesFromFile = loadMessages();
-        for (Message messageFromFile : messagesFromFile) {
-            if (messageFromFile.equalsId(message)) {
-                messageFromFile.updateMessageContent(newContents);
-                break;
+        messagesFromFile.removeIf(msg -> msg.getChannelId().equals(channelId));
+        saveMessages(messagesFromFile);
+    }
+
+    @Override
+    public void updateMessage(Message message) {
+
+        List<Message> messagesFromFile = loadMessages();
+
+        for (int i = 0; i < messagesFromFile.size(); i++) {
+            if (messagesFromFile.get(i).equalsId(message)) {
+                messagesFromFile.set(i, message);  // 리스트 내부 요소를 실제로 교체
+                saveMessages(messagesFromFile);   // 변경된 리스트 저장
+                return;
             }
         }
-        saveMessages(messagesFromFile);
     }
 
+
     @Override
-    public Message getMessageById(UUID messageId){
+    public Message findMessageByMessageId(UUID messageId){
         return loadMessages().stream()
                 .filter(msg -> msg.getId().equals(messageId))
                 .findFirst()
                 .orElse(null);
     }
+
+    @Override
+    public List<Message> findMessagesByMessageIds(Set<UUID> messageIds){
+        return loadMessages().stream()
+                .filter(message -> messageIds.contains(message.getId()))
+                .toList();
+    }
+
+    @Override
+    public List<Message> findMessagesByChannelId(UUID channelId) {
+        return loadMessages().stream()
+                .filter(message -> message.getChannelId().equals(channelId))
+                .toList();
+    }
+
 }

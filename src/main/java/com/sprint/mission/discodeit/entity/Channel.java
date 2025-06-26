@@ -1,29 +1,39 @@
 package com.sprint.mission.discodeit.entity;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
+@Setter
 @Getter
 public class Channel extends BaseEntity implements Serializable {
     private String channelName;
     private UUID hostUserId;
+    private ChannelType channelType;
+    private String channelDescription;
 
     private final Set<UUID> messageIds = new HashSet<>();
     private final Set<UUID> userIds  = new HashSet<>();
 
-    public Channel(User hostUser, String name) {
+    public Channel(UUID hostUserId, String name, String description) {
         super();
+        this.hostUserId = hostUserId;
         this.channelName = name;
-        this.hostUserId = hostUser.getId();
+        this.channelDescription = description;
+        this.channelType = ChannelType.PUBLIC_CHANNEL; // public 채널 생성
+    }
+
+    public Channel(UUID hostUserId) {
+        super();
+        this.hostUserId = hostUserId;
+        this.channelType = ChannelType.PRIVATE_CHANNEL; //private 채널 생성
     }
 
     public void addUser(User user) {
         if (!userIds.add(user.getId())) {
-            System.out.println("User: " + user.getId() + ", already exists!");
+            //System.out.println("User: " + user.getId() + ", already exists!");
             return;
         }
         user.addChannel(this);

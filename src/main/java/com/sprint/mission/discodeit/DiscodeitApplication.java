@@ -1,11 +1,18 @@
 package com.sprint.mission.discodeit;
 
-import com.sprint.mission.discodeit.dto.*;
-import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.dto.auth_service_dto.LoginRequestDTO;
+import com.sprint.mission.discodeit.dto.binary_contents_dto.BinaryContentsDTO;
+import com.sprint.mission.discodeit.dto.channel_service_dto.ChannelDTO;
+import com.sprint.mission.discodeit.dto.channel_service_dto.CreateChannelRequestDTO;
+import com.sprint.mission.discodeit.dto.channel_service_dto.DeleteChannelRequestDTO;
+import com.sprint.mission.discodeit.dto.message_service_dto.DeleteMessageRequestDTO;
+import com.sprint.mission.discodeit.dto.message_service_dto.MessageCreateRequestDTO;
+import com.sprint.mission.discodeit.dto.message_service_dto.MessageDTO;
+import com.sprint.mission.discodeit.dto.message_service_dto.MessageUpdateRequestDTO;
+import com.sprint.mission.discodeit.dto.user_service_dto.*;
+import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
-import com.sprint.mission.discodeit.service.AuthService;
-import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.*;
 import com.sprint.mission.discodeit.service.basic.BasicAuthService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,115 +21,344 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootApplication
 public class DiscodeitApplication {
-	public static final String pathStaticFolder = "./src/main/resources/static";
+	public static final String pathStaticFolder = "./src/main/resources/static/";
 	public static void main(String[] args) {
 		ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
 		mainTest(context);
 	}
 
 	public static void mainTest(ConfigurableApplicationContext context) {
-		// 1. 유저 생성
-		// 2. 로그인
-		// 3. 전체 유저의 로그인/로그아웃 상태 확인
- 		// 4.
- 		//
+
+		userTest(context); //유저 서비스 테스트및 채널 서비스에서 사용할 유저 생성
+		channelTest(context);
+		messageTest(context);
+		/*
+		AuthService authService = context.getBean(AuthService.class);
+		ChannelService channelService = context.getBean(ChannelService.class);
+		MessageService messageService = context.getBean(MessageService.class);
+		BinaryContentsService binaryContentsService = context.getBean(BinaryContentsService.class);
+
+		LoginRequestDTO loginRequestDTO = new LoginRequestDTO("newKwon1", "pw1");
+		LoginRequestDTO loginRequestDTO2 = new LoginRequestDTO("kwon2", "pw2");
+
+		UserDTO user1 = authService.logInUser(loginRequestDTO);
+		UserDTO user2 = authService.logInUser(loginRequestDTO2);
+
+		System.out.println("\n=== Public 채널 생성===");
+		CreateChannelRequestDTO createChannelRequestDTO = new CreateChannelRequestDTO(user1.getUserId(), "권용진1의 public 채널", "권용진의 1의 public 채널입니다.");
+		ChannelDTO channel1 = channelService.createPublicChannel(createChannelRequestDTO);
+
+		createChannelRequestDTO = new CreateChannelRequestDTO(user1.getUserId(), "권용진1의 public 채널2", "권용진의 1의 public 채널2 입니다.");
+		ChannelDTO channel2 = channelService.createPublicChannel(createChannelRequestDTO);
+
+		System.out.println("\n=== channel1,2 에 메시지 추가===");
+		List<String> extraFilesPath = new ArrayList<>();
+		extraFilesPath.add(pathStaticFolder + "messageExtraFileTest1.txt");
+		extraFilesPath.add(pathStaticFolder + "basicUserProfileImage.png");
+		// 추가 첨부 파일을 선택했다는 의미*/
+
+
+	}
+
+	public static void userTest(ConfigurableApplicationContext context) {
+
 		deleteAllFilesInDataFolder();
 
 		UserService userService = context.getBean(UserService.class);
 		AuthService authService = context.getBean(AuthService.class);
+		BinaryContentsRepository binaryContentsRepository = context.getBean(BinaryContentsRepository.class);
+
 
 		System.out.println("\n========== userService Test start ==========================================\n");
 		System.out.println("1. 유저 등록=================");
 
 		String profilePicture1Path =  pathStaticFolder + "/basicUserProfileImage.png"; // 기본 이미지, 유저가 선택하면 여기 값이 바뀌도록 해서 기본 이미지가 있도록 유지
-		String profilePicture2Path = null; // 나중에서 이미지 선택 로직 추가, 이미지의 경로를 추가하면 좋을 듯
 
-		UserCreateDTO userCreateDTO1 = new UserCreateDTO("id1", "pw1", "권용진-1", "kwon1@email.com", profilePicture1Path);
-		UserCreateDTO userCreateDTO2 = new UserCreateDTO("id2", "pw2", "권용진-2", "kwon2@email.com", profilePicture1Path);
+		UserCreateRequestDTO user1Dto = new UserCreateRequestDTO("kwon1", "pw1",  "kwon1@email.com", profilePicture1Path);
+		UserCreateRequestDTO user2Dto = new UserCreateRequestDTO("kwon2", "pw2",  "kwon2@email.com", null); // null은 사진을 선택하지 않았다는 의미
 
-		User user1 = userService.createUser(userCreateDTO1);
-		User user2 = userService.createUser(userCreateDTO2);
+		UserDTO user1 = userService.createUser(user1Dto);
+		UserDTO user2 = userService.createUser(user2Dto);
 
 		AuthService basicAuthService = context.getBean(BasicAuthService.class);
-		LoginRequestDTO loginRequestDTO = new LoginRequestDTO("id1", "pw1");
-		UserLoginDataDTO loginUser1 = basicAuthService.logInUser(loginRequestDTO);
+		LoginRequestDTO loginRequestDTO = new LoginRequestDTO("kwon1", "pw1");
+		UserDTO loginUser1 = basicAuthService.logInUser(loginRequestDTO);
 		System.out.println(loginUser1.getUserName() + "님이 로그인에 성공했습니다.");
 
 		/*
-		System.out.println(user1.getProfileId());
-		BinaryContentsRepository binaryContentsRepository = context.getBean(BinaryContentsRepository.class);
+		System.out.println(user2.getProfileId());
+		binaryContentsRepository = context.getBean(BinaryContentsRepository.class);
 		BinaryContents user1ProfileImg = binaryContentsRepository.getBinaryContentsById(user1.getProfileId());
-		testImgBySave(user1ProfileImg.getBinaryData()); 이미지 제대로 저장되었는지 확인
-		*/
+		testImgBySave(user1ProfileImg.getBinaryData()); // 이미지 제대로 저장되었는지 확인*/
 
-		List<UserLoggedDataDTO> userLoggedDataDTOS = userService.findAll();
+
+		List<UserRecentConnectionDTO> userRecentConnectionDTOS = userService.findAllConnection();
 		System.out.println("=== 전체 유저 로그인 상태 ===");
-		userLoggedDataDTOS.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
+		userRecentConnectionDTOS.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
 		System.out.println();
 
 		System.out.println("=== 단일 유저 로그인 상태 ===");
-		UserLoggedDataDTO userLoggedDataDTO = userService.findUserById("id1");
-		System.out.println("사용자: " + userLoggedDataDTO.getUserName() + " | 상태: " + userLoggedDataDTO.getIsLoggedIn());
+		UserConnectionRequestDTO userConnectionRequestDTO = new UserConnectionRequestDTO("kwon1");
+		UserRecentConnectionDTO userRecentConnectionDTO = userService.findUserConnectionByUserName(userConnectionRequestDTO);
+		System.out.println("사용자: " + userRecentConnectionDTO.getUserName() + " | 상태: " + userRecentConnectionDTO.getIsLoggedIn());
 		System.out.println();
 
 		System.out.println("=== 유저 업데이트 ===");
-		UserUpdateDTO userUpdateDto = new UserUpdateDTO(user1.getId(), "newId1", "new권용진-1", "newPw1", "newEMail", ".\\src\\main\\resources\\static\\basicUserProfileImage2.png");
-		userService.updateUser(userUpdateDto);
-		userLoggedDataDTO = userService.findUserById("newId1");
-		System.out.println("사용자: " + userLoggedDataDTO.getUserName() + " | 상태: " + userLoggedDataDTO.getIsLoggedIn());
+		UserUpdateRequestDTO userUpdateRequestDto = new UserUpdateRequestDTO(loginUser1.getUserId(), "newKwon1", "newPw1", "newEMail", ".\\src\\main\\resources\\static\\basicUserProfileImage2.png");
+		userService.updateUser(userUpdateRequestDto);
+		userConnectionRequestDTO  = new UserConnectionRequestDTO("newKwon1");
+		userRecentConnectionDTO = userService.findUserConnectionByUserName(userConnectionRequestDTO);
+		System.out.println("사용자: " + userRecentConnectionDTO.getUserName() + " | 상태: " + userRecentConnectionDTO.getIsLoggedIn());
 		System.out.println();
 
 		System.out.println("=== 전체 유저 로그인 상태 ===");
-		userLoggedDataDTOS = userService.findAll();
-		userLoggedDataDTOS.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
+		userRecentConnectionDTOS = userService.findAllConnection();
+		userRecentConnectionDTOS.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
 		System.out.println();
 
-		System.out.println("=== 유저 삭제 전 전체 유저 로그인 상태 ===");
-		userLoggedDataDTOS = userService.findAll();
-		userLoggedDataDTOS.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
-		System.out.println();
-		// 꺼내서 확인하기
-
-		System.out.println("=== 유저 삭제 전 UserStatus 확인 ===");
-		UserStatusRepository userStatusRepository = context.getBean(UserStatusRepository.class);
-		userStatusRepository.loadUserStatuses().forEach(status -> System.out.println(status.getUserId()));
-		userService.printAllUsers();
+		System.out.println("=== 유저 삭제 전 ActiveUserDTo 확인 ===");
+		List<UserDTO> AcitveUserDTO = userService.findAllActiveUserDTO();
+		printUserDTOs(AcitveUserDTO);
 		System.out.println();
 
-		System.out.println("=== 유저 삭제 전 BinaryContents 확인 ===");
-		BinaryContentsRepository binaryContentsRepository = context.getBean(BinaryContentsRepository.class);
-		binaryContentsRepository.loadBinaryContents().forEach(binaryContent -> System.out.println("프로필 ID: " + binaryContent.getId() + ", User Id: "+ binaryContent.getReferenceId()));
+		System.out.println("=== 유저 삭제 전 DeactiveUserDTO 확인 ===");
+		List<UserDTO> DeacitveUserDTO = userService.findAllDeactiveUserDTO();
+		printUserDTOs(DeacitveUserDTO);
 		System.out.println();
-		
-		
-		System.out.println("=== 유저 삭제 후 전체 유저 로그인 상태 ===");
+
+		/*
 		userService.deleteUser(user1);
-		userLoggedDataDTOS = userService.findAll();
-		userLoggedDataDTOS.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
-		System.out.println();
-		// 꺼내서 확인하기
 
-		System.out.println("=== 유저 삭제 후 UserStatus 확인 ===");
-		userStatusRepository = context.getBean(UserStatusRepository.class);
-		userStatusRepository.loadUserStatuses().forEach(status -> System.out.println(status.getUserId()));
-		userService.printAllUsers();
+		System.out.println("=== 유저 삭제 후 ActiveUserDTo 확인 ===");
+		AcitveUserDTO = userService.findAllActiveUserDTO();
+		printUserDTOs(AcitveUserDTO);
 		System.out.println();
 
-		System.out.println("=== 유저 삭제 후 BinaryContents 확인 ===");
-		binaryContentsRepository = context.getBean(BinaryContentsRepository.class);
-		binaryContentsRepository.loadBinaryContents().forEach(binaryContent -> System.out.println("프로필 ID: " + binaryContent.getId() + ", User Id: "+ binaryContent.getReferenceId()));
-		System.out.println();
-
-
+		System.out.println("=== 유저 삭제 후 DeactiveUserDTO 확인 ===");
+		DeacitveUserDTO = userService.findAllDeactiveUserDTO();
+		printUserDTOs(DeacitveUserDTO);
+		System.out.println();*/
 	}
+
+	public static void channelTest(ConfigurableApplicationContext context) {
+		AuthService authService = context.getBean(AuthService.class);
+		ChannelService channelService = context.getBean(ChannelService.class);
+		MessageService messageService = context.getBean(MessageService.class);
+
+		LoginRequestDTO loginRequestDTO = new LoginRequestDTO("newKwon1", "pw1");
+		LoginRequestDTO loginRequestDTO2 = new LoginRequestDTO("kwon2", "pw2");
+
+		UserDTO user1 = authService.logInUser(loginRequestDTO);
+		UserDTO user2 = authService.logInUser(loginRequestDTO2);
+
+		System.out.println("\n=== Public 채널 생성===");
+		CreateChannelRequestDTO createChannelRequestDTO = new CreateChannelRequestDTO(user1.getUserId(), "권용진1의 public 채널", "권용진의 1의 public 채널입니다.");
+		ChannelDTO channel1 = channelService.createPublicChannel(createChannelRequestDTO);
+
+		createChannelRequestDTO = new CreateChannelRequestDTO(user1.getUserId(), "권용진1의 public 채널2", "권용진의 1의 public 채널2 입니다.");
+		ChannelDTO channel2 = channelService.createPublicChannel(createChannelRequestDTO);
+		System.out.println("\n=== Private 채널 생성===");
+		createChannelRequestDTO = new CreateChannelRequestDTO(user1.getUserId(), "권용진1의 private 채널", "권용진의 1의 private 채널입니다.");
+		ChannelDTO channel3 = channelService.createPrivateChannel(createChannelRequestDTO, user2);
+
+		System.out.println("\n=== 모든 Public 채널 출력 ===");
+		List<ChannelDTO> allPublicChannel = channelService.findPublicChannel();
+		printChannelDTOs(allPublicChannel);
+
+		System.out.println("\n=== user1의 모든 Private 채널 출력 ===");
+		List<ChannelDTO> allPrivateChannel = channelService.findPrivateChannel(user1);
+		printChannelDTOs(allPrivateChannel);
+
+		System.out.println("\n=== channel1에 메시지 추가===");
+		MessageCreateRequestDTO messageCreateRequestDTO = new MessageCreateRequestDTO(user1, channel1, "권용진1의 채널1에서 새로운 메세지");
+		messageService.createMessage(messageCreateRequestDTO); // 메세지가 계속 추가되서 잠시 주석처리
+		printMessageDTOs(messageService.findAllMessage());
+
+		System.out.println("\n=== channel1의 마지막 메시지 시간 출력 ===");
+		createChannelRequestDTO = new CreateChannelRequestDTO(user1.getUserId(), "권용진1의 public 채널", "권용진의 1의 public 채널입니다.");
+		channel1 = channelService.findChannelDTOByCannelId(channel1.getChannelId()); // 메세지를 더했으니까 채널 수동 업데이트
+		System.out.println(channel1.getLastMessageTime());
+		System.out.println("channel1의 메세지 개수 " + channel1.getMessageIds().size());
+
+		/*
+		System.out.println("\n*** channel1의 이름 변경 ***");
+		System.out.println("변경 전 이름: " + channel1.getChannelName());
+		ChannelNameUpdateRequestDTO channelNameUpdateRequestDTO = new ChannelNameUpdateRequestDTO(user1, channel1, "새로운 이름의 채널1");
+		channelService.updateChannelName(channelNameUpdateRequestDTO);
+		channel1 = channelService.findChannelDTOByCannelId(channel1.getChannelId());
+		System.out.println("변경 후 이름: " + channel1.getChannelName());
+
+		System.out.println("\n*** channel1의 호스트 변경 ***");
+		System.out.println("변경 전 호스트의 ID: " + channel1.getHostUserId());
+		ChannelHostUserUpdateRequestDTO channelHostUserUpdateRequestDTO = new ChannelHostUserUpdateRequestDTO(user1, user2, channel1);
+		channelService.addUserToChannel(new AddUserToChannelRequestDTO(user2, channel1));
+
+		channel1 = channelService.findChannelDTOByCannelId(channel1.getChannelId());
+
+		channelService.updateHostUser(channelHostUserUpdateRequestDTO);
+		channel1 = channelService.findChannelDTOByCannelId(channel1.getChannelId());
+		System.out.println("변경 후 호스트의 ID: " + channel1.getHostUserId());*/ //채널 삭제 테스트를 위한 주석
+
+		System.out.println("\n*** 채널 삭제 ***");
+		System.out.println("\n=== 삭제 전 모든 Public 채널 출력 ===");
+		allPublicChannel = channelService.findPublicChannel();
+		printChannelDTOs(allPublicChannel);
+
+		System.out.println("\n=== 삭제 전 모든 Message 출력 ===");
+		printMessageDTOs(messageService.findAllMessage());
+
+		System.out.println("\n=== 삭제 전 모든 ReadStatus 출력 ===");
+		channelService.findAllReadStatus().stream().forEach(readStatus -> System.out.println("유저 ID: " + readStatus.getUserId() + "채널 ID: " + readStatus.getChannelId()));
+
+		channelService.deleteChannel(new DeleteChannelRequestDTO(user1, channel1));
+
+		System.out.println("\n=== 삭제 후 모든 Public 채널 출력 ===");
+		allPublicChannel = channelService.findPublicChannel();
+		printChannelDTOs(allPublicChannel);
+
+		System.out.println("\n=== 삭제 후 모든 Message 출력 ===");
+		printMessageDTOs(messageService.findAllMessage());
+
+		System.out.println("\n=== 삭제 후 모든 ReadStatus 출력 ===");
+		channelService.findAllReadStatus().stream().forEach(readStatus -> System.out.println("유저 ID: " + readStatus.getUserId() + "채널 ID: " + readStatus.getChannelId()));
+	}
+
+	public static void messageTest(ConfigurableApplicationContext context) {
+
+		AuthService authService = context.getBean(AuthService.class);
+		ChannelService channelService = context.getBean(ChannelService.class);
+		MessageService messageService = context.getBean(MessageService.class);
+		BinaryContentsService binaryContentsService = context.getBean(BinaryContentsService.class);
+
+		LoginRequestDTO loginRequestDTO = new LoginRequestDTO("newKwon1", "pw1");
+		LoginRequestDTO loginRequestDTO2 = new LoginRequestDTO("kwon2", "pw2");
+
+		UserDTO user1 = authService.logInUser(loginRequestDTO);
+		UserDTO user2 = authService.logInUser(loginRequestDTO2);
+
+		System.out.println("\n=== Public 채널 생성===");
+		CreateChannelRequestDTO createChannelRequestDTO = new CreateChannelRequestDTO(user1.getUserId(), "권용진1의 public 채널", "권용진의 1의 public 채널입니다.");
+		ChannelDTO channel1 = channelService.createPublicChannel(createChannelRequestDTO);
+
+		createChannelRequestDTO = new CreateChannelRequestDTO(user1.getUserId(), "권용진1의 public 채널2", "권용진의 1의 public 채널2 입니다.");
+		ChannelDTO channel2 = channelService.createPublicChannel(createChannelRequestDTO);
+
+		System.out.println("\n=== channel1,2 에 메시지 추가===");
+		List<String> extraFilesPath = new ArrayList<>();
+		extraFilesPath.add(pathStaticFolder + "messageExtraFileTest1.txt");
+		extraFilesPath.add(pathStaticFolder + "basicUserProfileImage.png");
+		// 추가 첨부 파일을 선택했다는 의미
+
+		MessageCreateRequestDTO messageCreateRequestDTO = new MessageCreateRequestDTO(user1, channel1, "권용진1의 채널1에서 새로운 메세지", extraFilesPath);
+		MessageDTO messageDTO1 = messageService.createMessage(messageCreateRequestDTO); // 메세지가 계속 추가되서 잠시 주석처리
+
+		messageCreateRequestDTO = new MessageCreateRequestDTO(user1, channel2, "권용진1의 채널2에서 새로운 메세지", extraFilesPath);
+		MessageDTO messageDTO2 = messageService.createMessage(messageCreateRequestDTO); // 메세지가 계속 추가되서 잠시 주석처리
+
+		System.out.println("\n=== 전체 메시지 출력===");
+		printMessageDTOs(messageService.findAllMessage());
+		/*
+		System.out.println("\n=== channel1 메시지 출력===");
+		printMessageDTOs(messageService.findMessagesByChannelDTO(channel1));
+
+		System.out.println("\n=== channel2 메시지 출력===");
+		printMessageDTOs(messageService.findMessagesByChannelDTO(channel2));*/
+
+
+		System.out.println("\n=== 메시지1 업데이트===");
+		MessageUpdateRequestDTO messageUpdateRequestDTO1 = new MessageUpdateRequestDTO(user1, messageDTO1, "새로운 메시지 입니다.", null);
+		messageService.updateMessage(messageUpdateRequestDTO1);
+
+		System.out.println("\n=== 메시지 삭제 전 전체 메시지 출력===");
+		printMessageDTOs(messageService.findAllMessage());
+
+		System.out.println("\n=== 메시지 삭제 전 전체 바이너리 출력 출력===");
+		printBinaryContentsDTOs(binaryContentsService.findAllBinaryContentsDTOs());
+
+		System.out.println("\n=== 메시지2 삭제===");
+		DeleteMessageRequestDTO deleteMessageRequestDTO = new DeleteMessageRequestDTO(user1, messageDTO2);
+		messageService.deleteMessage(deleteMessageRequestDTO);
+
+		System.out.println("\n=== 메시지 삭제 후 전체 메시지 출력===");
+		printMessageDTOs(messageService.findAllMessage());
+
+		System.out.println("\n=== 메시지 삭제 후 전체 바이너리 출력 출력===");
+		printBinaryContentsDTOs(binaryContentsService.findAllBinaryContentsDTOs());
+		// 정상적으로 수행 됨
+	}
+
+	public static void printUserDTOs(List<UserDTO> userDTOS) {
+		//TODO 테스트 코드 추가하기
+		for (UserDTO userDTO : userDTOS) {
+			System.out.println("유저 id: " + userDTO.getUserId() + ", 이름: " + userDTO.getUserName());
+		}
+	}
+
+	public static void printChannelDTOs(List<ChannelDTO> channelDTOs) {
+		for (ChannelDTO dto : channelDTOs) {
+			StringBuilder sb = new StringBuilder();
+
+			boolean isPrivate = dto.getChannelType() == ChannelType.PRIVATE_CHANNEL;
+			sb.append(isPrivate ? "Private Channel: " : "Public Channel: ");
+			sb.append(dto.getChannelId());
+			sb.append(", 유저 수: ").append(dto.getUserIds().size());
+
+			if (isPrivate) {
+				sb.append(", 참여 User Id: ").append(dto.getUserIds());
+			}
+
+			System.out.println(sb);
+		}
+	}
+
+	public static void printMessageDTOs(List<MessageDTO> messageDTOs) {
+		for (MessageDTO dto : messageDTOs) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("메세지 id: ");
+			sb.append(dto.getMessageId());
+			sb.append(", 채널 id: ");
+			sb.append(dto.getChannelId());
+			sb.append(", 유저 id: ");
+			sb.append(dto.getAuthorId());
+
+			sb.append(", 내용 id: ");
+			sb.append(dto.getMessageContents());
+
+			sb.append(", ");
+
+			if (dto.getBinaryContentIds() != null) {
+				sb.append("바이너리 ID: ").append(dto.getBinaryContentIds());
+			}
+
+			System.out.println(sb);
+		}
+	}
+
+	public static void printBinaryContentsDTOs(List<BinaryContentsDTO> dtos) {
+		for (BinaryContentsDTO dto : dtos) {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append("Reference ID: ");
+			sb.append(dto.getReferenceId());
+			sb.append(", Type: ");
+			sb.append(dto.getBinaryContentType());
+			sb.append(", Data Size: ");
+			sb.append(dto.getBinaryData() != null ? dto.getBinaryData().length + " bytes" : "null");
+
+			System.out.println(sb);
+		}
+	}
+
+
 
 	public static void testImgBySave(byte[] imageBytes){
 
-		File outputFile = new File(pathStaticFolder + "/restored_user1_profile.jpg"); // 저장될 파일명
+		File outputFile = new File(pathStaticFolder + "/restored_user_profile.jpg"); // 저장될 파일명
 		try (FileOutputStream fos = new FileOutputStream(outputFile)) {
 			fos.write(imageBytes);
 			System.out.println("이미지 파일로 저장 완료: " + outputFile.getAbsolutePath());
@@ -134,9 +370,15 @@ public class DiscodeitApplication {
 	public static void deleteAllFilesInDataFolder() {
 		File folder = new File("./data");
 
+		// 폴더가 없으면 생성
 		if (!folder.exists()) {
-			System.out.println("data 폴더가 존재하지 않습니다.");
-			return;
+			boolean created = folder.mkdirs(); // mkdir()도 가능하지만 mkdirs()는 상위 폴더까지 생성
+			if (created) {
+				System.out.println("data 폴더가 존재하지 않아 새로 생성했습니다.");
+			} else {
+				System.out.println("data 폴더를 생성하는 데 실패했습니다.");
+				return;
+			}
 		}
 
 		File[] files = folder.listFiles();
@@ -153,5 +395,4 @@ public class DiscodeitApplication {
 			}
 		}
 	}
-
 }

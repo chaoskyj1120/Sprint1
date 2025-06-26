@@ -1,8 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.LoginRequestDTO;
-import com.sprint.mission.discodeit.dto.UserLoggedDataDTO;
-import com.sprint.mission.discodeit.dto.UserLoginDataDTO;
+import com.sprint.mission.discodeit.dto.auth_service_dto.LoginRequestDTO;
+import com.sprint.mission.discodeit.dto.user_service_dto.UserDTO;
 import com.sprint.mission.discodeit.entity.BinaryContents;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -24,33 +23,31 @@ public class BasicAuthService implements AuthService {
     private final BinaryContentsRepository binaryContentsRepository;
 
     @Override
-    public UserLoginDataDTO logInUser(LoginRequestDTO loginRequest) {
-        List<User> users = userRepository.loadUsers();
+    public UserDTO logInUser(LoginRequestDTO loginRequest) {
+        Optional<User> targetUser = userRepository.findUserByUserName(loginRequest.getUserName());
 
-        // 아이디 일치하는 유저 찾기
-        User targetUser = users.stream()
-                .filter(user -> user.getIdForLogin().equals(loginRequest.getIdForLogin()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 아이디입니다."));
+        if (targetUser.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 아이디입니다.");
+        }
 
-        // 비밀번호 검증
-        if (!targetUser.getPasswordForLogin().equals(loginRequest.getPasswordForLogin())) {
-            throw new IllegalArgumentException("비밀번호가 틀렸습니다.");
+        User user = targetUser.get();
+
+        if (!user.getPassword().equals(loginRequest.getPassword())) {
+            throw new IllegalArgumentException("일치하지 않은 비밀번호 입니다.");
         }
 
         // 로그인 성공 → UserStatus 갱신 (로그인 상태 저장)
-        UserStatus userStatus = new UserStatus(targetUser, true);
+        UserStatus userStatus = new UserStatus(user, true);
         userStatusRepository.createUserStatus(userStatus); // NOTE: 기존 상태를 대체하거나 갱신하는 방식이라면 update 방식도 고려
 
         // 프로필 이미지 조회
-        BinaryContents currentUserPicture = binaryContentsRepository.getBinaryContentsById(targetUser.getProfileId());
+        BinaryContents currentUserPicture = binaryContentsRepository.getBinaryContentsByBinaryContentsId(user.getProfileId());
 
         // DTO 반환
-        return new UserLoginDataDTO(
-                targetUser.getId(),
-                targetUser.getIdForLogin(),
-                targetUser.getUserName(),
-                targetUser.getEmail(),
+        return new UserDTO(
+                user.getId(),
+                user.getUserName(),
+                user.getEmail(),
                 currentUserPicture != null ? currentUserPicture.getBinaryData() : null
         );
     }

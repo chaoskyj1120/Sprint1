@@ -1,8 +1,6 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.UserCreateDTO;
-import com.sprint.mission.discodeit.dto.UserLoggedDataDTO;
-import com.sprint.mission.discodeit.dto.UserUpdateDTO;
+import com.sprint.mission.discodeit.dto.user_service_dto.*;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 
@@ -10,19 +8,19 @@ import java.util.List;
 
 public interface UserService {
 
-    void updateUser(UserUpdateDTO userUpdateDTO);
-    void deleteUser(User user);
-    void restoreUser(User user);
-    User createUser(UserCreateDTO userCreateDto);
+    void updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
+    void deleteUser(UserDTO userDTO);
+    void restoreUser(String userName);
+    UserDTO createUser(UserCreateRequestDTO userCreateRequestDTO);
 
-    void printUser(User user);
-    void printAllUsers();
-    void printActiveUsers();
-    void printDeactivatedUsers();
+    List<UserDTO> findAllUserDTO();
+    List<UserDTO> findAllActiveUserDTO();
+    List<UserDTO> findAllDeactiveUserDTO();
 
-    List<UserLoggedDataDTO> findAll();
-    UserLoggedDataDTO findUserById(String userIdForLogin);
+    List<UserRecentConnectionDTO> findAllConnection();
+    UserRecentConnectionDTO findUserConnectionByUserName(UserConnectionRequestDTO userConnectionRequestDTO);
 
-    void logOutUser(User user);
+    void logOutUser(UserDTO userDTO);
     UserStatus isOnline(User user);
+
 }

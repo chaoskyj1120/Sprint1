@@ -1,13 +1,8 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.LoginRequestDTO;
-import com.sprint.mission.discodeit.dto.UserLoggedDataDTO;
-import com.sprint.mission.discodeit.dto.UserLoginDataDTO;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserStatus;
-
-import java.util.List;
+import com.sprint.mission.discodeit.dto.auth_service_dto.LoginRequestDTO;
+import com.sprint.mission.discodeit.dto.user_service_dto.UserDTO;
 
 public interface AuthService {
-    UserLoginDataDTO logInUser(LoginRequestDTO loginRequestDTO);
+    UserDTO logInUser(LoginRequestDTO loginRequestDTO);
 }

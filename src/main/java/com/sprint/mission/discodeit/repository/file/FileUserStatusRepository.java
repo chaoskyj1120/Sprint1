@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.UserStatus;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -9,6 +10,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 
 @RequiredArgsConstructor
 @Repository
@@ -53,5 +55,15 @@ public class FileUserStatusRepository implements UserStatusRepository, Serializa
         List<UserStatus> userStatuses = loadUserStatuses();
         userStatuses.removeIf(userStatus -> userStatus.getUserId().equals(userId));
         saveStatuses(userStatuses);
+    }
+
+    @Override
+    public UserStatus getLastUserStatus(User user){
+        UserStatus lastStatus = loadUserStatuses().stream()
+                .filter(userStatus -> userStatus.getUserId().equals(user.getId()))
+                .reduce((first, second) -> second)
+                .orElse(null); // 또는 예외 처리
+        assert lastStatus != null;
+        return lastStatus;
     }
 }

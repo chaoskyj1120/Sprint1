@@ -1,12 +1,13 @@
 package com.sprint.mission.discodeit.service.basic;
 
+import com.sprint.mission.discodeit.dto.channel_service_dto.*;
+import com.sprint.mission.discodeit.dto.user_service_dto.UserDTO;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
-import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,35 +22,112 @@ public class BasicChannelService implements ChannelService {
     private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
 
+    // TODO 메소드 명, 필드명 한 번 고민하기
+    // 모든 반환 타입을 DTO로
+    // 컨트롤러에서 넘어오는 파라미터는 모두 DTO로
+    // Repository에서 전체를 불러와서 조회하지 않도록 필요한 경우가 아니면
+
 
     @Override
-    public Channel createChannel(User user, String channelName) {
-        if (user.getStatus() == UserActivationState.DEACTIVE) return null;
+    public ChannelDTO createPublicChannel(CreateChannelRequestDTO createChannelRequestDTO) {
 
-        Channel channel = new Channel(user, channelName);
-        channel.addUser(user);
+        User user = userRepository.findUserById(createChannelRequestDTO.getHostUserId());
 
-        List<User> usersFromFile = userRepository.loadUsers();
-        for (User userFromFile : usersFromFile) {
-            if(userFromFile.equalsId(user)) {
-                userFromFile.addChannel(channel);
-                break;
-            }
+        if (user == null) {
+           throw new IllegalArgumentException("호스트 유저를 찾을 수 없습니다.");
         }
 
+        Optional<Channel> duplicateChannel = channelRepository.findChannelByChannelName(createChannelRequestDTO.getChannelName());
+
+        if (duplicateChannel.isPresent()) {
+            System.out.println("중복 이름이 있는 채널 입니다.\n"); // 테스트를 위한 출력
+            //throw new IllegalArgumentException("이미 같은 이름의 채널이 존재합니다."); 테스트를 위한 주석추리
+            return new ChannelDTO(duplicateChannel.get());
+        }
+
+        Channel channel = new Channel(createChannelRequestDTO.getHostUserId(),
+                createChannelRequestDTO.getChannelName(),
+                createChannelRequestDTO.getDescription());
+
+        User hostUser = userRepository.findUserById(createChannelRequestDTO.getHostUserId());
+        channel.addUser(hostUser);
+        hostUser.addChannel(channel);
+
         channelRepository.createChannel(channel);
-        userRepository.saveUsers(usersFromFile);
+        userRepository.updateUser(hostUser);
 
-        return channelRepository.getChannelById(channel.getId());
+        //createOrUpdateReadStatus(hostUser, channel);
+
+        return new ChannelDTO(channel);
     }
 
     @Override
-    public void updateChannelName(User user, Channel channel, String newName) {
-        channelRepository.updateChannelName(user, channel, newName);
+    public ChannelDTO createPrivateChannel(CreateChannelRequestDTO createChannelRequestDTO, UserDTO enterUserDTO) {
+
+        User hostUser = userRepository.findUserById(createChannelRequestDTO.getHostUserId());
+
+        if (hostUser == null) {
+            throw new IllegalArgumentException("호스트 유저를 찾을 수 없습니다.");
+        }
+
+        User enterUser = userRepository.findUserById(enterUserDTO.getUserId());
+
+        if (enterUser == null) {
+            throw new IllegalArgumentException("입장할 유저를 찾을 수 없습니다.");
+        }
+
+        List<Channel> channelsInHostUser = channelRepository.findChannelsByUserId(hostUser.getId());
+        Optional<Channel> duplicateChannel = channelsInHostUser.stream().filter(ch -> ch.getUserIds().contains(enterUserDTO.getUserId())).findFirst();
+        if (duplicateChannel.isPresent()) {
+            System.out.println("중복 된 채널 입니다.\n"); // 테스트를 위한 출력
+            //throw new IllegalArgumentException("중복된 채널입니다.");// 테스트를 위한 주석추리
+            return new ChannelDTO(duplicateChannel.get());
+        }
+
+        Channel channel = new Channel(hostUser.getId());
+        channel.addUser(hostUser);
+        channel.addUser(enterUser);
+
+        hostUser.addChannel(channel);
+        enterUser.addChannel(channel);
+
+        channelRepository.createChannel(channel);
+        userRepository.updateUser(hostUser);
+        userRepository.updateUser(enterUser);
+
+        //createOrUpdateReadStatus(hostUser, channel);
+        //createOrUpdateReadStatus(enterUser, channel);
+
+        return new ChannelDTO(channel);
     }
 
     @Override
-    public void deleteChannel(User user, Channel channel) {
+    public void updateChannelName(ChannelNameUpdateRequestDTO channelNameUpdateRequestDTO) {
+        // 1. 채널의 호스티인지 검증
+        // 2. 변경된 채넝을 넘겨주기
+        User user = userRepository.findUserById(channelNameUpdateRequestDTO.getUserDTO().getUserId());
+        Channel channel = channelRepository.getChannelById(channelNameUpdateRequestDTO.getChannelDTO().getChannelId());
+
+        if (!user.equalsId(channel.getHostUserId())){
+            System.out.println("해당 채널의 호스트가 아니라 권한이 없습니다.\n"); //테스트용 나중에 throw로 바꾸기
+            return;
+        }
+
+        Optional<Channel> duplicateNewName = channelRepository.findChannelByChannelName(channelNameUpdateRequestDTO.getChannelNewName());
+        if (duplicateNewName.isPresent()){
+            System.out.println("새로운 이름과 동일한 이름을 가진 채널 이름이 이미 존재합니다. \n");
+            return;
+        }
+
+        channel.setChannelName(channelNameUpdateRequestDTO.getChannelNewName());
+        channelRepository.updateChannel(channel);
+    }
+
+    @Override
+    public void deleteChannel(DeleteChannelRequestDTO deleteChannelRequestDTO) {
+        User user = userRepository.findUserById(deleteChannelRequestDTO.getUserDTO().getUserId());
+        Channel channel = channelRepository.getChannelById(deleteChannelRequestDTO.getChannelDTO().getChannelId());
+
         if (user.getStatus() == UserActivationState.DEACTIVE || channel == null) return;
 
         if (!channel.getHostUserId().equals(user.getId())) {
@@ -64,16 +142,18 @@ public class BasicChannelService implements ChannelService {
             u.getMessageIds().removeIf(messageId -> channel.getMessageIds().contains(messageId));
         }
 
-        List<Message> messagesFromFile = messageRepository.loadMessages();
-        messagesFromFile.removeIf(messageFromFile -> channel.getMessageIds().contains(messageFromFile.getId()));
-        messageRepository.saveMessages(messagesFromFile);
 
+        readStatusRepository.deleteReadStatusByChannelId(deleteChannelRequestDTO.getChannelDTO().getChannelId());
+        messageRepository.deleteMessagesByChannelId(channel.getId());
         userRepository.saveUsers(users);
         channelRepository.deleteChannel(channel);
     }
 
     @Override
-    public void addUserToChannel(User user, Channel channel) {
+    public void addUserToChannel(AddUserToChannelRequestDTO addUserToChannelRequestDTO) {
+        User user = userRepository.findUserById(addUserToChannelRequestDTO.getUserDTO().getUserId());
+        Channel channel = channelRepository.getChannelById(addUserToChannelRequestDTO.getChannelDTO().getChannelId());
+
         if (user.getStatus() == UserActivationState.DEACTIVE){
             System.out.println("유저 상태가 비활성입니다.");
             return;
@@ -84,106 +164,109 @@ public class BasicChannelService implements ChannelService {
             return;
         }
 
-        List<User> usersFromFile = userRepository.loadUsers();
-        for (User userFromFile : usersFromFile) {
-            if (userFromFile.equalsId(user)) {
-                userFromFile.addChannel(channel); // 채널 추가
-                break; // 유저를 찾았으니 루프 종료
-            }
-        }
+        User userFromFile = userRepository.findUserById(user.getId());
+        userFromFile.addChannel(channel);
+        userRepository.updateUser(userFromFile);
 
-        userRepository.saveUsers(usersFromFile);
-        channelRepository.addUserToChannel(user, channel);
+        Channel channelFromFile = channelRepository.getChannelById(channel.getId());
+        channelFromFile.addUser(user);
+        channelRepository.updateChannel(channelFromFile);
     }
 
     @Override
-    public void leaveUserFromChannel(User user, Channel channel) {
-        if (user.getStatus() == UserActivationState.DEACTIVE || channel == null) return;
-        List<User> usersFromFile = userRepository.loadUsers();
+    public void leaveUserFromChannel(LeaveUserFromChannelRequestDTO leaveUserFromChannelRequestDTO) {
 
-        for (User userFromFile : usersFromFile) {
-            if (userFromFile.equalsId(user)) {
-                userFromFile.removeChannel(channel);
-            }
-        }
+        User userFromFile = userRepository.findUserById(leaveUserFromChannelRequestDTO.getUserDTO().getUserId());
+        Channel channelFromFile = channelRepository.getChannelById(leaveUserFromChannelRequestDTO.getChannelDTO().getChannelId());
 
-        userRepository.saveUsers(usersFromFile);
-        channelRepository.leaveUserFromChannel(user, channel);
-    }
-
-
-    @Override
-    public void updateHostUser(User oldHostUser, Channel channel, User newHostUser) {
-        channelRepository.updateHostUser(oldHostUser, channel, newHostUser);
-    }
-
-    @Override
-    public void printAllChannels() {
-        List<Channel> channels = channelRepository.loadChannels();
-        System.out.printf("전체 채널 조회, 채널 수: %d%n", channels.size());
-        channels.forEach(channel -> System.out.printf("채널 명: %s, 채널 ID: %s, 채널내 유저 수: %d%n", channel.getChannelName(), channel.getId(), channel.getUserIds().size()));
-    }
-
-    @Override
-    public void printChannel(Channel channel) {
-        if(channel == null) {
-            System.out.println("채널이 null 입니다.");
+        if (userFromFile == null || channelFromFile == null) {
+            System.out.println("유저 또는 채널을 찾을 수 없습니다.");
             return;
         }
-        System.out.printf("채널 단일 조회, 채널 이름: %s, 채널 내 유저 수 %d%n", channel.getChannelName(), channel.getUserIds().size());
-        System.out.printf("채절 주인: '%s', 채널 내 유저 들=%s%n", channel.getHostUserId(), channel.getUserIds());
-        //System.out.println(channel.toString());
+
+        userFromFile.removeChannel(channelFromFile);
+        userRepository.updateUser(userFromFile);
+        // 유저 찾기 -> 해당 채널 삭제 -> 유저 업데이트
+
+        channelFromFile.removeUser(userFromFile);
+        channelRepository.updateChannel(channelFromFile);
     }
 
     @Override
-    public void printUsersFromChannel(Channel channel) {
-        if(channel == null) {
-            System.out.println("채널이 null 입니다.");
+    public void updateHostUser(ChannelHostUserUpdateRequestDTO channelHostUserUpdateRequestDTO) {
+
+        User oldHostUser = userRepository.findUserById(channelHostUserUpdateRequestDTO.getOldHostUserDTO().getUserId());
+        User newHostUser = userRepository.findUserById(channelHostUserUpdateRequestDTO.getNewHostUserDTO().getUserId());
+        Channel channel = channelRepository.getChannelById(channelHostUserUpdateRequestDTO.getChannelDTO().getChannelId());
+
+        // 1. 진짜 호스트인가?
+        // 2. 모두 존재하는 가?
+
+        if (oldHostUser == null || newHostUser == null || channel == null) {
+            System.out.println("유저 또는 채널을 찾을 수 없습니다.");
             return;
         }
-        System.out.printf("%s 채널 내 유저 검색, 채널 내 유저 수: %d%n",
-                channel.getChannelName(), channel.getUserIds().size());
 
-        channel.getUserIds().forEach(System.out::println);
+        if (!channel.getHostUserId().equals(oldHostUser.getId())) {
+            System.out.println("채널 호스트가 아니라 변경할 수 없습니다.");
+            return;
+        }
+
+        if (!(channel.getUserIds().contains(newHostUser.getId()) && channel.getUserIds().contains(oldHostUser.getId()))) {
+            System.out.println("유저들이 해당 채널에 없어 변경할 수 없습니다.");
+            return;
+        }
+
+        channel.setHostUserId(newHostUser.getId());
+        channelRepository.updateChannel(channel);
     }
 
-
-    public Channel enterChanner(User user, Channel chanel){
+    @Override
+    public ChannelDTO enterChanner(User user, Channel chanel){
         // 채널에 가입된 유저가 채널에 입장했을 떄 / 가입이랑 다름
         // 채널을 반환해야 하나?
         // TODO ReadStatus를 추가 또는 변경
-
+        // 미구현
         return null;
     }
 
-    public void exitChanner(User user, Channel channel){
-        // 채널에 가입된 유저가 채널을 퇴장했을 때 / 탈퇴랑 다름
-        // 퇴장할 떄 업데이터 해야 함
-        updateReadStatus(user, channel);
+
+    @Override
+    public List<ChannelDTO> findPublicChannel() {
+        List<ChannelDTO> publicChannelsDTO = new ArrayList<>();
+        List<Channel> channels = channelRepository.loadChannels();
+        channels.stream()
+                .filter(channel -> channel.getChannelType().equals(ChannelType.PUBLIC_CHANNEL))
+                .forEach(channel -> {
+                    publicChannelsDTO.add(new ChannelDTO(channel));
+                });
+
+        return publicChannelsDTO;
     }
 
-    public void updateReadStatus(User user, Channel channel) {
-        List<ReadStatus> readStatuses = readStatusRepository.loadReadStatuses();
-        Set<UUID> messageIds = channel.getMessageIds();
-        UUID lastMessageId = messageIds.isEmpty() ? null : new ArrayList<>(messageIds).get(messageIds.size() - 1);
+    @Override
+    public List<ChannelDTO> findPrivateChannel(UserDTO userDTO) {
+        List<ChannelDTO> publicChannelsDTO = new ArrayList<>();
+        List<Channel> channels = channelRepository.findChannelsByUserId(userDTO.getUserId());
+        channels.stream()
+                .filter(channel -> channel.getChannelType().equals(ChannelType.PRIVATE_CHANNEL))
+                .forEach(channel -> publicChannelsDTO.add(new ChannelDTO(channel)));
 
-        Optional<ReadStatus> matchedReadStatus = readStatuses.stream()
-                .filter(readStatus -> readStatus.equalsId(user) && readStatus.equalsId(channel))
-                .findFirst();
-
-        ReadStatus targetReadStatus;
-
-        if (matchedReadStatus.isEmpty()) {
-            targetReadStatus = new ReadStatus(user.getId(), channel.getHostUserId());
-            readStatuses.add(targetReadStatus); // 새로 만든 ReadStatus를 리스트에 추가
-            readStatusRepository.createReadStatus(targetReadStatus); // 저장소에도 생성
-        } else {
-            targetReadStatus = matchedReadStatus.get();
-        }
-
-        targetReadStatus.setMessageId(lastMessageId);
-
-        readStatusRepository.saveReadStatuses(readStatuses); // 전체 리스트 저장
+        return publicChannelsDTO;
     }
+
+    @Override
+    public ChannelDTO findChannelDTOByCannelId(UUID chanelId){
+        Channel channel = channelRepository.getChannelById(chanelId);
+        return new ChannelDTO(channel);
+    }
+
+    @Override
+    public List<ReadStatus> findAllReadStatus(){
+        return readStatusRepository.loadReadStatuses();
+    }
+
+
+
 
 }

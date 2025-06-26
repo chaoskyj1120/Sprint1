@@ -1,17 +1,14 @@
 package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.dto.UserUpdateDTO;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -53,8 +50,15 @@ public class FileUserRepository implements UserRepository, Serializable {
     }
 
     @Override
-    public void updateUser(List<User> users) {
-        saveUsers(users);
+    public void updateUser(User user) {
+        List<User> users = loadUsers();
+        for (int i = 0; i < users.size(); i++) {
+            if (users.get(i).equalsId(user)) {
+                users.set(i, user); // 리스트 내부 요소를 직접 교체
+                saveUsers(users);
+                return;
+            }
+        }
     }
 
     @Override
@@ -65,7 +69,7 @@ public class FileUserRepository implements UserRepository, Serializable {
             if (userFromFile.equalsId(user)) {
                 userFromFile.setStatus(UserActivationState.DEACTIVE);
                 userFromFile.clearChannelIds();
-                usersFromFile.remove(userFromFile);
+                //usersFromFile.remove(userFromFile);
                 break; // 유저 찾았으니 루프 종료
             }
         }
@@ -74,10 +78,10 @@ public class FileUserRepository implements UserRepository, Serializable {
     }
 
     @Override
-    public void restoreUser(User user) {
+    public void restoreUser(String userName) {
         List<User> users = loadUsers();
         for (User targetUserInFile : users) {
-            if (targetUserInFile.equalsId(user)){
+            if (targetUserInFile.getUserName().equals(userName)){
                 targetUserInFile.setStatus(UserActivationState.ACTIVE);
                 break;
             }
@@ -85,11 +89,33 @@ public class FileUserRepository implements UserRepository, Serializable {
         saveUsers(users);
     }
 
+
     @Override
-    public User getUserById(UUID userId) {
+    public User findUserById(UUID userId) {
         return loadUsers().stream()
                 .filter(u -> u.equalsId(userId))
                 .findFirst()
                 .orElse(null);
+    }
+
+    @Override
+    public Optional<User> findUserByEmail(String email) {
+        return loadUsers().stream()
+                .filter(user -> user.getEmail().equals(email))
+                .findFirst();
+    }
+
+    @Override
+    public Optional<User> findUserByUserName(String username){
+        return loadUsers().stream()
+                .filter(user -> user.getUserName().equals(username))
+                .findFirst();
+    }
+
+    @Override
+    public Optional<User> findUserByUserId(UUID userId){
+        return loadUsers().stream()
+                .filter(user -> user.equalsId(userId))
+                .findFirst();
     }
 }

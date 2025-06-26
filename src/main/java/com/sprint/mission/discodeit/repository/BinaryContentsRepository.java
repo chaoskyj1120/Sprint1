@@ -11,7 +11,8 @@ public interface BinaryContentsRepository {
     void saveBinaryContents(List<BinaryContents> contentsList);
 
     void createBinaryContents(BinaryContents contents);
-    BinaryContents getBinaryContentsById(UUID binaryContentsId);
+    BinaryContents getBinaryContentsByBinaryContentsId(UUID binaryContentsId);
 
     void delete(UUID profileId);
+   List<BinaryContents> findBinaryContentsByReferenceId(UUID referenceId);
 }

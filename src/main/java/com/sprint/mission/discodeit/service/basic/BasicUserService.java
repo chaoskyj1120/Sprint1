@@ -1,14 +1,11 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.UserCreateDTO;
-import com.sprint.mission.discodeit.dto.UserLoggedDataDTO;
-import com.sprint.mission.discodeit.dto.UserUpdateDTO;
+import com.sprint.mission.discodeit.dto.user_service_dto.*;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
-import com.sprint.mission.discodeit.service.AuthService;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,8 +13,8 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor // NOTE 생성자 lombok에서 생성 final이 붙은 필드를 매개변수로 받아 생성자에서 주입
 @Service
@@ -28,230 +25,218 @@ public class BasicUserService implements UserService {
     private final UserStatusRepository userStatusRepository;
 
     @Override
-    public User createUser(UserCreateDTO userCreateDto) {
-        List<User> usersFromFile = userRepository.loadUsers();
+    public UserDTO createUser(UserCreateRequestDTO userCreateRequestDTO) {
+        final String DEFAULT_PROFILE_IMG_PATH = "./src/main/resources/static/basicUserProfileImage.png";
 
-        String idForLogin = userCreateDto.getIdForLogin();
-        String passwordForLogin = userCreateDto.getPassword();
-        String userName = userCreateDto.getName();
-        String email = userCreateDto.getEmail();
-        String profilePicturePath = userCreateDto.getProfilePicturePath();
+        String userName = userCreateRequestDTO.getUsername();
+        String password = userCreateRequestDTO.getPassword();
+        String userEmail = userCreateRequestDTO.getEmail();
+        String profilePicturePath = Optional.ofNullable(userCreateRequestDTO.getProfileImagePath())
+                .orElse(DEFAULT_PROFILE_IMG_PATH);
 
-        // 아이디 중복 검사
-        boolean isIdDuplicated = usersFromFile.stream()
-                .anyMatch(user -> user.getIdForLogin().equals(idForLogin));
-        if (isIdDuplicated) {
-            System.out.println("이미 존재하는 아이디입니다.");
-            return null;
-        }
+        validateUserNameNotDuplicated(userName);
+        validateUserEmailNotDuplicated(userEmail);
 
-        // 이름 중복 검사
-        boolean isNameDuplicated = usersFromFile.stream()
-                .anyMatch(user -> user.getUserName().equals(userName));
-        if (isNameDuplicated) {
-            System.out.println("이미 존재하는 이름입니다.");
-            return null;
-        }
-
-        // 이메일 중복 검사
-        boolean isEmailDuplicated = usersFromFile.stream()
-                .anyMatch(user -> user.getEmail().equals(email));
-        if (isEmailDuplicated) {
-            System.out.println("이미 존재하는 이메일입니다.");
-            return null;
-        }
-
-        // 프로필 이미지 읽기
-        byte[] profileImageBytes = null;
-        if (profilePicturePath != null && !profilePicturePath.isEmpty()) {
-            File imageFile = new File(profilePicturePath);
-            try (FileInputStream fis = new FileInputStream(imageFile)) {
-                profileImageBytes = fis.readAllBytes();
-            } catch (IOException e) {
-                System.out.println("프로필 이미지를 읽는 데 실패했습니다: " + e.getMessage());
-                return null;
-            }
+        byte[] profileImageBytes;
+        try (FileInputStream fis = new FileInputStream(profilePicturePath)) {
+            profileImageBytes = fis.readAllBytes();
+        } catch (IOException e) {
+            throw new RuntimeException("프로필 이미지를 읽는 데 실패했습니다: " + e.getMessage(), e);
         }
 
         BinaryContents profileImg = new BinaryContents(profilePicturePath, BinaryContentType.USER_PROFILE_IMAGE, profileImageBytes);
-        // 사용자 생성
-        User user = new User(idForLogin, passwordForLogin, userName, email, profileImg.getId());
+
+        User user = new User(userName, password, userEmail, profileImg.getId());
         userRepository.createUser(user);
 
         profileImg.setReferenceId(user.getId());
         binaryContentsRepository.createBinaryContents(profileImg);
 
-        UserStatus userStatus = new UserStatus(user, false); // 새로 생성한 것을 저장 해야 하는데
+        UserStatus userStatus = new UserStatus(user, false); // 로그인 상태는 false
         userStatusRepository.createUserStatus(userStatus);
 
-        return userRepository.getUserById(user.getId());
+        return new UserDTO(
+                user.getId(),
+                user.getUserName(),
+                user.getEmail(),
+                profileImageBytes // 프로필 이미지 바이트 직접 반환
+        );
     }
 
+
     @Override
-    public void updateUser(UserUpdateDTO userUpdateDTO) {
-        List<User> users = userRepository.loadUsers();
+    public void updateUser(UserUpdateRequestDTO userUpdateRequestDTO) {
 
-        User targetUser = users.stream()
-                .filter(userFromFile -> userFromFile.equalsId(userUpdateDTO.getUserId()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("해당 유저 없음"));
+        User targetUser = userRepository.findUserById(userUpdateRequestDTO.getUserId());
 
-        targetUser.setIdForLogin(userUpdateDTO.getNewUserIdForLogin());
-        targetUser.setUserName(userUpdateDTO.getNewName());
-        targetUser.setPasswordForLogin(userUpdateDTO.getNewPassword());;
-        targetUser.setEmail(userUpdateDTO.getNewEmail());
+        isExistUserByUserId(userUpdateRequestDTO.getUserId());
+
+        targetUser.setUserName(userUpdateRequestDTO.getNewUserName());
+        targetUser.setEmail(userUpdateRequestDTO.getNewEmail());
 
         // 유저의 프로필아이디를 가진 사진의 패스가 같아야함
 
-
-        boolean isSameProfile = binaryContentsRepository.loadBinaryContents().stream()
-                .anyMatch(binaryContent -> binaryContent.equalsId(targetUser.getProfileId())
-                        && binaryContent.getBinaryContentsPath().equals(userUpdateDTO.getNewProfileImagePath()));
-
-        if (!isSameProfile) {
+        if (!compareProfile(userUpdateRequestDTO)) {
             // 프로필 이미지 읽기
             byte[] profileImageBytes = null;
-            if (userUpdateDTO.getNewProfileImagePath() != null && !userUpdateDTO.getNewProfileImagePath().isEmpty()) {
-                File imageFile = new File(userUpdateDTO.getNewProfileImagePath());
+            if (userUpdateRequestDTO.getNewProfileImagePath() != null && !userUpdateRequestDTO.getNewProfileImagePath().isEmpty()) {
+                File imageFile = new File(userUpdateRequestDTO.getNewProfileImagePath());
                 try (FileInputStream fis = new FileInputStream(imageFile)) {
                     profileImageBytes = fis.readAllBytes();
                 } catch (IOException e) {
                     System.out.println("프로필 이미지를 읽는 데 실패했습니다: " + e.getMessage());
-                    userRepository.saveUsers(users);
+                    userRepository.updateUser(targetUser);
                     return;
                 }
             }
-            BinaryContents profileImg = new BinaryContents(userUpdateDTO.getNewProfileImagePath(), BinaryContentType.USER_PROFILE_IMAGE, profileImageBytes);
+            BinaryContents profileImg = new BinaryContents(userUpdateRequestDTO.getNewProfileImagePath(), BinaryContentType.USER_PROFILE_IMAGE, profileImageBytes);
             profileImg.setReferenceId(targetUser.getId());
             binaryContentsRepository.delete(targetUser.getProfileId());
             targetUser.setProfileId(profileImg.getId());
             binaryContentsRepository.createBinaryContents(profileImg);
         }
         
-        userRepository.saveUsers(users);
+        userRepository.updateUser(targetUser);
     }
 
     @Override
-    public void deleteUser(User user) {
+    public void deleteUser(UserDTO userDTO) {
 
-        List<Channel> channelsFromFile = channelRepository.loadChannels();
+        Optional<User> userFromFile = userRepository.findUserByUserId(userDTO.getUserId());
 
-        boolean hasHostChannel = channelsFromFile.stream()
-                .anyMatch(channel -> channel.getHostUserId().equals(user.getId()));
-
-        if (hasHostChannel) {
-            // 채널 주인이란 의미이므로 return
-            System.out.println("호스트인 채널이 있어서 유저를 삭제할 수 없습니다.");
-            return;
-        }
-
-        User userFromFile = userRepository.getUserById(user.getId());
-
-        if (userFromFile == null) {
+        if (userFromFile.isEmpty()){
             System.out.println("해당 유저가 존재하지 않습니다.");
             return;
         }
-
-        for (Channel channelFromFile : channelsFromFile) {
-            if(userFromFile.getChannelIds().contains(channelFromFile.getId())){
-                channelFromFile.removeUser(user);
-            }
-        }
-
+        User user = userFromFile.get();
         /*
         [ ] 관련된 도메인도 같이 삭제합니다.
         BinaryContent(프로필), UserStatus
         */
-        binaryContentsRepository.delete(userFromFile.getProfileId());
-        userStatusRepository.delete(userFromFile.getId());
+        binaryContentsRepository.delete(user.getProfileId());
+        userStatusRepository.delete(user.getId());
 
-        channelRepository.saveChannels(channelsFromFile);
+        channelRepository.deleteUserFromChannels(user);
         userRepository.deleteUser(user);
     }
 
     @Override
-    public void restoreUser(User user) {
-        userRepository.restoreUser(user);
+    public void restoreUser(String userName) {
+        isExistUserByUserName(userName);
+        userRepository.restoreUser(userName);
     }
 
     @Override
-    public void printActiveUsers(){
-        List<User> data = userRepository.loadUsers();
-
-        System.out.printf("전체 유저 조회(탈퇴 유저 미포함), 총 유저 수: %d \n", (data.stream()
-                .filter(user -> user.getStatus().equals(UserActivationState.ACTIVE))).toList().size());
-        data.stream()
-                .filter(user -> user.getStatus().equals(UserActivationState.ACTIVE))
-                .forEach(user -> System.out.printf("유저 이름: '%s', 유저 ID: '%s'\n", user.getUserName(), user.getId()));
+    public UserRecentConnectionDTO findUserConnectionByUserName(UserConnectionRequestDTO userConnectionRequestDTO){
+        //User user로 받으면 좋을것같다? -> 컨트롤러가 User를 들고 있을 수 없으니 할 수 없음, userName하나만을 가지고 있는 DTO를 사용
+        isExistUserByUserName(userConnectionRequestDTO.getUserName());
+        return findAllConnection().stream().filter(u -> u.getUserName().equals(userConnectionRequestDTO.getUserName())).findFirst().orElse(null);
     }
 
     @Override
-    public void printUser(User user) {
-        System.out.print("단일 유저 조회\n");
-        System.out.printf("유저 이름: '%s', 유저 ID: '%s'\n", user.getUserName(), user.getId());
-    }
-
-    @Override
-    public void printAllUsers() {
-        List<User> data = userRepository.loadUsers();
-        System.out.printf("전체 유저 조회(탈퇴 유저 포함), 유저 수: %d \n", data.size());
-        data
-                .forEach(user -> System.out.printf("유저 이름: '%s', 유저 ID: '%s'\n", user.getUserName(), user.getId()));
-    }
-
-    @Override
-    public void printDeactivatedUsers() {
-        List<User> data = userRepository.loadUsers();
-        System.out.printf("탈퇴 유저 조회, 총 유저 수: %d \n", (data.stream()
-                .filter(user -> user.getStatus().equals(UserActivationState.DEACTIVE))).toList().size());
-        data.stream()
-                .filter(user -> user.getStatus().equals(UserActivationState.DEACTIVE)) // getStatus는 boolean 값이므로 equal 생략
-                .forEach(user -> System.out.printf("유저 이름: '%s', 유저 ID: '%s'\n", user.getUserName(), user.getId()));
-    }
-
-
-    @Override
-    public UserLoggedDataDTO findUserById(String userIdForLogin){
-        return findAll().stream().filter(u -> u.getUserId().equals(userIdForLogin)).findFirst().orElse(null);
-    }
-
-    @Override
-    public void logOutUser(User user){
+    public void logOutUser(UserDTO userDTO){
+        isExistUserByUserName(userDTO.getUserName());
+        User user = userRepository.findUserById(userDTO.getUserId());
         UserStatus userStatus = new UserStatus(user, false); // 새로 생성한 것을 저장 해야 하는데
         userStatusRepository.createUserStatus(userStatus);
     }
 
     @Override
     public UserStatus isOnline(User user){
-
-        UserStatus lastStatus = userStatusRepository.loadUserStatuses().stream()
-                .filter(userStatus -> userStatus.getUserId().equals(user.getId()))
-                .reduce((first, second) -> second)
-                .orElse(null); // 또는 예외 처리
-
-        assert lastStatus != null;
-        return lastStatus;
-
-        // true는 접속 시간
-        // faisl는
+        // 검증로직은 따로 필요없다.
+        return userStatusRepository.getLastUserStatus(user);
     }
 
     @Override
-    public List<UserLoggedDataDTO> findAll(){
+    public List<UserRecentConnectionDTO> findAllConnection(){
         /*
         UserStatus
         사용자 별 마지막으로 확인된 접속 시간을 표현하는 도메인 모델입니다. 사용자의 온라인 상태를 확인하기 위해 활용합니다.
         마지막 접속 시간을 기준으로 현재 로그인한 유저로 판단할 수 있는 메소드를 정의하세요.
         마지막 접속 시간이 현재 시간으로부터 5분 이내이면 현재 접속 중인 유저로 간주합니다.*/
 
-        List<UserLoggedDataDTO> userStatuses = new ArrayList<>();
+        List<UserRecentConnectionDTO> userStatuses = new ArrayList<>();
         List<User> usersFromFile = userRepository.loadUsers();
+
 
         for (User user : usersFromFile) {
             UserStatus userStatusFromCurrentUser = isOnline(user);
-            userStatuses.add(new UserLoggedDataDTO(user.getId(), user.getIdForLogin(), user.getUserName(), userStatusFromCurrentUser.getLoggedIn()));
+            userStatuses.add(new UserRecentConnectionDTO(user.getId(), user.getUserName(), userStatusFromCurrentUser.getLoggedIn()));
         }
 
         return userStatuses;
+    }
+
+    @Override
+    public List<UserDTO> findAllUserDTO(){
+        List<User> usersFromFile = userRepository.loadUsers();
+        List<UserDTO> userDTOs = new ArrayList<>();
+        for (User user : usersFromFile) {
+            userDTOs.add(new UserDTO(user.getId(), user.getUserName(), user.getEmail(), binaryContentsRepository.getBinaryContentsByBinaryContentsId(user.getProfileId()).getBinaryData()));
+        }
+        return userDTOs;
+    }
+
+    @Override
+    public List<UserDTO> findAllActiveUserDTO() {
+        return userRepository.loadUsers().stream()
+                .filter(user -> user.getStatus() == UserActivationState.ACTIVE)
+                .map(user -> new UserDTO(
+                        user.getId(),
+                        user.getUserName(),
+                        user.getEmail(),
+                        binaryContentsRepository
+                                .getBinaryContentsByBinaryContentsId(user.getProfileId())
+                                .getBinaryData()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserDTO> findAllDeactiveUserDTO() {
+        return userRepository.loadUsers().stream()
+                .filter(user -> user.getStatus() == UserActivationState.DEACTIVE)
+                .map(user -> new UserDTO(
+                        user.getId(),
+                        user.getUserName(),
+                        user.getEmail(),
+                        null //삭제된 유저이므로 사진이 없음
+                ))
+                .collect(Collectors.toList());
+    }
+
+
+    private void validateUserNameNotDuplicated(String userName) {
+        if (userRepository.findUserByUserName(userName).isPresent()) {
+            throw new IllegalStateException("이미 존재하는 사용자 이름입니다: " + userName);
+        }
+    }
+
+    private void validateUserEmailNotDuplicated(String userEmail) {
+        if (userRepository.findUserByUserName(userEmail).isPresent()) {
+            throw new IllegalStateException("이미 존재하는 사용되고 있는 이메일입니다: " + userEmail);
+        }
+    }
+
+    private void isExistUserByUserName(String userName) {
+        userRepository.findUserByUserName(userName)
+                .orElseThrow(() -> new NoSuchElementException("User not found: " + userName));
+    }
+
+    private void isExistUserByUserEmail(String userEmail) {
+        userRepository.findUserByUserName(userEmail)
+                .orElseThrow(() -> new NoSuchElementException("User not found: " + userEmail));
+    }
+
+    private void isExistUserByUserId(UUID userId) {
+        userRepository.findUserByUserId(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
+    }
+
+    private boolean compareProfile(UserUpdateRequestDTO userUpdateRequestDTO){
+        User targetUser = userRepository.findUserById(userUpdateRequestDTO.getUserId());
+        BinaryContents profileImg = binaryContentsRepository.getBinaryContentsByBinaryContentsId(targetUser.getProfileId());
+
+        return profileImg.getBinaryContentsPath().equals(userUpdateRequestDTO.getNewProfileImagePath());
     }
 }

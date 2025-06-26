@@ -1,18 +1,24 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.entity.UserActivationState;
+import com.sprint.mission.discodeit.dto.channel_service_dto.ChannelDTO;
+import com.sprint.mission.discodeit.dto.message_service_dto.DeleteMessageRequestDTO;
+import com.sprint.mission.discodeit.dto.message_service_dto.MessageCreateRequestDTO;
+import com.sprint.mission.discodeit.dto.message_service_dto.MessageDTO;
+import com.sprint.mission.discodeit.dto.message_service_dto.MessageUpdateRequestDTO;
+import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.file.FileUserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -21,9 +27,15 @@ public class BasicMessageService implements MessageService {
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
     private final MessageRepository messageRepository;
+    private final BinaryContentsRepository binaryContentsRepository;
 
     @Override
-    public Message createMessage(User user, Channel channel, String contents) {
+    public MessageDTO createMessage(MessageCreateRequestDTO messageCreateRequestDTO) {
+
+        Channel channel = channelRepository.getChannelById(messageCreateRequestDTO.getChannelDTO().getChannelId());
+        User user = userRepository.findUserById(messageCreateRequestDTO.getUserDTO().getUserId());
+        String contents = messageCreateRequestDTO.getMessageContents();
+
         if(channel == null) {
             //System.out.println("채널이 null 입니다.");
             return null;
@@ -35,94 +47,139 @@ public class BasicMessageService implements MessageService {
 
         Message newMessage = new Message(user, channel, contents);
         newMessage.registerMessageToUserAndChannel(user, channel);
+
+        List<BinaryContents> binaryContentsList;
+
+        if (messageCreateRequestDTO.getExtraContentsFilePath() != null){
+            // 메세지 첨부 파일이 있다는 의미
+            // 첨부 파일 바이트화 -> 바이너리 컨텐츠 추가 -> 메세지의 바이너리컨텐츠 ids에 해당 바이너리 컨튼체으 객체의 아이디 추가
+            // 유저 프로필 참고하기
+
+            for (String filePath : messageCreateRequestDTO.getExtraContentsFilePath()) {
+                byte[] extraFileBytes = null;
+                try (FileInputStream fis = new FileInputStream(filePath)) {
+                    extraFileBytes = fis.readAllBytes();
+                } catch (IOException e) {
+                    throw new RuntimeException("바이트화가 불가능합니다: " + e.getMessage(), e);
+                }
+
+                BinaryContents newBinaryContent = new BinaryContents(filePath, BinaryContentType.USER_PROFILE_IMAGE, extraFileBytes);
+                newMessage.addBinaryContentsId(newBinaryContent.getId());
+                newBinaryContent.setReferenceId(newMessage.getId());
+
+                binaryContentsRepository.createBinaryContents(newBinaryContent);
+            }
+        }
+
+        //binaryContentsList = binaryContentsRepository.loadBinaryContents();
+        //System.out.println(binaryContentsList.size());
         messageRepository.createMessage(newMessage);
 
-        List<User> usersFromFile = userRepository.loadUsers();
-        usersFromFile.stream().filter(userFromFile -> userFromFile.equalsId(user))
-                .forEach(userFromFile -> userFromFile.addMessage(newMessage));
+        User updateMessageUser = userRepository.findUserById(newMessage.getAuthorId());
+        updateMessageUser.addMessage(newMessage);
+        userRepository.updateUser(updateMessageUser);
 
-        List<Channel> channelsFromFile = channelRepository.loadChannels();
-        channelsFromFile.stream().filter(channelFromFile -> channelFromFile.equalsId(channel))
-                .forEach(channelFromFile -> channelFromFile.addMessage(newMessage));
+        Channel UpdateMessageChannel = channelRepository.getChannelById(newMessage.getChannelId());
+        UpdateMessageChannel.addMessage(newMessage);
+        channelRepository.updateChannel(UpdateMessageChannel);
 
-
-        return messageRepository.getMessageById(newMessage.getId());
+        return new MessageDTO(newMessage);
     }
 
     @Override
-    public void deleteMessage(User user, Message message) {
-        if(message == null) {
+    public void deleteMessage(DeleteMessageRequestDTO deleteMessageRequestDTO) {
+
+        User user = userRepository.findUserById(deleteMessageRequestDTO.getUserDTO().getUserId());
+        Message message = messageRepository.findMessageByMessageId(deleteMessageRequestDTO.getMessageDTO().getMessageId());
+        Channel channel = channelRepository.getChannelById(message.getChannelId());
+
+
+        if (!user.getId().equals(message.getAuthorId())) {
             return;
         }
-        if(user.getStatus().equals(UserActivationState.DEACTIVE)) {
+
+        if (channel == null) {
             return;
         }
-        if (!user.getId().equals(message.getId())) {
+
+        user.getMessageIds().remove(message.getId());
+        channel.getMessageIds().remove(message.getId());
+
+
+        for (UUID binaryContentId : message.getBinaryContentsIds()) {
+            binaryContentsRepository.delete(binaryContentId);
+        }
+
+        userRepository.updateUser(user);
+        channelRepository.updateChannel(channel);
+
+        messageRepository.deleteMessageByMessageId(message.getId());
+    }
+
+    @Override
+    public List<MessageDTO> findAllMessage(){
+        List<MessageDTO> messageDTOList = new ArrayList<>();
+
+        for (Message message : messageRepository.loadMessages()){
+            messageDTOList.add(new MessageDTO(message));
+        }
+        return messageDTOList;
+    }
+
+    @Override
+    public List<MessageDTO> findMessagesByChannelDTO(ChannelDTO channelDTO){
+        List<MessageDTO> messageDTOList = new ArrayList<>();
+        for (Message message : messageRepository.findMessagesByChannelId(channelDTO.getChannelId())){
+            messageDTOList.add(new MessageDTO(message));
+        }
+        return messageDTOList;
+    }
+
+
+    @Override
+    public void updateMessage(MessageUpdateRequestDTO messageUpdateRequestDTO) {
+        Message message = messageRepository.findMessageByMessageId(messageUpdateRequestDTO.getMessageDTO().getMessageId());
+        User user = userRepository.findUserById(messageUpdateRequestDTO.getUserDTO().getUserId());
+        if (message == null) {
+            //System.out.println("메세지가 null 입니다.");
+            return;
+        }
+        if (user.getStatus().equals(UserActivationState.DEACTIVE)) {
+            //System.out.printf("'%s' 비활성 상태라 메세지를 업데이트할 수 없습니다.", user.getUserName());
+            return;
+        }
+        if (!user.getId().equals(message.getAuthorId())) {
+            //System.out.printf("'%s'는 '%s' 메시지의 주인이 아닙니다. 따라서 해당 메시지를 '%s'로 바꾸는 것은 불가능합니다.", user.getUserName(), message.getMessageContents(), newContents);
             return;
         }
 
-        List<User> usersFromFile = userRepository.loadUsers();
-        List<Channel> channelsFromFile = channelRepository.loadChannels();
+        message.setMessageContents(messageUpdateRequestDTO.getNewContent());
 
-        usersFromFile.forEach(userFromFile -> userFromFile.getMessageIds()
-                .removeIf(messageId -> messageId.equals(message.getId())));
-
-        channelsFromFile.forEach(channelFromFile -> channelFromFile.getMessageIds().
-                removeIf(messageId -> messageId.equals(message.getId())));
-
-
-        userRepository.saveUsers(usersFromFile);
-        channelRepository.saveChannels(channelsFromFile);
-
-        messageRepository.deleteMessage(user, message);
-    }
-
-    @Override
-    public void updateMessage(User user, Message message, String newContents) {
-        messageRepository.updateMessage(user, message, newContents);
-    }
-
-    @Override
-    public void printMessagesByChannel(Channel channel) {
-        if(channel == null) {
-            System.out.println("채널이 null 입니다.");
-            return;
+        for (UUID binaryContentId : message.getBinaryContentsIds()) {
+            binaryContentsRepository.delete(binaryContentId);
         }
-        List<Message> messagesFromFile = messageRepository.loadMessages();
-        System.out.printf("%s 채널의 메세지를 조회합니다. 메시지 수: %d%n",
-                channel.getChannelName(), channel.getMessageIds().size());
+        message.clearBinaryContentsId();
 
-        messagesFromFile.stream()
-                .filter(message -> channel.getMessageIds().contains(message.getId()))
-                .forEach(message -> System.out.printf("작성자: %s, 내용: %s%n",
-                        message.getAuthorId(), message.getMessageContents()));
-    }
+        if (messageUpdateRequestDTO.getExtraContentsFilePath() != null){
+            // 메세지 첨부 파일이 있다는 의미
+            // 첨부 파일 바이트화 -> 바이너리 컨텐츠 추가 -> 메세지의 바이너리컨텐츠 ids에 해당 바이너리 컨튼체으 객체의 아이디 추가
+            // 유저 프로필 참고하기
 
-    @Override
-    public void printMessage(Message message) {
-        if(message == null) {
-            System.out.println("메세지가 null 입니다.");
-            return;
+            for (String filePath : messageUpdateRequestDTO.getExtraContentsFilePath()) {
+                byte[] extraFileBytes = null;
+                try (FileInputStream fis = new FileInputStream(filePath)) {
+                    extraFileBytes = fis.readAllBytes();
+                } catch (IOException e) {
+                    throw new RuntimeException("바이트화가 불가능합니다: " + e.getMessage(), e);
+                }
+
+                BinaryContents extraFile = new BinaryContents(filePath, BinaryContentType.USER_PROFILE_IMAGE, extraFileBytes);
+                message.addBinaryContentsId(extraFile.getId());
+
+                binaryContentsRepository.createBinaryContents(extraFile);
+            }
         }
-        System.out.printf("메세지 ID: %s 의 정보를 출력합니다.%n", message.getId());
-        System.out.println(message.toString());
-    }
 
-    @Override
-    public void printAllMessage() {
-        List<Message> messageFromFile = messageRepository.loadMessages();
-        System.out.printf("전체 메시지를 출력합니다. 메세지 수: %d%n", messageFromFile.size());
-
-        messageFromFile
-                .forEach(message -> System.out.printf("작성자: %s, 내용: %s%n", message.getAuthorId(), message.getMessageContents()));
-    }
-
-    @Override
-    public void printAllMessageByUser(User user) {
-        // 이렇게 하면 최신 저장된 메시지가 출력되지는 않을 것 같은데
-        System.out.printf("%s이 작성한 모든 메세지를 출력합니다. 메시지 수: %d%n",
-                user.getUserName(), user.getMessageIds().size());
-        user.getMessageIds()
-                .forEach(message -> System.out.printf("메시지: %s%n", message));
+        messageRepository.updateMessage(message);
     }
 }

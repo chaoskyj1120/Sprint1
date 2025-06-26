@@ -1,10 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.channel_service_dto.ChannelDTO;
-import com.sprint.mission.discodeit.dto.message_service_dto.DeleteMessageRequestDTO;
-import com.sprint.mission.discodeit.dto.message_service_dto.MessageCreateRequestDTO;
-import com.sprint.mission.discodeit.dto.message_service_dto.MessageDTO;
-import com.sprint.mission.discodeit.dto.message_service_dto.MessageUpdateRequestDTO;
+import com.sprint.mission.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
+import com.sprint.mission.discodeit.dto.message_service_dto.MessageCreateRequestDto;
+import com.sprint.mission.discodeit.dto.message_service_dto.MessageResponseDto;
+import com.sprint.mission.discodeit.dto.message_service_dto.MessageUpdateRequestDto;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
@@ -30,10 +29,10 @@ public class BasicMessageService implements MessageService {
     private final BinaryContentsRepository binaryContentsRepository;
 
     @Override
-    public MessageDTO createMessage(MessageCreateRequestDTO messageCreateRequestDTO) {
+    public MessageResponseDto createMessage(MessageCreateRequestDto messageCreateRequestDTO) {
 
-        Channel channel = channelRepository.getChannelById(messageCreateRequestDTO.getChannelDTO().getChannelId());
-        User user = userRepository.findUserById(messageCreateRequestDTO.getUserDTO().getUserId());
+        Channel channel = channelRepository.getChannelById(messageCreateRequestDTO.getChannelResponseDto().getChannelId());
+        User user = userRepository.findUserById(messageCreateRequestDTO.getUserResponseDto().getUserId());
         String contents = messageCreateRequestDTO.getMessageContents();
 
         if(channel == null) {
@@ -83,14 +82,14 @@ public class BasicMessageService implements MessageService {
         UpdateMessageChannel.addMessage(newMessage);
         channelRepository.updateChannel(UpdateMessageChannel);
 
-        return new MessageDTO(newMessage);
+        return new MessageResponseDto(newMessage);
     }
 
     @Override
-    public void deleteMessage(DeleteMessageRequestDTO deleteMessageRequestDTO) {
+    public void deleteMessage(DeleteMessageRequestDto deleteMessageRequestDTO) {
 
-        User user = userRepository.findUserById(deleteMessageRequestDTO.getUserDTO().getUserId());
-        Message message = messageRepository.findMessageByMessageId(deleteMessageRequestDTO.getMessageDTO().getMessageId());
+        User user = userRepository.findUserById(deleteMessageRequestDTO.getUserResponseDto().getUserId());
+        Message message = messageRepository.findMessageByMessageId(deleteMessageRequestDTO.getMessageResponseDTO().getMessageId());
         Channel channel = channelRepository.getChannelById(message.getChannelId());
 
 
@@ -117,40 +116,40 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public List<MessageDTO> findAllMessage(){
-        List<MessageDTO> messageDTOList = new ArrayList<>();
+    public List<MessageResponseDto> findAllMessage(){
+        List<MessageResponseDto> messageResponseDtoList = new ArrayList<>();
 
         for (Message message : messageRepository.loadMessages()){
-            messageDTOList.add(new MessageDTO(message));
+            messageResponseDtoList.add(new MessageResponseDto(message));
         }
-        return messageDTOList;
+        return messageResponseDtoList;
     }
 
     @Override
-    public List<MessageDTO> findMessagesByChannelDTO(ChannelDTO channelDTO){
-        List<MessageDTO> messageDTOList = new ArrayList<>();
-        for (Message message : messageRepository.findMessagesByChannelId(channelDTO.getChannelId())){
-            messageDTOList.add(new MessageDTO(message));
+    public List<MessageResponseDto> findMessagesByChannelId(UUID channelId){
+        List<MessageResponseDto> messageResponseDtoList = new ArrayList<>();
+        for (Message message : messageRepository.findMessagesByChannelId(channelId)){
+            messageResponseDtoList.add(new MessageResponseDto(message));
         }
-        return messageDTOList;
+        return messageResponseDtoList;
     }
 
 
     @Override
-    public void updateMessage(MessageUpdateRequestDTO messageUpdateRequestDTO) {
-        Message message = messageRepository.findMessageByMessageId(messageUpdateRequestDTO.getMessageDTO().getMessageId());
-        User user = userRepository.findUserById(messageUpdateRequestDTO.getUserDTO().getUserId());
+    public MessageResponseDto updateMessage(MessageUpdateRequestDto messageUpdateRequestDTO) {
+        Message message = messageRepository.findMessageByMessageId(messageUpdateRequestDTO.getMessageResponseDTO().getMessageId());
+        User user = userRepository.findUserById(messageUpdateRequestDTO.getUserResponseDto().getUserId());
         if (message == null) {
             //System.out.println("메세지가 null 입니다.");
-            return;
+            return null;
         }
         if (user.getStatus().equals(UserActivationState.DEACTIVE)) {
             //System.out.printf("'%s' 비활성 상태라 메세지를 업데이트할 수 없습니다.", user.getUserName());
-            return;
+            return null;
         }
         if (!user.getId().equals(message.getAuthorId())) {
             //System.out.printf("'%s'는 '%s' 메시지의 주인이 아닙니다. 따라서 해당 메시지를 '%s'로 바꾸는 것은 불가능합니다.", user.getUserName(), message.getMessageContents(), newContents);
-            return;
+            return null ;
         }
 
         message.setMessageContents(messageUpdateRequestDTO.getNewContent());
@@ -181,5 +180,6 @@ public class BasicMessageService implements MessageService {
         }
 
         messageRepository.updateMessage(message);
+        return new MessageResponseDto(message);
     }
 }

@@ -8,19 +8,19 @@ import java.util.List;
 
 public interface UserService {
 
-    void updateUser(UserUpdateRequestDTO userUpdateRequestDTO);
-    void deleteUser(UserDTO userDTO);
+    void updateUser(UserUpdateRequestDto userUpdateRequestDTO);
+    void deleteUser(UserResponseDto userResponseDto);
     void restoreUser(String userName);
-    UserDTO createUser(UserCreateRequestDTO userCreateRequestDTO);
+    UserResponseDto createUser(UserCreateRequestDto userCreateRequestDTO);
 
-    List<UserDTO> findAllUserDTO();
-    List<UserDTO> findAllActiveUserDTO();
-    List<UserDTO> findAllDeactiveUserDTO();
+    List<UserResponseDto> findAllUserDTO();
+    List<UserResponseDto> findAllActiveUserDTO();
+    List<UserResponseDto> findAllDeactiveUserDTO();
 
-    List<UserRecentConnectionDTO> findAllConnection();
-    UserRecentConnectionDTO findUserConnectionByUserName(UserConnectionRequestDTO userConnectionRequestDTO);
+    List<UserRecentConnectionDto> findAllConnection();
+    UserRecentConnectionDto findUserConnectionByUserName(UserConnectionRequestDto userConnectionRequestDTO);
 
-    void logOutUser(UserDTO userDTO);
+    void logOutUser(UserResponseDto userResponseDto);
     UserStatus isOnline(User user);
 
 }

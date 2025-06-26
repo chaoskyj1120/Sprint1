@@ -5,12 +5,12 @@ import lombok.Getter;
 import java.util.UUID;
 
 @Getter
-public class UserRecentConnectionDTO {
+public class UserRecentConnectionDto {
     private final UUID id;
     private final String userName;
     private final String isLoggedIn;
 
-    public UserRecentConnectionDTO(UUID id, String userName, String loggedIn) {
+    public UserRecentConnectionDto(UUID id, String userName, String loggedIn) {
         this.id = id;
         this.userName = userName;
         this.isLoggedIn = loggedIn;

@@ -76,7 +76,7 @@ public class FileReadStatusRepository implements ReadStatusRepository, Serializa
     }
 
     @Override
-    public ReadStatus findReadStatusesByreadStatusId(UUID readStatusId){
+    public ReadStatus findReadStatusesByReadStatusId(UUID readStatusId){
         return loadReadStatuses().stream()
                 .filter(readStatus -> readStatus.getId().equals(readStatusId))
                 .findFirst().orElse(null);

@@ -7,12 +7,12 @@ import lombok.Getter;
 import java.util.UUID;
 
 @Getter
-public class BinaryContentsDTO {
+public class BinaryContentsResponseDto {
     private UUID referenceId;
     private final BinaryContentType binaryContentType;
     private final byte[] binaryData;
 
-    public BinaryContentsDTO(BinaryContents binaryContents) {
+    public BinaryContentsResponseDto(BinaryContents binaryContents) {
         this.binaryContentType = binaryContents.getBinaryContentType();
         this.binaryData = binaryContents.getBinaryData();
         this.referenceId = binaryContents.getReferenceId();

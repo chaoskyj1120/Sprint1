@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.channel_service_dto.*;
-import com.sprint.mission.discodeit.dto.user_service_dto.UserDTO;
+import com.sprint.mission.discodeit.dto.user_service_dto.UserResponseDto;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
@@ -11,22 +11,22 @@ import java.util.UUID;
 
 public interface ChannelService {
 
-    ChannelDTO createPublicChannel(CreateChannelRequestDTO createChannelRequestDTO);
-    ChannelDTO createPrivateChannel(CreateChannelRequestDTO createChannelRequestDTO, UserDTO enterUserDTO);
+    ChannelResponseDto createPublicChannel(CreateChannelRequestDto createChannelRequestDTO);
+    ChannelResponseDto createPrivateChannel(CreateChannelRequestDto createChannelRequestDTO, UserResponseDto enterUserResponseDto);
 
-    void deleteChannel(DeleteChannelRequestDTO deleteChannelRequestDTO);
+    void deleteChannel(DeleteChannelRequestDto deleteChannelRequestDTO);
 
-    void addUserToChannel(AddUserToChannelRequestDTO addUserToChannelRequestDTO);
-    void leaveUserFromChannel(LeaveUserFromChannelRequestDTO leaveUserFromChannelRequestDTO);
+    void addUserToChannel(AddUserToChannelRequestDto addUserToChannelRequestDTO);
+    void leaveUserFromChannel(LeaveUserFromChannelRequestDto leaveUserFromChannelRequestDTO);
 
-    void updateChannelName(ChannelNameUpdateRequestDTO channelNameUpdateRequestDTO);
-    void updateHostUser(ChannelHostUserUpdateRequestDTO channelHostUserUpdateRequestDTO);
+    void updateChannelName(ChannelNameUpdateRequestDto channelNameUpdateRequestDTO);
+    void updateHostUser(ChannelHostUserUpdateRequestDto channelHostUserUpdateRequestDTO);
 
-    List<ChannelDTO> findPublicChannel();
-    List<ChannelDTO> findPrivateChannel(UserDTO user);
+    List<ChannelResponseDto> findPublicChannel();
+    List<ChannelResponseDto> findPrivateChannel(UserResponseDto user);
 
-    ChannelDTO enterChanner(User user, Channel chanel);
-    ChannelDTO findChannelDTOByCannelId(UUID chanelId);
+    ChannelResponseDto enterChanner(User user, Channel chanel);
+    ChannelResponseDto findChannelDTOByCannelId(UUID chanelId);
 
     List<ReadStatus> findAllReadStatus();
 }

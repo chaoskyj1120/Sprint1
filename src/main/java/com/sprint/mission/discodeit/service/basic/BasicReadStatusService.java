@@ -1,12 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.channel_service_dto.ChannelDTO;
-import com.sprint.mission.discodeit.dto.readstatus_dto.CreateReadStatusRequestDTO;
-import com.sprint.mission.discodeit.dto.readstatus_dto.DeleteReadStatusRequestDTO;
-import com.sprint.mission.discodeit.dto.readstatus_dto.ReadStatusDTO;
-import com.sprint.mission.discodeit.dto.readstatus_dto.UpdateReadStatusRequestDTO;
-import com.sprint.mission.discodeit.dto.user_service_dto.UserDTO;
-import com.sprint.mission.discodeit.entity.Message;
+import com.sprint.mission.discodeit.dto.readstatus_dto.CreateReadStatusRequestDto;
+import com.sprint.mission.discodeit.dto.readstatus_dto.DeleteReadStatusRequestDto;
+import com.sprint.mission.discodeit.dto.readstatus_dto.ReadStatusResponseDto;
+import com.sprint.mission.discodeit.dto.readstatus_dto.UpdateReadStatusRequestDto;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -28,11 +25,11 @@ public class BasicReadStatusService implements ReadStatusService {
     private final ChannelRepository channelRepository;
 
     @Override
-    public ReadStatusDTO createReadStatus (CreateReadStatusRequestDTO createReadStatusRequestDTO){
+    public ReadStatusResponseDto createReadStatus (CreateReadStatusRequestDto createReadStatusRequestDTO){
 
         // 원래는 유저에서 했던 기능인데 가져옴
-        UUID userId = createReadStatusRequestDTO.getUserDTO().getUserId();
-        UUID channelId = createReadStatusRequestDTO.getChannelDTO().getChannelId();
+        UUID userId = createReadStatusRequestDTO.getUserResponseDto().getUserId();
+        UUID channelId = createReadStatusRequestDTO.getChannelResponseDto().getChannelId();
 
         Optional<User> user = userRepository.findUserByUserId(userId);
         if (user.isEmpty()) {
@@ -47,77 +44,90 @@ public class BasicReadStatusService implements ReadStatusService {
 
         ReadStatus existing = readStatusRepository.findReadStatusesByUserIdAndChannelId(userId, channelId);
         if (existing != null) {
-            throw new IllegalStateException("이미 존재하는 ReadStatus입니다: userId = " + userId + ", channelId = " + channelId);
+            return new ReadStatusResponseDto(existing);
+            //throw new IllegalStateException("이미 존재하는 ReadStatus입니다: userId = " + userId + ", channelId = " + channelId);
         }
 
         ReadStatus newReadStatus = new ReadStatus(channelId, userId); // 생성자에 messageId 반영
         readStatusRepository.createReadStatus(newReadStatus);
 
-        return new ReadStatusDTO(newReadStatus);
+        return new ReadStatusResponseDto(newReadStatus);
     }
 
     @Override
-    public List<ReadStatusDTO> findReadStatusByUserDTO (UserDTO userDTO){
-        List<ReadStatus> readStatuses = readStatusRepository.findReadStatusesByUserId(userDTO.getUserId());
-        List<ReadStatusDTO> readStatusDTOs = new ArrayList<>();
+    public List<ReadStatusResponseDto> findReadStatusByUserId (UUID userId){
+        List<ReadStatus> readStatuses = readStatusRepository.findReadStatusesByUserId(userId);
+        List<ReadStatusResponseDto> readStatusResponseDtos = new ArrayList<>();
 
         for (ReadStatus readStatus : readStatuses) {
-            readStatusDTOs.add(new ReadStatusDTO(readStatus));
+            readStatusResponseDtos.add(new ReadStatusResponseDto(readStatus));
         }
 
-        return readStatusDTOs;
+        return readStatusResponseDtos;
     }
 
     @Override
-    public List<ReadStatusDTO> findReadStatusByChannelDTO (ChannelDTO channelDTO){
-        List<ReadStatus> readStatuses = readStatusRepository.findReadStatusesByUserId(channelDTO.getChannelId());
-        List<ReadStatusDTO> readStatusDTOs = new ArrayList<>();
+    public List<ReadStatusResponseDto> findReadStatusByChannelId (UUID channelId){
+        List<ReadStatus> readStatuses = readStatusRepository.findReadStatusesByChannelId(channelId);
+        List<ReadStatusResponseDto> readStatusResponseDtos = new ArrayList<>();
 
         for (ReadStatus readStatus : readStatuses) {
-            readStatusDTOs.add(new ReadStatusDTO(readStatus));
+            readStatusResponseDtos.add(new ReadStatusResponseDto(readStatus));
         }
-        return readStatusDTOs;
+        return readStatusResponseDtos;
     }
 
     @Override
-    public ReadStatusDTO findReadStatusByReadStatusDTO (ReadStatusDTO readStatusDTO){
-        ReadStatus readStatus = readStatusRepository.findReadStatusesByreadStatusId(readStatusDTO.getReadStatusId());
-        return new ReadStatusDTO(readStatus);
+    public ReadStatusResponseDto findReadStatusByReadStatusId (UUID readStatusId){
+        ReadStatus readStatus = readStatusRepository.findReadStatusesByReadStatusId(readStatusId);
+        return new ReadStatusResponseDto(readStatus);
     }
 
     @Override
-    public void updateReadStatus (UpdateReadStatusRequestDTO updateReadStatusRequestDTO){
+    public List<ReadStatusResponseDto> findAllReadStatus(){
+        List<ReadStatus> readStatuses = readStatusRepository.loadReadStatuses();
+        List<ReadStatusResponseDto> readStatusResponseDtos = new ArrayList<>();
 
-        ReadStatus readStatus = readStatusRepository.findReadStatusesByreadStatusId(updateReadStatusRequestDTO.getReadStatusId());
+        for (ReadStatus readStatus : readStatuses) {
+            readStatusResponseDtos.add(new ReadStatusResponseDto(readStatus));
+        }
+        return readStatusResponseDtos;
+    }
+
+    @Override
+    public ReadStatusResponseDto updateReadStatus (UpdateReadStatusRequestDto updateReadStatusRequestDTO){
+
+        ReadStatus readStatus = readStatusRepository.findReadStatusesByReadStatusId(updateReadStatusRequestDTO.getReadStatusId());
 
         if (readStatus == null) {
             throw new IllegalStateException("존재하지 않는 readStatus입니다.");
         }
 
-        if (readStatus.getUserId() != updateReadStatusRequestDTO.getUserId()) {
+        if (!readStatus.getUserId().equals(updateReadStatusRequestDTO.getUserId())) {
             throw new IllegalArgumentException("유저 id와 readStatus id가 불일치 합니다.");
         }
-        
-        if (readStatus.getChannelId() != updateReadStatusRequestDTO.getChannelId()) {
+        if (!readStatus.getChannelId().equals(updateReadStatusRequestDTO.getChannelId())) {
             throw new IllegalArgumentException("채널 id와 readStatus id가 불일치 합니다.");
         }
 
         readStatus.updateUpdatedAt();// 시간만 업데이트
         readStatusRepository.updateReadStatus(readStatus);
+
+        return new ReadStatusResponseDto(readStatus);
     }
 
     @Override
-    public void deleteReadStatus (DeleteReadStatusRequestDTO deleteReadStatusRequestDTO){
-        ReadStatus readStatus = readStatusRepository.findReadStatusesByreadStatusId(deleteReadStatusRequestDTO.getReadStatusId());
+    public void deleteReadStatus (DeleteReadStatusRequestDto deleteReadStatusRequestDTO){
+        ReadStatus readStatus = readStatusRepository.findReadStatusesByReadStatusId(deleteReadStatusRequestDTO.getReadStatusId());
         if (readStatus == null) {
             throw new IllegalStateException("존재하지 않는 readStatus입니다.");
         }
 
-        if (readStatus.getUserId() != deleteReadStatusRequestDTO.getUserId()) {
+        if (!readStatus.getUserId().equals(deleteReadStatusRequestDTO.getUserId())) {
             throw new IllegalArgumentException("유저 id와 readStatus id가 불일치 합니다.");
         }
 
-        if (readStatus.getChannelId() != deleteReadStatusRequestDTO.getChannelId()) {
+        if (!readStatus.getChannelId().equals(deleteReadStatusRequestDTO.getChannelId())) {
             throw new IllegalArgumentException("채널 id와 readStatus id가 불일치 합니다.");
         }
         readStatusRepository.deleteReadStatusByReadStatusId(deleteReadStatusRequestDTO.getReadStatusId());

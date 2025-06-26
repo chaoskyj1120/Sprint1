@@ -11,7 +11,7 @@ import java.time.Instant;
 import java.util.*;
 
 @Getter
-public class ChannelDTO {
+public class ChannelResponseDto {
     private final MessageRepository messageRepository = new FileMessageRepository();
 
     private final UUID channelId;
@@ -26,7 +26,7 @@ public class ChannelDTO {
     private final Set<UUID> userIds;
     private final Set<UUID> messageIds;
 
-    public ChannelDTO(Channel channel) {
+    public ChannelResponseDto(Channel channel) {
         this.channelId = channel.getId();
         this.channelName = channel.getChannelName();
         this.hostUserId = channel.getHostUserId();

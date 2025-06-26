@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.auth_service_dto.LoginRequestDTO;
-import com.sprint.mission.discodeit.dto.user_service_dto.UserDTO;
+import com.sprint.mission.discodeit.dto.auth_service_dto.LoginRequestDto;
+import com.sprint.mission.discodeit.dto.user_service_dto.UserResponseDto;
 import com.sprint.mission.discodeit.entity.BinaryContents;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
@@ -23,7 +23,7 @@ public class BasicAuthService implements AuthService {
     private final BinaryContentsRepository binaryContentsRepository;
 
     @Override
-    public UserDTO logInUser(LoginRequestDTO loginRequest) {
+    public UserResponseDto logInUser(LoginRequestDto loginRequest) {
         Optional<User> targetUser = userRepository.findUserByUserName(loginRequest.getUserName());
 
         if (targetUser.isEmpty()) {
@@ -44,7 +44,7 @@ public class BasicAuthService implements AuthService {
         BinaryContents currentUserPicture = binaryContentsRepository.getBinaryContentsByBinaryContentsId(user.getProfileId());
 
         // DTO 반환
-        return new UserDTO(
+        return new UserResponseDto(
                 user.getId(),
                 user.getUserName(),
                 user.getEmail(),

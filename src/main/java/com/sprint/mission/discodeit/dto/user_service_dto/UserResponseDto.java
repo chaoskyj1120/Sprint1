@@ -6,14 +6,14 @@ import lombok.Getter;
 import java.util.UUID;
 
 @Getter
-public class UserDTO {
+public class UserResponseDto {
     private UUID userId;
     private String userName;
     private String userEmail;
     private byte[] userPicture;
 
 
-    public UserDTO(UUID userId, String userName, String userEmail, byte[] userPicture) {
+    public UserResponseDto(UUID userId, String userName, String userEmail, byte[] userPicture) {
         this.userId = userId;
         this.userName = userName;
         this.userEmail = userEmail;

@@ -1,24 +1,25 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.channel_service_dto.ChannelDTO;
-import com.sprint.mission.discodeit.dto.readstatus_dto.CreateReadStatusRequestDTO;
-import com.sprint.mission.discodeit.dto.readstatus_dto.DeleteReadStatusRequestDTO;
-import com.sprint.mission.discodeit.dto.readstatus_dto.ReadStatusDTO;
-import com.sprint.mission.discodeit.dto.readstatus_dto.UpdateReadStatusRequestDTO;
-import com.sprint.mission.discodeit.dto.user_service_dto.UserDTO;
+import com.sprint.mission.discodeit.dto.channel_service_dto.ChannelResponseDto;
+import com.sprint.mission.discodeit.dto.readstatus_dto.CreateReadStatusRequestDto;
+import com.sprint.mission.discodeit.dto.readstatus_dto.DeleteReadStatusRequestDto;
+import com.sprint.mission.discodeit.dto.readstatus_dto.ReadStatusResponseDto;
+import com.sprint.mission.discodeit.dto.readstatus_dto.UpdateReadStatusRequestDto;
+import com.sprint.mission.discodeit.dto.user_service_dto.UserResponseDto;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface ReadStatusService {
-    ReadStatusDTO createReadStatus(CreateReadStatusRequestDTO createReadStatusRequestDTO);
+    ReadStatusResponseDto createReadStatus(CreateReadStatusRequestDto createReadStatusRequestDTO);
 
-    List<ReadStatusDTO> findReadStatusByUserDTO(UserDTO userDTO);
+    List<ReadStatusResponseDto> findReadStatusByUserId (UUID userId);
+    List<ReadStatusResponseDto> findReadStatusByChannelId (UUID channelId);
+    List<ReadStatusResponseDto> findAllReadStatus();
 
-    List<ReadStatusDTO> findReadStatusByChannelDTO(ChannelDTO channelDTO);
+    ReadStatusResponseDto findReadStatusByReadStatusId (UUID readStatusId);
+    ReadStatusResponseDto updateReadStatus (UpdateReadStatusRequestDto updateReadStatusRequestDTO);
+    void deleteReadStatus (DeleteReadStatusRequestDto deleteReadStatusRequestDTO);
 
-    ReadStatusDTO findReadStatusByReadStatusDTO(ReadStatusDTO readStatusDTO);
 
-    void updateReadStatus(UpdateReadStatusRequestDTO updateReadStatusRequestDTO);
-
-    void deleteReadStatus(DeleteReadStatusRequestDTO deleteReadStatusRequestDTO);
 }

@@ -1,11 +1,11 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.binary_contents_dto.BinaryContentsDTO;
-import com.sprint.mission.discodeit.dto.binary_contents_dto.FindBinaryContentRequestDTO;
+import com.sprint.mission.discodeit.dto.binary_contents_dto.BinaryContentsResponseDto;
+import com.sprint.mission.discodeit.dto.binary_contents_dto.FindBinaryContentRequestDto;
 
 import java.util.List;
 
 public interface BinaryContentsService {
-    List<BinaryContentsDTO> findAllBinaryContentsDTOs();
-    List<BinaryContentsDTO> findBinaryContentsDTOsByReferenceId(FindBinaryContentRequestDTO findBinaryContentRequestDTO);
+    List<BinaryContentsResponseDto> findAllBinaryContentsDTOs();
+    List<BinaryContentsResponseDto> findBinaryContentsDTOsByReferenceId(FindBinaryContentRequestDto findBinaryContentRequestDTO);
 }

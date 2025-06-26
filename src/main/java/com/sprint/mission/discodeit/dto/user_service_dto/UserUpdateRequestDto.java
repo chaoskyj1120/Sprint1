@@ -5,7 +5,7 @@ import lombok.Getter;
 import java.util.UUID;
 
 @Getter
-public class UserUpdateRequestDTO {
+public class UserUpdateRequestDto {
     private final UUID userId;
 
     private final String newUserName;
@@ -13,7 +13,7 @@ public class UserUpdateRequestDTO {
     private final String newProfileImagePath;
     private final String newEmail;
 
-    public UserUpdateRequestDTO(UUID userId, String newUserName, String newPassword, String newEmail, String newProfileImagePath) {
+    public UserUpdateRequestDto(UUID userId, String newUserName, String newPassword, String newEmail, String newProfileImagePath) {
         this.userId = userId;
 
         this.newUserName = newUserName;

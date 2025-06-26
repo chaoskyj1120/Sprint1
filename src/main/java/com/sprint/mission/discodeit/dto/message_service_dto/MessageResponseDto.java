@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Getter
-public class MessageDTO {
+public class MessageResponseDto {
 
     private final UUID messageId;
     private final String messageContents;
@@ -19,7 +19,7 @@ public class MessageDTO {
     private final Instant createdAt;
     private final Instant updatedAt;
 
-    public MessageDTO(Message message) {
+    public MessageResponseDto(Message message) {
         this.messageId = message.getId();
         this.messageContents = message.getMessageContents();
         this.authorId = message.getAuthorId();

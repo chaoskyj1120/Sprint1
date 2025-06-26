@@ -25,7 +25,7 @@ public class BasicUserService implements UserService {
     private final UserStatusRepository userStatusRepository;
 
     @Override
-    public UserDTO createUser(UserCreateRequestDTO userCreateRequestDTO) {
+    public UserResponseDto createUser(UserCreateRequestDto userCreateRequestDTO) {
         final String DEFAULT_PROFILE_IMG_PATH = "./src/main/resources/static/basicUserProfileImage.png";
 
         String userName = userCreateRequestDTO.getUsername();
@@ -55,7 +55,7 @@ public class BasicUserService implements UserService {
         UserStatus userStatus = new UserStatus(user, false); // 로그인 상태는 false
         userStatusRepository.createUserStatus(userStatus);
 
-        return new UserDTO(
+        return new UserResponseDto(
                 user.getId(),
                 user.getUserName(),
                 user.getEmail(),
@@ -65,7 +65,7 @@ public class BasicUserService implements UserService {
 
 
     @Override
-    public void updateUser(UserUpdateRequestDTO userUpdateRequestDTO) {
+    public void updateUser(UserUpdateRequestDto userUpdateRequestDTO) {
 
         User targetUser = userRepository.findUserById(userUpdateRequestDTO.getUserId());
 
@@ -100,9 +100,9 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public void deleteUser(UserDTO userDTO) {
+    public void deleteUser(UserResponseDto userResponseDto) {
 
-        Optional<User> userFromFile = userRepository.findUserByUserId(userDTO.getUserId());
+        Optional<User> userFromFile = userRepository.findUserByUserId(userResponseDto.getUserId());
 
         if (userFromFile.isEmpty()){
             System.out.println("해당 유저가 존재하지 않습니다.");
@@ -127,16 +127,16 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserRecentConnectionDTO findUserConnectionByUserName(UserConnectionRequestDTO userConnectionRequestDTO){
+    public UserRecentConnectionDto findUserConnectionByUserName(UserConnectionRequestDto userConnectionRequestDTO){
         //User user로 받으면 좋을것같다? -> 컨트롤러가 User를 들고 있을 수 없으니 할 수 없음, userName하나만을 가지고 있는 DTO를 사용
         isExistUserByUserName(userConnectionRequestDTO.getUserName());
         return findAllConnection().stream().filter(u -> u.getUserName().equals(userConnectionRequestDTO.getUserName())).findFirst().orElse(null);
     }
 
     @Override
-    public void logOutUser(UserDTO userDTO){
-        isExistUserByUserName(userDTO.getUserName());
-        User user = userRepository.findUserById(userDTO.getUserId());
+    public void logOutUser(UserResponseDto userResponseDto){
+        isExistUserByUserName(userResponseDto.getUserName());
+        User user = userRepository.findUserById(userResponseDto.getUserId());
         UserStatus userStatus = new UserStatus(user, false); // 새로 생성한 것을 저장 해야 하는데
         userStatusRepository.createUserStatus(userStatus);
     }
@@ -148,40 +148,40 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public List<UserRecentConnectionDTO> findAllConnection(){
+    public List<UserRecentConnectionDto> findAllConnection(){
         /*
         UserStatus
         사용자 별 마지막으로 확인된 접속 시간을 표현하는 도메인 모델입니다. 사용자의 온라인 상태를 확인하기 위해 활용합니다.
         마지막 접속 시간을 기준으로 현재 로그인한 유저로 판단할 수 있는 메소드를 정의하세요.
         마지막 접속 시간이 현재 시간으로부터 5분 이내이면 현재 접속 중인 유저로 간주합니다.*/
 
-        List<UserRecentConnectionDTO> userStatuses = new ArrayList<>();
+        List<UserRecentConnectionDto> userStatuses = new ArrayList<>();
         List<User> usersFromFile = userRepository.loadUsers();
 
 
         for (User user : usersFromFile) {
             UserStatus userStatusFromCurrentUser = isOnline(user);
-            userStatuses.add(new UserRecentConnectionDTO(user.getId(), user.getUserName(), userStatusFromCurrentUser.getLoggedIn()));
+            userStatuses.add(new UserRecentConnectionDto(user.getId(), user.getUserName(), userStatusFromCurrentUser.getLoggedIn()));
         }
 
         return userStatuses;
     }
 
     @Override
-    public List<UserDTO> findAllUserDTO(){
+    public List<UserResponseDto> findAllUserDTO(){
         List<User> usersFromFile = userRepository.loadUsers();
-        List<UserDTO> userDTOs = new ArrayList<>();
+        List<UserResponseDto> userResponseDtos = new ArrayList<>();
         for (User user : usersFromFile) {
-            userDTOs.add(new UserDTO(user.getId(), user.getUserName(), user.getEmail(), binaryContentsRepository.getBinaryContentsByBinaryContentsId(user.getProfileId()).getBinaryData()));
+            userResponseDtos.add(new UserResponseDto(user.getId(), user.getUserName(), user.getEmail(), binaryContentsRepository.getBinaryContentsByBinaryContentsId(user.getProfileId()).getBinaryData()));
         }
-        return userDTOs;
+        return userResponseDtos;
     }
 
     @Override
-    public List<UserDTO> findAllActiveUserDTO() {
+    public List<UserResponseDto> findAllActiveUserDTO() {
         return userRepository.loadUsers().stream()
                 .filter(user -> user.getStatus() == UserActivationState.ACTIVE)
-                .map(user -> new UserDTO(
+                .map(user -> new UserResponseDto(
                         user.getId(),
                         user.getUserName(),
                         user.getEmail(),
@@ -193,10 +193,10 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public List<UserDTO> findAllDeactiveUserDTO() {
+    public List<UserResponseDto> findAllDeactiveUserDTO() {
         return userRepository.loadUsers().stream()
                 .filter(user -> user.getStatus() == UserActivationState.DEACTIVE)
-                .map(user -> new UserDTO(
+                .map(user -> new UserResponseDto(
                         user.getId(),
                         user.getUserName(),
                         user.getEmail(),
@@ -233,7 +233,7 @@ public class BasicUserService implements UserService {
                 .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
     }
 
-    private boolean compareProfile(UserUpdateRequestDTO userUpdateRequestDTO){
+    private boolean compareProfile(UserUpdateRequestDto userUpdateRequestDTO){
         User targetUser = userRepository.findUserById(userUpdateRequestDTO.getUserId());
         BinaryContents profileImg = binaryContentsRepository.getBinaryContentsByBinaryContentsId(targetUser.getProfileId());
 

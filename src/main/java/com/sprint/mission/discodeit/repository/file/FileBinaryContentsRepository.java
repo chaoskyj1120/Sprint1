@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -46,16 +47,15 @@ public class FileBinaryContentsRepository implements BinaryContentsRepository, S
     }
 
     @Override
-    public BinaryContents getBinaryContentsByBinaryContentsId(UUID binaryContentsId){
+    public Optional<BinaryContents> findBinaryContentsByBinaryContentsId(UUID binaryContentsId){
         List<BinaryContents> contentsList = loadBinaryContents();
         return contentsList.stream()
                 .filter(content -> content.equalsId(binaryContentsId))
-                .findFirst()
-                .orElse(null); // 없으면 null 반환
+                .findFirst(); // 없으면 null 반환
     }
 
     @Override
-    public void delete(UUID binaryContentId){
+    public void deleteBinaryContensByBinaryContentsId(UUID binaryContentId){
         List<BinaryContents> contentsList = loadBinaryContents();
         contentsList.removeIf(content -> content.equalsId(binaryContentId));
         saveBinaryContents(contentsList);

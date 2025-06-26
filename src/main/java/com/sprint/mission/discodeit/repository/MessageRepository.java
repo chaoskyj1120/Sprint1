@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -15,7 +16,7 @@ public interface MessageRepository {
     List<Message> loadMessages();
     void saveMessages(List<Message> messages);
 
-    Message findMessageByMessageId(UUID id);
+    Optional<Message> findMessageByMessageId(UUID id);
     List<Message> findMessagesByMessageIds(Set<UUID> messageIds);
     List<Message> findMessagesByChannelId(UUID channelId);
 

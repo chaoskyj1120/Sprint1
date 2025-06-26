@@ -25,28 +25,21 @@ public class BasicReadStatusService implements ReadStatusService {
     private final ChannelRepository channelRepository;
 
     @Override
-    public ReadStatusResponseDto createReadStatus (CreateReadStatusRequestDto createReadStatusRequestDTO){
+    public ReadStatusResponseDto createReadStatus(CreateReadStatusRequestDto createReadStatusRequestDTO) {
 
         // 원래는 유저에서 했던 기능인데 가져옴
         UUID userId = createReadStatusRequestDTO.getUserResponseDto().getUserId();
         UUID channelId = createReadStatusRequestDTO.getChannelResponseDto().getChannelId();
 
         Optional<User> user = userRepository.findUserByUserId(userId);
-        if (user.isEmpty()) {
-            throw new IllegalArgumentException("해당 유저가 존재하지 않습니다: " + userId);
-        }
+        optionalUserIsEmpty(user);
 
         // 2. 채널이 존재하지 않으면 예외 발생
         Optional<Channel> channel = channelRepository.findChannelByChannelId(channelId);
-        if (channel.isEmpty()) {
-            throw new IllegalArgumentException("해당 채널이 존재하지 않습니다: " + channelId);
-        }
+        optionalChannelIsEmpty(channel);
 
-        ReadStatus existing = readStatusRepository.findReadStatusesByUserIdAndChannelId(userId, channelId);
-        if (existing != null) {
-            return new ReadStatusResponseDto(existing);
-            //throw new IllegalStateException("이미 존재하는 ReadStatus입니다: userId = " + userId + ", channelId = " + channelId);
-        }
+        Optional<ReadStatus> existing = readStatusRepository.findReadStatusesByUserIdAndChannelId(userId, channelId);
+        optionalReadStatusIsEmpty(existing);
 
         ReadStatus newReadStatus = new ReadStatus(channelId, userId); // 생성자에 messageId 반영
         readStatusRepository.createReadStatus(newReadStatus);
@@ -55,7 +48,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public List<ReadStatusResponseDto> findReadStatusByUserId (UUID userId){
+    public List<ReadStatusResponseDto> findReadStatusByUserId(UUID userId) {
         List<ReadStatus> readStatuses = readStatusRepository.findReadStatusesByUserId(userId);
         List<ReadStatusResponseDto> readStatusResponseDtos = new ArrayList<>();
 
@@ -67,7 +60,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public List<ReadStatusResponseDto> findReadStatusByChannelId (UUID channelId){
+    public List<ReadStatusResponseDto> findReadStatusByChannelId(UUID channelId) {
         List<ReadStatus> readStatuses = readStatusRepository.findReadStatusesByChannelId(channelId);
         List<ReadStatusResponseDto> readStatusResponseDtos = new ArrayList<>();
 
@@ -78,13 +71,16 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusResponseDto findReadStatusByReadStatusId (UUID readStatusId){
-        ReadStatus readStatus = readStatusRepository.findReadStatusesByReadStatusId(readStatusId);
+    public ReadStatusResponseDto findReadStatusByReadStatusId(UUID readStatusId) {
+        Optional<ReadStatus> readStatusFromFIle = readStatusRepository.findReadStatusesByReadStatusId(readStatusId);
+        optionalReadStatusIsEmpty(readStatusFromFIle);
+        ReadStatus readStatus = readStatusFromFIle.get();
+
         return new ReadStatusResponseDto(readStatus);
     }
 
     @Override
-    public List<ReadStatusResponseDto> findAllReadStatus(){
+    public List<ReadStatusResponseDto> findAllReadStatus() {
         List<ReadStatus> readStatuses = readStatusRepository.loadReadStatuses();
         List<ReadStatusResponseDto> readStatusResponseDtos = new ArrayList<>();
 
@@ -95,9 +91,11 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public ReadStatusResponseDto updateReadStatus (UpdateReadStatusRequestDto updateReadStatusRequestDTO){
+    public ReadStatusResponseDto updateReadStatus(UpdateReadStatusRequestDto updateReadStatusRequestDTO) {
 
-        ReadStatus readStatus = readStatusRepository.findReadStatusesByReadStatusId(updateReadStatusRequestDTO.getReadStatusId());
+        Optional<ReadStatus> readStatusFromFIle = readStatusRepository.findReadStatusesByReadStatusId(updateReadStatusRequestDTO.getReadStatusId());
+        optionalReadStatusIsEmpty(readStatusFromFIle);
+        ReadStatus readStatus = readStatusFromFIle.get();
 
         if (readStatus == null) {
             throw new IllegalStateException("존재하지 않는 readStatus입니다.");
@@ -117,11 +115,10 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     @Override
-    public void deleteReadStatus (DeleteReadStatusRequestDto deleteReadStatusRequestDTO){
-        ReadStatus readStatus = readStatusRepository.findReadStatusesByReadStatusId(deleteReadStatusRequestDTO.getReadStatusId());
-        if (readStatus == null) {
-            throw new IllegalStateException("존재하지 않는 readStatus입니다.");
-        }
+    public void deleteReadStatus(DeleteReadStatusRequestDto deleteReadStatusRequestDTO) {
+        Optional<ReadStatus> readStatusFromFIle = readStatusRepository.findReadStatusesByReadStatusId(deleteReadStatusRequestDTO.getReadStatusId());
+        optionalReadStatusIsEmpty(readStatusFromFIle);
+        ReadStatus readStatus = readStatusFromFIle.get();
 
         if (!readStatus.getUserId().equals(deleteReadStatusRequestDTO.getUserId())) {
             throw new IllegalArgumentException("유저 id와 readStatus id가 불일치 합니다.");
@@ -131,5 +128,23 @@ public class BasicReadStatusService implements ReadStatusService {
             throw new IllegalArgumentException("채널 id와 readStatus id가 불일치 합니다.");
         }
         readStatusRepository.deleteReadStatusByReadStatusId(deleteReadStatusRequestDTO.getReadStatusId());
+    }
+
+    private void optionalUserIsEmpty(Optional<User> user) {
+        if (user.isEmpty()) {
+            throw new IllegalArgumentException("User 정보가 없습니다.");
+        }
+    }
+
+    private void optionalChannelIsEmpty(Optional<Channel> channel) {
+        if (channel.isEmpty()) {
+            throw new IllegalArgumentException("Channel 정보가 없습니다.");
+        }
+    }
+
+    private void optionalReadStatusIsEmpty(Optional<ReadStatus> readStatus) {
+        if (readStatus.isEmpty()) {
+            throw new IllegalArgumentException("ReadStatus 정보가 없습니다.");
+        }
     }
 }

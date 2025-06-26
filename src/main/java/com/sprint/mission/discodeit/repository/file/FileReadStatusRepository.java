@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -69,17 +70,17 @@ public class FileReadStatusRepository implements ReadStatusRepository, Serializa
     }
 
     @Override
-    public ReadStatus findReadStatusesByUserIdAndChannelId(UUID userId, UUID channelId){
+    public Optional<ReadStatus> findReadStatusesByUserIdAndChannelId(UUID userId, UUID channelId){
         return loadReadStatuses().stream()
                 .filter(readStatus -> readStatus.getUserId().equals(userId)
-                                && readStatus.getChannelId().equals(channelId)).findFirst().orElse(null);
+                                && readStatus.getChannelId().equals(channelId)).findFirst();
     }
 
     @Override
-    public ReadStatus findReadStatusesByReadStatusId(UUID readStatusId){
+    public Optional<ReadStatus> findReadStatusesByReadStatusId(UUID readStatusId){
         return loadReadStatuses().stream()
                 .filter(readStatus -> readStatus.getId().equals(readStatusId))
-                .findFirst().orElse(null);
+                .findFirst();
 
     }
 

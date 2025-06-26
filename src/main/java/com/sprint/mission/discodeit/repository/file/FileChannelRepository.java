@@ -62,14 +62,6 @@ public class FileChannelRepository implements ChannelRepository, Serializable {
     }
 
     @Override
-    public Channel getChannelById(UUID channelId){
-        return loadChannels().stream()
-                .filter(ch -> ch.getId().equals(channelId))
-                .findFirst()
-                .orElse(null);
-    }
-
-    @Override
     public void updateChannel(Channel channel) {
         List<Channel> channels = loadChannels();
 

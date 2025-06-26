@@ -91,11 +91,10 @@ public class FileUserRepository implements UserRepository, Serializable {
 
 
     @Override
-    public User findUserById(UUID userId) {
+    public Optional<User> findUserById(UUID userId) {
         return loadUsers().stream()
                 .filter(u -> u.equalsId(userId))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 
     @Override

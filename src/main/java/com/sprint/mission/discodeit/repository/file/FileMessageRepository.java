@@ -12,10 +12,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Repository
@@ -87,11 +84,10 @@ public class FileMessageRepository implements MessageRepository, Serializable {
 
 
     @Override
-    public Message findMessageByMessageId(UUID messageId){
+    public Optional<Message> findMessageByMessageId(UUID messageId){
         return loadMessages().stream()
                 .filter(msg -> msg.getId().equals(messageId))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
     }
 
     @Override

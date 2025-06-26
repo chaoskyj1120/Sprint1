@@ -15,15 +15,10 @@ public interface ChannelRepository {
     void saveChannels(List<Channel> channels);
     List<Channel> loadChannels();
 
-    Channel getChannelById(UUID channelId);
     void updateChannel(Channel channel);
 
     void deleteUserFromChannels(User user);
     Optional<Channel> findChannelByChannelName(String channelName);
     Optional<Channel> findChannelByChannelId(UUID channelId);
-
-
     List<Channel> findChannelsByUserId(UUID userId);
-
-
 }

@@ -3,6 +3,8 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.user_status_dto.CreateUserStatusRequestDto;
 import com.sprint.mission.discodeit.dto.user_status_dto.UpdateUserStatusRequestDto;
 import com.sprint.mission.discodeit.dto.user_status_dto.UserStatusResponseDto;
+import com.sprint.mission.discodeit.entity.Channel;
+import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -29,10 +31,9 @@ public class BasicUserStatusService implements UserStatusService {
         //[ ] 관련된 User가 존재하지 않으면 예외를 발생시킵니다.
         //[ ] 같은 User와 관련된 객체가 이미 존재하면 예외를 발생시킵니다.
 
-        User user = userRepository.findUserById(createUserStatusRequestDto.getUserId());
-        if (user == null) {
-            throw new RuntimeException("존재하지 않는 유저입니다.");
-        }
+        Optional<User> userFromFile = userRepository.findUserById(createUserStatusRequestDto.getUserId());
+        optionalUserIsEmpty(userFromFile);
+        User user = userFromFile.get();
 
         Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(user.getId());
 
@@ -51,15 +52,12 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatusResponseDto updateUserStatus(UpdateUserStatusRequestDto updateUserStatusRequestDto){
-        User user = userRepository.findUserById(updateUserStatusRequestDto.getUserId());
-        if (user == null) {
-            throw new RuntimeException("존재하지 않는 유저입니다.");
-        }
+        Optional<User> userFromFile  = userRepository.findUserById(updateUserStatusRequestDto.getUserId());
+        optionalUserIsEmpty(userFromFile);
+        User user = userFromFile.get();
 
         Optional<UserStatus> optionalUserStatus = userStatusRepository.findUserStatusByUserId(updateUserStatusRequestDto.getUserId());
-        if (!optionalUserStatus.isPresent()) {
-            throw new RuntimeException("존재하지 않는 userStatus 입니다.");
-        }
+        optionalUserStatusIsEmpty(optionalUserStatus);
 
         UserStatus userStatus = optionalUserStatus.get();
 
@@ -92,7 +90,10 @@ public class BasicUserStatusService implements UserStatusService {
         List<UserStatus> userStatuses = userStatusRepository.loadUserStatuses();
 
         for (UserStatus userStatus : userStatuses) {
-            User user = userRepository.findUserById(userStatus.getUserId());
+            Optional<User> userFromFile = userRepository.findUserById(userStatus.getUserId());
+            optionalUserIsEmpty(userFromFile);
+            User user = userFromFile.get();
+
             UserStatusResponseDto userStatusResponseDto = new UserStatusResponseDto(userStatus.getId(), userStatus.getUserId(), user.getUserName(), userStatus.getLoggedIn(), userStatus.getUpdatedAt());
             userStatusResponse.add(userStatusResponseDto);
         }
@@ -104,7 +105,10 @@ public class BasicUserStatusService implements UserStatusService {
     public UserStatusResponseDto findUserStatusByUserId(UUID userId){
         Optional<UserStatus> optionalUserStatus = userStatusRepository.findUserStatusByUserStatusId(userId);
         UserStatus userStatus = optionalUserStatus.get();
-        User user = userRepository.findUserById(userId);
+        Optional<User> userFromFile = userRepository.findUserById(userId);
+        optionalUserIsEmpty(userFromFile);
+        User user = userFromFile.get();
+
         return new UserStatusResponseDto(userStatus.getId(), user.getId(), user.getUserName(), userStatus.getLoggedIn(), userStatus.getUpdatedAt());
     }
 
@@ -120,8 +124,21 @@ public class BasicUserStatusService implements UserStatusService {
     }
 
 
-    private void isExistUserByUserName(String userName) {
-        userRepository.findUserByUserName(userName)
-                .orElseThrow(() -> new NoSuchElementException("User not found: " + userName));
+    private void optionalUserIsEmpty(Optional<User> user) {
+        if (user.isEmpty()) {
+            throw new IllegalArgumentException("User 정보가 없습니다.");
+        }
+    }
+
+    private void optionalChannelIsEmpty(Optional<Channel> channel) {
+        if (channel.isEmpty()) {
+            throw new IllegalArgumentException("Channel 정보가 없습니다.");
+        }
+    }
+
+    private void optionalUserStatusIsEmpty(Optional<UserStatus> userStatus) {
+        if (userStatus.isEmpty()) {
+            throw new IllegalArgumentException("UserStatus 정보가 없습니다.");
+        }
     }
 }

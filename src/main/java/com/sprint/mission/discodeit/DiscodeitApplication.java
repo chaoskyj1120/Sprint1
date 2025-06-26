@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit;
 
 import com.sprint.mission.discodeit.dto.auth_service_dto.LoginRequestDto;
 import com.sprint.mission.discodeit.dto.binary_contents_dto.BinaryContentsResponseDto;
+import com.sprint.mission.discodeit.dto.binary_contents_dto.CreateBinaryContentsRequestDto;
+import com.sprint.mission.discodeit.dto.binary_contents_dto.FindBinaryContentRequestDto;
 import com.sprint.mission.discodeit.dto.channel_service_dto.ChannelResponseDto;
 import com.sprint.mission.discodeit.dto.channel_service_dto.CreateChannelRequestDto;
 import com.sprint.mission.discodeit.dto.channel_service_dto.DeleteChannelRequestDto;
@@ -17,6 +19,7 @@ import com.sprint.mission.discodeit.dto.user_service_dto.*;
 import com.sprint.mission.discodeit.dto.user_status_dto.CreateUserStatusRequestDto;
 import com.sprint.mission.discodeit.dto.user_status_dto.UpdateUserStatusRequestDto;
 import com.sprint.mission.discodeit.dto.user_status_dto.UserStatusResponseDto;
+import com.sprint.mission.discodeit.entity.BinaryContentType;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
 import com.sprint.mission.discodeit.service.*;
@@ -46,51 +49,9 @@ public class DiscodeitApplication {
 		//messageTest(context);
 		//readStatusTest(context);
 		//userStatusTest(context);
+		//binaryContentTest(context);
 
-		AuthService authService = context.getBean(AuthService.class);
-		ChannelService channelService = context.getBean(ChannelService.class);
-		MessageService messageService = context.getBean(MessageService.class);
-		ReadStatusService readStatusService = context.getBean(ReadStatusService.class);
-		BinaryContentsService binaryContentsService = context.getBean(BinaryContentsService.class);
-		UserStatusService userStatusService = context.getBean(UserStatusService.class);
-		UserService userService = context.getBean(UserService.class);
-		/*
-		UserCreateRequestDto user1Dto = new UserCreateRequestDto("kwon1", "pw1",  "kwon1@email.com", null);
-		UserCreateRequestDto user2Dto = new UserCreateRequestDto("kwon2", "pw2",  "kwon2@email.com", null); // null은 사진을 선택하지 않았다는 의미
 
-		UserResponseDto user1 = userService.createUser(user1Dto);
-		UserResponseDto user2 = userService.createUser(user2Dto);*/
-
-		LoginRequestDto loginRequestDto = new LoginRequestDto("kwon1", "pw1");
-		LoginRequestDto loginRequestDto2 = new LoginRequestDto("kwon2", "pw2");
-
-		UserResponseDto user1 = authService.logInUser(loginRequestDto);
-		UserResponseDto user2 = authService.logInUser(loginRequestDto2);
-
-		System.out.println("=== 전체 userStatus출력 ===");
-
-		CreateUserStatusRequestDto createUserStatusRequestDto = new CreateUserStatusRequestDto(user1.getUserId());
-		UserStatusResponseDto user1Status = userStatusService.createUserStatus(createUserStatusRequestDto);
-
-		createUserStatusRequestDto = new CreateUserStatusRequestDto(user2.getUserId());
-		UserStatusResponseDto user2Status = userStatusService.createUserStatus(createUserStatusRequestDto);
-
-		List<UserStatusResponseDto> userStatusList = userStatusService.findAllUserStatus();
-		printUserStatusResponseDTOs(userStatusList);
-		
-		System.out.println("=== User1 userStatus 출력 ===");
-		user1Status = userStatusService.findUserStatusByUserId(user1.getUserId());
-		System.out.println("UserStatus ID: " + user1Status.getUserStatusId() + ", User ID: " + user1Status.getUserId() + ", Time: " + user1Status.getLoginTime());
-
-		System.out.println("=== User1 userStatus 업데이트 ===");
-		UpdateUserStatusRequestDto updateUserStatusRequestDto = new UpdateUserStatusRequestDto(user1Status.getUserId(), user1Status.getUserStatusId());
-		user1Status = userStatusService.updateUserStatus(updateUserStatusRequestDto);
-		System.out.println("UserStatus ID: " + user1Status.getUserStatusId() + ", User ID: " + user1Status.getUserId() + ", Time: " + user1Status.getLoginTime());
-
-		System.out.println("=== User1 userStatus 삭제 ===");
-		userStatusService.deleteUserStatusByUserId(user1Status.getUserId());
-		userStatusList = userStatusService.findAllUserStatus();
-		printUserStatusResponseDTOs(userStatusList);
 	}
 
 	public static void userTest(ConfigurableApplicationContext context) {
@@ -304,7 +265,7 @@ public class DiscodeitApplication {
 		printMessageDTOs(messageService.findAllMessage());
 
 		System.out.println("\n=== 메시지 삭제 전 전체 바이너리 출력 출력===");
-		printBinaryContentsDTOs(binaryContentsService.findAllBinaryContentsDTOs());
+		printBinaryContentsResponseDTOs(binaryContentsService.findAllBinaryContentsDTOs());
 
 		System.out.println("\n=== 메시지2 삭제===");
 		DeleteMessageRequestDto deleteMessageRequestDTO = new DeleteMessageRequestDto(user1, messageResponseDto2);
@@ -314,7 +275,7 @@ public class DiscodeitApplication {
 		printMessageDTOs(messageService.findAllMessage());
 
 		System.out.println("\n=== 메시지 삭제 후 전체 바이너리 출력 출력===");
-		printBinaryContentsDTOs(binaryContentsService.findAllBinaryContentsDTOs());
+		printBinaryContentsResponseDTOs(binaryContentsService.findAllBinaryContentsDTOs());
 		// 정상적으로 수행 됨
 	}
 
@@ -412,6 +373,44 @@ public class DiscodeitApplication {
 		printUserStatusResponseDTOs(userStatusList);
 	}
 
+	public static void binaryContentTest(ConfigurableApplicationContext context) {
+		AuthService authService = context.getBean(AuthService.class);
+		BinaryContentsService binaryContentsService = context.getBean(BinaryContentsService.class);
+		UserService userService = context.getBean(UserService.class);
+
+		UserCreateRequestDto user1Dto = new UserCreateRequestDto("kwon1", "pw1",  "kwon1@email.com", null);
+		UserCreateRequestDto user2Dto = new UserCreateRequestDto("kwon2", "pw2",  "kwon2@email.com", null); // null은 사진을 선택하지 않았다는 의미
+		/*
+		UserResponseDto user1 = userService.createUser(user1Dto);
+		UserResponseDto user2 = userService.createUser(user2Dto);*/
+
+		LoginRequestDto loginRequestDto = new LoginRequestDto("kwon1", "pw1");
+		LoginRequestDto loginRequestDto2 = new LoginRequestDto("kwon2", "pw2");
+
+		UserResponseDto user1 = authService.logInUser(loginRequestDto);
+		UserResponseDto user2 = authService.logInUser(loginRequestDto2);
+		String profilePicture1Path =  pathStaticFolder + "/basicUserProfileImage.png"; // 기본 이미지, 유저가 선택하면 여기 값이 바뀌도록 해서 기본 이미지가 있도록 유지
+
+		System.out.println("=== 바이너리 컨텐츠 추가 및 전체 출력 ===");
+		CreateBinaryContentsRequestDto createBinaryContentsRequestDto = new CreateBinaryContentsRequestDto(user1.getUserId(), profilePicture1Path, BinaryContentType.USER_PROFILE_IMAGE);
+		BinaryContentsResponseDto binaryContentsResponseDto = binaryContentsService.createBinaryContents(createBinaryContentsRequestDto);
+
+		List<BinaryContentsResponseDto> binaryContentsResponseDtos = binaryContentsService.findAllBinaryContentsDTOs();
+		printBinaryContentsResponseDTOs(binaryContentsResponseDtos);
+
+		System.out.println("=== reference id로 전체 출력 ===");
+		binaryContentsResponseDtos = binaryContentsService.findBinaryContentsDtosByReferenceId(binaryContentsResponseDto.getReferenceId());
+		printBinaryContentsResponseDTOs(binaryContentsResponseDtos);
+
+		System.out.println("=== binaryContents id로 출력 ===");
+		System.out.println("contentsId: " + binaryContentsService.findBinaryContentsDTOByBinaryContentsId( binaryContentsResponseDto.getBinaryContentsId()).getBinaryContentsId() + ", reference Id: " + binaryContentsService.findBinaryContentsDTOByBinaryContentsId(binaryContentsResponseDto.getBinaryContentsId()).getReferenceId());
+
+		System.out.println("=== 삭제 후 전체 출력 ===");
+		binaryContentsService.deleteBinaryContentsDTOById(binaryContentsResponseDto.getBinaryContentsId());
+		binaryContentsResponseDtos = binaryContentsService.findBinaryContentsDtosByReferenceId(binaryContentsResponseDto.getReferenceId());
+		printBinaryContentsResponseDTOs(binaryContentsResponseDtos);
+	}
+
 	public static void printUserDTOs(List<UserResponseDto> userResponseDtos) {
 		//TODO 테스트 코드 추가하기
 		for (UserResponseDto userResponseDto : userResponseDtos) {
@@ -459,21 +458,6 @@ public class DiscodeitApplication {
 		}
 	}
 
-	public static void printBinaryContentsDTOs(List<BinaryContentsResponseDto> dtos) {
-		for (BinaryContentsResponseDto dto : dtos) {
-			StringBuilder sb = new StringBuilder();
-
-			sb.append("Reference ID: ");
-			sb.append(dto.getReferenceId());
-			sb.append(", Type: ");
-			sb.append(dto.getBinaryContentType());
-			sb.append(", Data Size: ");
-			sb.append(dto.getBinaryData() != null ? dto.getBinaryData().length + " bytes" : "null");
-
-			System.out.println(sb);
-		}
-	}
-
 	public static void printReadStatusResponseDTOs(List<ReadStatusResponseDto> dtos) {
 		if (dtos.isEmpty()) {
 			System.out.println("DTO가 비었습니다.");
@@ -512,6 +496,27 @@ public class DiscodeitApplication {
 			sb.append(dto.getUserId());
 			sb.append(", Time: ");
 			sb.append(dto.getLoginTime());
+
+
+			System.out.println(sb);
+		}
+	}
+
+	public static void printBinaryContentsResponseDTOs(List<BinaryContentsResponseDto> dtos) {
+		if (dtos.isEmpty()) {
+			System.out.println("DTO가 비었습니다.");
+			return;
+		}
+
+		for (BinaryContentsResponseDto dto : dtos) {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append("BinaryContents ID: ");
+			sb.append(dto.getBinaryContentsId());
+			sb.append(", Reference ID: ");
+			sb.append(dto.getReferenceId());
+			sb.append(", Type: ");
+			sb.append(dto.getBinaryContentType());
 
 
 			System.out.println(sb);

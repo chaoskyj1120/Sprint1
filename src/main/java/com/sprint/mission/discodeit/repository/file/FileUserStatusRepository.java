@@ -51,17 +51,6 @@ public class FileUserStatusRepository implements UserStatusRepository, Serializa
         saveStatuses(userStatuses);
     }
 
-
-    @Override
-    public UserStatus getLastUserStatus(User user){
-        UserStatus lastStatus = loadUserStatuses().stream()
-                .filter(userStatus -> userStatus.getUserId().equals(user.getId()))
-                .reduce((first, second) -> second)
-                .orElse(null); // 또는 예외 처리
-        assert lastStatus != null;
-        return lastStatus;
-    }
-
     @Override
     public void deleteUserStatusByUserStatusId (UUID userStatusId){
         List<UserStatus> userStatuses = loadUserStatuses();

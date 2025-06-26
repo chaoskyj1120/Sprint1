@@ -1,21 +1,21 @@
 package com.sprint.mission.discodeit.entity;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
+@Setter
 @Getter
 public class UserStatus extends BaseEntity{
 
     private final UUID userId; // 사용자의 Id
-    private final boolean loggedIn; // true면 로그인 상태, false면 로그아웃 상태
     
-    public UserStatus(User user, boolean loggedIn) {
+    public UserStatus(User user) {
         super();
         this.userId = user.getId();
-        this.loggedIn = loggedIn;
     }
 
     public String getLoggedIn() {
@@ -23,6 +23,10 @@ public class UserStatus extends BaseEntity{
         Duration duration = Duration.between(getUpdatedAt(), Instant.now());
         long minutes = duration.toMinutes();
         return minutes < 5 ? "로그인" : "로그아웃";
+    }
+
+    public void updateTime(){
+        updateUpdatedAt();
     }
 }
 

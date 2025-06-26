@@ -19,7 +19,6 @@ import java.util.*;
 public class BasicAuthService implements AuthService {
 
     private final UserRepository userRepository;
-    private final UserStatusRepository userStatusRepository;
     private final BinaryContentsRepository binaryContentsRepository;
 
     @Override
@@ -36,11 +35,6 @@ public class BasicAuthService implements AuthService {
             throw new IllegalArgumentException("일치하지 않은 비밀번호 입니다.");
         }
 
-        // 로그인 성공 → UserStatus 갱신 (로그인 상태 저장)
-        UserStatus userStatus = new UserStatus(user, true);
-        userStatusRepository.createUserStatus(userStatus); // NOTE: 기존 상태를 대체하거나 갱신하는 방식이라면 update 방식도 고려
-
-        // 프로필 이미지 조회
         BinaryContents currentUserPicture = binaryContentsRepository.getBinaryContentsByBinaryContentsId(user.getProfileId());
 
         // DTO 반환

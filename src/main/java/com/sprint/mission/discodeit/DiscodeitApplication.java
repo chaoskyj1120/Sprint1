@@ -14,6 +14,9 @@ import com.sprint.mission.discodeit.dto.readstatus_dto.DeleteReadStatusRequestDt
 import com.sprint.mission.discodeit.dto.readstatus_dto.ReadStatusResponseDto;
 import com.sprint.mission.discodeit.dto.readstatus_dto.UpdateReadStatusRequestDto;
 import com.sprint.mission.discodeit.dto.user_service_dto.*;
+import com.sprint.mission.discodeit.dto.user_status_dto.CreateUserStatusRequestDto;
+import com.sprint.mission.discodeit.dto.user_status_dto.UpdateUserStatusRequestDto;
+import com.sprint.mission.discodeit.dto.user_status_dto.UserStatusResponseDto;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
 import com.sprint.mission.discodeit.service.*;
@@ -41,56 +44,53 @@ public class DiscodeitApplication {
 		//userTest(context); //유저 서비스 테스트및 채널 서비스에서 사용할 유저 생성
 		//channelTest(context);
 		//messageTest(context);
+		//readStatusTest(context);
+		//userStatusTest(context);
 
 		AuthService authService = context.getBean(AuthService.class);
 		ChannelService channelService = context.getBean(ChannelService.class);
 		MessageService messageService = context.getBean(MessageService.class);
 		ReadStatusService readStatusService = context.getBean(ReadStatusService.class);
 		BinaryContentsService binaryContentsService = context.getBean(BinaryContentsService.class);
+		UserStatusService userStatusService = context.getBean(UserStatusService.class);
+		UserService userService = context.getBean(UserService.class);
+		/*
+		UserCreateRequestDto user1Dto = new UserCreateRequestDto("kwon1", "pw1",  "kwon1@email.com", null);
+		UserCreateRequestDto user2Dto = new UserCreateRequestDto("kwon2", "pw2",  "kwon2@email.com", null); // null은 사진을 선택하지 않았다는 의미
 
-		LoginRequestDto loginRequestDTO = new LoginRequestDto("newKwon1", "pw1");
-		LoginRequestDto loginRequestDTO2 = new LoginRequestDto("kwon2", "pw2");
+		UserResponseDto user1 = userService.createUser(user1Dto);
+		UserResponseDto user2 = userService.createUser(user2Dto);*/
 
-		UserResponseDto user1 = authService.logInUser(loginRequestDTO);
-		UserResponseDto user2 = authService.logInUser(loginRequestDTO2);
+		LoginRequestDto loginRequestDto = new LoginRequestDto("kwon1", "pw1");
+		LoginRequestDto loginRequestDto2 = new LoginRequestDto("kwon2", "pw2");
 
-		System.out.println("\n=== Public 채널 생성===");
-		CreateChannelRequestDto createChannelRequestDTO = new CreateChannelRequestDto(user1.getUserId(), "권용진1의 public 채널", "권용진의 1의 public 채널입니다.");
-		ChannelResponseDto channel1 = channelService.createPublicChannel(createChannelRequestDTO);
+		UserResponseDto user1 = authService.logInUser(loginRequestDto);
+		UserResponseDto user2 = authService.logInUser(loginRequestDto2);
 
-		createChannelRequestDTO = new CreateChannelRequestDto(user1.getUserId(), "권용진1의 public 채널2", "권용진의 1의 public 채널2 입니다.");
-		ChannelResponseDto channel2 = channelService.createPublicChannel(createChannelRequestDTO);
+		System.out.println("=== 전체 userStatus출력 ===");
 
-		// 추가 첨부 파일을 선택했다는 의미
+		CreateUserStatusRequestDto createUserStatusRequestDto = new CreateUserStatusRequestDto(user1.getUserId());
+		UserStatusResponseDto user1Status = userStatusService.createUserStatus(createUserStatusRequestDto);
 
-		System.out.println("\n=== ReadStatus 추가===");
-		CreateReadStatusRequestDto createReadStatusRequestDto = new CreateReadStatusRequestDto(user1, channel1);
-		ReadStatusResponseDto readStatusResponseDto = readStatusService.createReadStatus(createReadStatusRequestDto);
+		createUserStatusRequestDto = new CreateUserStatusRequestDto(user2.getUserId());
+		UserStatusResponseDto user2Status = userStatusService.createUserStatus(createUserStatusRequestDto);
 
-		System.out.println("\n=== ReadStatus 전체 출력===");
-		List<ReadStatusResponseDto> readStatusResponseDtos = readStatusService.findAllReadStatus();
-		printReadStatusResponseDTOs(readStatusResponseDtos);
+		List<UserStatusResponseDto> userStatusList = userStatusService.findAllUserStatus();
+		printUserStatusResponseDTOs(userStatusList);
+		
+		System.out.println("=== User1 userStatus 출력 ===");
+		user1Status = userStatusService.findUserStatusByUserId(user1.getUserId());
+		System.out.println("UserStatus ID: " + user1Status.getUserStatusId() + ", User ID: " + user1Status.getUserId() + ", Time: " + user1Status.getLoginTime());
 
-		System.out.println("\n=== ReadStatus 유저1 출력===");
-		readStatusResponseDtos = readStatusService.findReadStatusByUserId(user1.getUserId());
-		printReadStatusResponseDTOs(readStatusResponseDtos);
+		System.out.println("=== User1 userStatus 업데이트 ===");
+		UpdateUserStatusRequestDto updateUserStatusRequestDto = new UpdateUserStatusRequestDto(user1Status.getUserId(), user1Status.getUserStatusId());
+		user1Status = userStatusService.updateUserStatus(updateUserStatusRequestDto);
+		System.out.println("UserStatus ID: " + user1Status.getUserStatusId() + ", User ID: " + user1Status.getUserId() + ", Time: " + user1Status.getLoginTime());
 
-		System.out.println("\n=== ReadStatus 채널1 출력===");
-		readStatusResponseDtos = readStatusService.findReadStatusByChannelId(channel1.getChannelId());
-		printReadStatusResponseDTOs(readStatusResponseDtos);
-
-		System.out.println("\n=== ReadStatus 업데이트 후 출력===");
-		UpdateReadStatusRequestDto updateReadStatusRequestDto = new UpdateReadStatusRequestDto(readStatusResponseDto.getUserId(), readStatusResponseDto.getChannelId(), readStatusResponseDto.getReadStatusId());
-		readStatusResponseDto = readStatusService.updateReadStatus(updateReadStatusRequestDto);
-		readStatusResponseDtos = readStatusService.findAllReadStatus();
-		printReadStatusResponseDTOs(readStatusResponseDtos);
-
-		System.out.println("\n=== ReadStatus 삭제 후 출력===");
-		DeleteReadStatusRequestDto deleteReadStatusRequestDto = new DeleteReadStatusRequestDto(readStatusResponseDto.getUserId(), readStatusResponseDto.getChannelId(), readStatusResponseDto.getReadStatusId());
-		readStatusService.deleteReadStatus(deleteReadStatusRequestDto);
-		readStatusResponseDtos = readStatusService.findAllReadStatus();
-		printReadStatusResponseDTOs(readStatusResponseDtos);
-
+		System.out.println("=== User1 userStatus 삭제 ===");
+		userStatusService.deleteUserStatusByUserId(user1Status.getUserId());
+		userStatusList = userStatusService.findAllUserStatus();
+		printUserStatusResponseDTOs(userStatusList);
 	}
 
 	public static void userTest(ConfigurableApplicationContext context) {
@@ -100,7 +100,7 @@ public class DiscodeitApplication {
 		UserService userService = context.getBean(UserService.class);
 		AuthService authService = context.getBean(AuthService.class);
 		BinaryContentsRepository binaryContentsRepository = context.getBean(BinaryContentsRepository.class);
-
+		UserStatusService userStatusService = context.getBean(UserStatusService.class);
 
 		System.out.println("\n========== userService Test start ==========================================\n");
 		System.out.println("1. 유저 등록=================");
@@ -125,28 +125,26 @@ public class DiscodeitApplication {
 		testImgBySave(user1ProfileImg.getBinaryData()); // 이미지 제대로 저장되었는지 확인*/
 
 
-		List<UserRecentConnectionDto> userRecentConnectionDtos = userService.findAllConnection();
+		List<UserStatusResponseDto> userStatusResponseDtos = userStatusService.findAllUserStatus();
 		System.out.println("=== 전체 유저 로그인 상태 ===");
-		userRecentConnectionDtos.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
+		userStatusResponseDtos.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
 		System.out.println();
 
 		System.out.println("=== 단일 유저 로그인 상태 ===");
-		UserConnectionRequestDto userConnectionRequestDTO = new UserConnectionRequestDto("kwon1");
-		UserRecentConnectionDto userRecentConnectionDTO = userService.findUserConnectionByUserName(userConnectionRequestDTO);
-		System.out.println("사용자: " + userRecentConnectionDTO.getUserName() + " | 상태: " + userRecentConnectionDTO.getIsLoggedIn());
+		UserStatusResponseDto userStatusResponseDTO = userStatusService.findUserStatusByUserId(user1.getUserId());
+		System.out.println("사용자: " + userStatusResponseDTO.getUserName() + " | 상태: " + userStatusResponseDTO.getIsLoggedIn());
 		System.out.println();
 
 		System.out.println("=== 유저 업데이트 ===");
 		UserUpdateRequestDto userUpdateRequestDto = new UserUpdateRequestDto(loginUser1.getUserId(), "newKwon1", "newPw1", "newEMail", ".\\src\\main\\resources\\static\\basicUserProfileImage2.png");
 		userService.updateUser(userUpdateRequestDto);
-		userConnectionRequestDTO  = new UserConnectionRequestDto("newKwon1");
-		userRecentConnectionDTO = userService.findUserConnectionByUserName(userConnectionRequestDTO);
-		System.out.println("사용자: " + userRecentConnectionDTO.getUserName() + " | 상태: " + userRecentConnectionDTO.getIsLoggedIn());
+		userStatusResponseDTO = userStatusService.findUserStatusByUserId(user1.getUserId());
+		System.out.println("사용자: " + userStatusResponseDTO.getUserName() + " | 상태: " + userStatusResponseDTO.getIsLoggedIn());
 		System.out.println();
 
 		System.out.println("=== 전체 유저 로그인 상태 ===");
-		userRecentConnectionDtos = userService.findAllConnection();
-		userRecentConnectionDtos.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
+		userStatusResponseDtos = userStatusService.findAllUserStatus();
+		userStatusResponseDtos.forEach(userLoginData -> System.out.println("사용자: " + userLoginData.getUserName() + " | 상태: " + userLoginData.getIsLoggedIn()));
 		System.out.println();
 
 		System.out.println("=== 유저 삭제 전 ActiveUserDTo 확인 ===");
@@ -320,6 +318,100 @@ public class DiscodeitApplication {
 		// 정상적으로 수행 됨
 	}
 
+	public static void readStatusTest(ConfigurableApplicationContext context) {
+		AuthService authService = context.getBean(AuthService.class);
+		ChannelService channelService = context.getBean(ChannelService.class);
+		MessageService messageService = context.getBean(MessageService.class);
+		ReadStatusService readStatusService = context.getBean(ReadStatusService.class);
+		BinaryContentsService binaryContentsService = context.getBean(BinaryContentsService.class);
+
+		LoginRequestDto loginRequestDTO = new LoginRequestDto("newKwon1", "pw1");
+		LoginRequestDto loginRequestDTO2 = new LoginRequestDto("kwon2", "pw2");
+
+		UserResponseDto user1 = authService.logInUser(loginRequestDTO);
+		UserResponseDto user2 = authService.logInUser(loginRequestDTO2);
+
+		System.out.println("\n=== Public 채널 생성===");
+		CreateChannelRequestDto createChannelRequestDTO = new CreateChannelRequestDto(user1.getUserId(), "권용진1의 public 채널", "권용진의 1의 public 채널입니다.");
+		ChannelResponseDto channel1 = channelService.createPublicChannel(createChannelRequestDTO);
+
+		createChannelRequestDTO = new CreateChannelRequestDto(user1.getUserId(), "권용진1의 public 채널2", "권용진의 1의 public 채널2 입니다.");
+		ChannelResponseDto channel2 = channelService.createPublicChannel(createChannelRequestDTO);
+
+		// 추가 첨부 파일을 선택했다는 의미
+
+		System.out.println("\n=== ReadStatus 추가===");
+		CreateReadStatusRequestDto createReadStatusRequestDto = new CreateReadStatusRequestDto(user1, channel1);
+		ReadStatusResponseDto readStatusResponseDto = readStatusService.createReadStatus(createReadStatusRequestDto);
+
+		System.out.println("\n=== ReadStatus 전체 출력===");
+		List<ReadStatusResponseDto> readStatusResponseDtos = readStatusService.findAllReadStatus();
+		printReadStatusResponseDTOs(readStatusResponseDtos);
+
+		System.out.println("\n=== ReadStatus 유저1 출력===");
+		readStatusResponseDtos = readStatusService.findReadStatusByUserId(user1.getUserId());
+		printReadStatusResponseDTOs(readStatusResponseDtos);
+
+		System.out.println("\n=== ReadStatus 채널1 출력===");
+		readStatusResponseDtos = readStatusService.findReadStatusByChannelId(channel1.getChannelId());
+		printReadStatusResponseDTOs(readStatusResponseDtos);
+
+		System.out.println("\n=== ReadStatus 업데이트 후 출력===");
+		UpdateReadStatusRequestDto updateReadStatusRequestDto = new UpdateReadStatusRequestDto(readStatusResponseDto.getUserId(), readStatusResponseDto.getChannelId(), readStatusResponseDto.getReadStatusId());
+		readStatusResponseDto = readStatusService.updateReadStatus(updateReadStatusRequestDto);
+		readStatusResponseDtos = readStatusService.findAllReadStatus();
+		printReadStatusResponseDTOs(readStatusResponseDtos);
+
+		System.out.println("\n=== ReadStatus 삭제 후 출력===");
+		DeleteReadStatusRequestDto deleteReadStatusRequestDto = new DeleteReadStatusRequestDto(readStatusResponseDto.getUserId(), readStatusResponseDto.getChannelId(), readStatusResponseDto.getReadStatusId());
+		readStatusService.deleteReadStatus(deleteReadStatusRequestDto);
+		readStatusResponseDtos = readStatusService.findAllReadStatus();
+		printReadStatusResponseDTOs(readStatusResponseDtos);
+	}
+
+	public static void userStatusTest(ConfigurableApplicationContext context) {
+		AuthService authService = context.getBean(AuthService.class);
+		UserStatusService userStatusService = context.getBean(UserStatusService.class);
+		/*
+		UserService userService = context.getBean(UserService.class);
+		UserCreateRequestDto user1Dto = new UserCreateRequestDto("kwon1", "pw1",  "kwon1@email.com", null);
+		UserCreateRequestDto user2Dto = new UserCreateRequestDto("kwon2", "pw2",  "kwon2@email.com", null); // null은 사진을 선택하지 않았다는 의미
+
+		UserResponseDto user1 = userService.createUser(user1Dto);
+		UserResponseDto user2 = userService.createUser(user2Dto);*/
+
+		LoginRequestDto loginRequestDto = new LoginRequestDto("kwon1", "pw1");
+		LoginRequestDto loginRequestDto2 = new LoginRequestDto("kwon2", "pw2");
+
+		UserResponseDto user1 = authService.logInUser(loginRequestDto);
+		UserResponseDto user2 = authService.logInUser(loginRequestDto2);
+
+		System.out.println("=== 전체 userStatus출력 ===");
+
+		CreateUserStatusRequestDto createUserStatusRequestDto = new CreateUserStatusRequestDto(user1.getUserId());
+		UserStatusResponseDto user1Status = userStatusService.createUserStatus(createUserStatusRequestDto);
+
+		createUserStatusRequestDto = new CreateUserStatusRequestDto(user2.getUserId());
+		UserStatusResponseDto user2Status = userStatusService.createUserStatus(createUserStatusRequestDto);
+
+		List<UserStatusResponseDto> userStatusList = userStatusService.findAllUserStatus();
+		printUserStatusResponseDTOs(userStatusList);
+
+		System.out.println("=== User1 userStatus 출력 ===");
+		user1Status = userStatusService.findUserStatusByUserId(user1.getUserId());
+		System.out.println("UserStatus ID: " + user1Status.getUserStatusId() + ", User ID: " + user1Status.getUserId() + ", Time: " + user1Status.getLoginTime());
+
+		System.out.println("=== User1 userStatus 업데이트 ===");
+		UpdateUserStatusRequestDto updateUserStatusRequestDto = new UpdateUserStatusRequestDto(user1Status.getUserId(), user1Status.getUserStatusId());
+		user1Status = userStatusService.updateUserStatus(updateUserStatusRequestDto);
+		System.out.println("UserStatus ID: " + user1Status.getUserStatusId() + ", User ID: " + user1Status.getUserId() + ", Time: " + user1Status.getLoginTime());
+
+		System.out.println("=== User1 userStatus 삭제 ===");
+		userStatusService.deleteUserStatusByUserId(user1Status.getUserId());
+		userStatusList = userStatusService.findAllUserStatus();
+		printUserStatusResponseDTOs(userStatusList);
+	}
+
 	public static void printUserDTOs(List<UserResponseDto> userResponseDtos) {
 		//TODO 테스트 코드 추가하기
 		for (UserResponseDto userResponseDto : userResponseDtos) {
@@ -399,6 +491,27 @@ public class DiscodeitApplication {
 			sb.append(dto.getChannelId());
 			sb.append(", Time: ");
 			sb.append(dto.getReadTime());
+
+
+			System.out.println(sb);
+		}
+	}
+
+	public static void printUserStatusResponseDTOs(List<UserStatusResponseDto> dtos) {
+		if (dtos.isEmpty()) {
+			System.out.println("DTO가 비었습니다.");
+			return;
+		}
+
+		for (UserStatusResponseDto dto : dtos) {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append("UserStatus ID: ");
+			sb.append(dto.getUserStatusId());
+			sb.append(", User ID: ");
+			sb.append(dto.getUserId());
+			sb.append(", Time: ");
+			sb.append(dto.getLoginTime());
 
 
 			System.out.println(sb);

@@ -22,7 +22,6 @@ public class BasicUserService implements UserService {
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
     private final BinaryContentsRepository binaryContentsRepository;
-    private final UserStatusRepository userStatusRepository;
 
     @Override
     public UserResponseDto createUser(UserCreateRequestDto userCreateRequestDTO) {
@@ -52,8 +51,7 @@ public class BasicUserService implements UserService {
         profileImg.setReferenceId(user.getId());
         binaryContentsRepository.createBinaryContents(profileImg);
 
-        UserStatus userStatus = new UserStatus(user, false); // 로그인 상태는 false
-        userStatusRepository.createUserStatus(userStatus);
+
 
         return new UserResponseDto(
                 user.getId(),
@@ -114,8 +112,6 @@ public class BasicUserService implements UserService {
         BinaryContent(프로필), UserStatus
         */
         binaryContentsRepository.delete(user.getProfileId());
-        userStatusRepository.delete(user.getId());
-
         channelRepository.deleteUserFromChannels(user);
         userRepository.deleteUser(user);
     }
@@ -126,46 +122,6 @@ public class BasicUserService implements UserService {
         userRepository.restoreUser(userName);
     }
 
-    @Override
-    public UserRecentConnectionDto findUserConnectionByUserName(UserConnectionRequestDto userConnectionRequestDTO){
-        //User user로 받으면 좋을것같다? -> 컨트롤러가 User를 들고 있을 수 없으니 할 수 없음, userName하나만을 가지고 있는 DTO를 사용
-        isExistUserByUserName(userConnectionRequestDTO.getUserName());
-        return findAllConnection().stream().filter(u -> u.getUserName().equals(userConnectionRequestDTO.getUserName())).findFirst().orElse(null);
-    }
-
-    @Override
-    public void logOutUser(UserResponseDto userResponseDto){
-        isExistUserByUserName(userResponseDto.getUserName());
-        User user = userRepository.findUserById(userResponseDto.getUserId());
-        UserStatus userStatus = new UserStatus(user, false); // 새로 생성한 것을 저장 해야 하는데
-        userStatusRepository.createUserStatus(userStatus);
-    }
-
-    @Override
-    public UserStatus isOnline(User user){
-        // 검증로직은 따로 필요없다.
-        return userStatusRepository.getLastUserStatus(user);
-    }
-
-    @Override
-    public List<UserRecentConnectionDto> findAllConnection(){
-        /*
-        UserStatus
-        사용자 별 마지막으로 확인된 접속 시간을 표현하는 도메인 모델입니다. 사용자의 온라인 상태를 확인하기 위해 활용합니다.
-        마지막 접속 시간을 기준으로 현재 로그인한 유저로 판단할 수 있는 메소드를 정의하세요.
-        마지막 접속 시간이 현재 시간으로부터 5분 이내이면 현재 접속 중인 유저로 간주합니다.*/
-
-        List<UserRecentConnectionDto> userStatuses = new ArrayList<>();
-        List<User> usersFromFile = userRepository.loadUsers();
-
-
-        for (User user : usersFromFile) {
-            UserStatus userStatusFromCurrentUser = isOnline(user);
-            userStatuses.add(new UserRecentConnectionDto(user.getId(), user.getUserName(), userStatusFromCurrentUser.getLoggedIn()));
-        }
-
-        return userStatuses;
-    }
 
     @Override
     public List<UserResponseDto> findAllUserDTO(){

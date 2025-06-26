@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -50,12 +51,6 @@ public class FileUserStatusRepository implements UserStatusRepository, Serializa
         saveStatuses(userStatuses);
     }
 
-    @Override
-    public void delete(UUID userId){
-        List<UserStatus> userStatuses = loadUserStatuses();
-        userStatuses.removeIf(userStatus -> userStatus.getUserId().equals(userId));
-        saveStatuses(userStatuses);
-    }
 
     @Override
     public UserStatus getLastUserStatus(User user){
@@ -65,5 +60,45 @@ public class FileUserStatusRepository implements UserStatusRepository, Serializa
                 .orElse(null); // 또는 예외 처리
         assert lastStatus != null;
         return lastStatus;
+    }
+
+    @Override
+    public void deleteUserStatusByUserStatusId (UUID userStatusId){
+        List<UserStatus> userStatuses = loadUserStatuses();
+        userStatuses.removeIf(userStatus ->userStatus.equalsId(userStatusId));
+        saveStatuses(userStatuses);
+    }
+
+    @Override
+    public void deleteUserStatusByUserId (UUID userId){
+        List<UserStatus> userStatuses = loadUserStatuses();
+        userStatuses.removeIf(userStatus ->userStatus.getUserId().equals(userId));
+        saveStatuses(userStatuses);
+    }
+
+    @Override
+    public Optional<UserStatus> findUserStatusByUserId (UUID userId){
+        List<UserStatus> userStatuses = loadUserStatuses();
+        return userStatuses.stream()
+                .filter(userStatus ->userStatus.getUserId().equals(userId)).findFirst();
+    }
+
+    @Override
+    public Optional<UserStatus> findUserStatusByUserStatusId(UUID userStatusId){
+        List<UserStatus> userStatuses = loadUserStatuses();
+        return userStatuses.stream().filter(userStatus ->userStatus.getUserId().equals(userStatusId)).findFirst();
+    }
+
+    @Override
+    public void updateUserStatus(UserStatus userStatus){
+        List<UserStatus> userStatuses = loadUserStatuses();
+        for (int i = 0; i < userStatuses.size(); i++) {
+            if (userStatuses.get(i).equalsId(userStatus.getId())) {
+                userStatuses.set(i, userStatus);
+                saveStatuses(userStatuses);
+                return;
+            }
+        }
+
     }
 }

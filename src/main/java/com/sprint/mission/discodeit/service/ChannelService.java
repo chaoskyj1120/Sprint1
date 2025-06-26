@@ -25,7 +25,6 @@ public interface ChannelService {
     List<ChannelResponseDto> findPublicChannel();
     List<ChannelResponseDto> findPrivateChannel(UserResponseDto user);
 
-    ChannelResponseDto enterChanner(User user, Channel chanel);
     ChannelResponseDto findChannelDTOByCannelId(UUID chanelId);
 
     List<ReadStatus> findAllReadStatus();

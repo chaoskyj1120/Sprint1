@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -31,14 +32,17 @@ public class BasicMessageService implements MessageService {
     @Override
     public MessageResponseDto createMessage(MessageCreateRequestDto messageCreateRequestDTO) {
 
-        Channel channel = channelRepository.getChannelById(messageCreateRequestDTO.getChannelResponseDto().getChannelId());
-        User user = userRepository.findUserById(messageCreateRequestDTO.getUserResponseDto().getUserId());
+        Optional<User> userFromFile = userRepository.findUserById(messageCreateRequestDTO.getUserResponseDto().getUserId());
+        Optional<Channel> channelFromFile = channelRepository.findChannelByChannelId(messageCreateRequestDTO.getChannelResponseDto().getChannelId());
+
+        optionalUserIsEmpty(userFromFile);
+        optionalChannelIsEmpty(channelFromFile);
+
         String contents = messageCreateRequestDTO.getMessageContents();
 
-        if(channel == null) {
-            //System.out.println("채널이 null 입니다.");
-            return null;
-        }
+        User user = userFromFile.get();
+        Channel channel = channelFromFile.get();
+
         if(user.getStatus().equals(UserActivationState.DEACTIVE)) {
             //System.out.printf("'%s' 비활성 상태라 메세지를 작성할 수 없습니다.", user.getUserName());
             return null;
@@ -74,13 +78,17 @@ public class BasicMessageService implements MessageService {
         //System.out.println(binaryContentsList.size());
         messageRepository.createMessage(newMessage);
 
-        User updateMessageUser = userRepository.findUserById(newMessage.getAuthorId());
+        Optional<User> updateMessageUserFromFile = userRepository.findUserById(newMessage.getAuthorId());
+        optionalUserIsEmpty(updateMessageUserFromFile);
+        User updateMessageUser = updateMessageUserFromFile.get();
         updateMessageUser.addMessage(newMessage);
         userRepository.updateUser(updateMessageUser);
 
-        Channel UpdateMessageChannel = channelRepository.getChannelById(newMessage.getChannelId());
-        UpdateMessageChannel.addMessage(newMessage);
-        channelRepository.updateChannel(UpdateMessageChannel);
+        Optional<Channel> updateMessageChannelFromFile = channelRepository.findChannelByChannelId(newMessage.getChannelId());
+        optionalChannelIsEmpty(updateMessageChannelFromFile);
+        Channel updateMessageChannel = updateMessageChannelFromFile.get();
+        updateMessageChannel.addMessage(newMessage);
+        channelRepository.updateChannel(updateMessageChannel);
 
         return new MessageResponseDto(newMessage);
     }
@@ -88,25 +96,23 @@ public class BasicMessageService implements MessageService {
     @Override
     public void deleteMessage(DeleteMessageRequestDto deleteMessageRequestDTO) {
 
-        User user = userRepository.findUserById(deleteMessageRequestDTO.getUserResponseDto().getUserId());
-        Message message = messageRepository.findMessageByMessageId(deleteMessageRequestDTO.getMessageResponseDTO().getMessageId());
-        Channel channel = channelRepository.getChannelById(message.getChannelId());
+        Optional<User> userFromFile = userRepository.findUserById(deleteMessageRequestDTO.getUserResponseDto().getUserId());
+        optionalUserIsEmpty(userFromFile);
+        User user = userFromFile.get();
 
+        Optional<Message> messageFromFile = messageRepository.findMessageByMessageId(deleteMessageRequestDTO.getMessageResponseDTO().getMessageId());
+        optionalMessageIsEmpty(messageFromFile);
+        Message message = messageFromFile.get();
 
-        if (!user.getId().equals(message.getAuthorId())) {
-            return;
-        }
-
-        if (channel == null) {
-            return;
-        }
+        Optional<Channel> channelFromFile = channelRepository.findChannelByChannelId(message.getChannelId());
+        optionalChannelIsEmpty(channelFromFile);
+        Channel channel = channelFromFile.get();
 
         user.getMessageIds().remove(message.getId());
         channel.getMessageIds().remove(message.getId());
 
-
         for (UUID binaryContentId : message.getBinaryContentsIds()) {
-            binaryContentsRepository.delete(binaryContentId);
+            binaryContentsRepository.deleteBinaryContensByBinaryContentsId(binaryContentId);
         }
 
         userRepository.updateUser(user);
@@ -137,12 +143,14 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponseDto updateMessage(MessageUpdateRequestDto messageUpdateRequestDTO) {
-        Message message = messageRepository.findMessageByMessageId(messageUpdateRequestDTO.getMessageResponseDTO().getMessageId());
-        User user = userRepository.findUserById(messageUpdateRequestDTO.getUserResponseDto().getUserId());
-        if (message == null) {
-            //System.out.println("메세지가 null 입니다.");
-            return null;
-        }
+        Optional<Message> messageFromFile = messageRepository.findMessageByMessageId(messageUpdateRequestDTO.getMessageResponseDTO().getMessageId());
+        optionalMessageIsEmpty(messageFromFile);
+        Message message = messageFromFile.get();
+
+        Optional<User> userFromFile = userRepository.findUserById(messageUpdateRequestDTO.getUserResponseDto().getUserId());
+        optionalUserIsEmpty(userFromFile);
+        User user = userFromFile.get();
+
         if (user.getStatus().equals(UserActivationState.DEACTIVE)) {
             //System.out.printf("'%s' 비활성 상태라 메세지를 업데이트할 수 없습니다.", user.getUserName());
             return null;
@@ -155,7 +163,7 @@ public class BasicMessageService implements MessageService {
         message.setMessageContents(messageUpdateRequestDTO.getNewContent());
 
         for (UUID binaryContentId : message.getBinaryContentsIds()) {
-            binaryContentsRepository.delete(binaryContentId);
+            binaryContentsRepository.deleteBinaryContensByBinaryContentsId(binaryContentId);
         }
         message.clearBinaryContentsId();
 
@@ -181,5 +189,29 @@ public class BasicMessageService implements MessageService {
 
         messageRepository.updateMessage(message);
         return new MessageResponseDto(message);
+    }
+
+    private void optionalUserIsEmpty(Optional<User> user) {
+        if (user.isEmpty()) {
+            throw new IllegalArgumentException("User 정보가 없습니다.");
+        }
+    }
+
+    private void optionalChannelIsEmpty(Optional<Channel> channel) {
+        if (channel.isEmpty()) {
+            throw new IllegalArgumentException("Channel 정보가 없습니다.");
+        }
+    }
+
+    private void optionalMessageIsEmpty(Optional<Message> message) {
+        if (message.isEmpty()) {
+            throw new IllegalArgumentException("Message 정보가 없습니다.");
+        }
+    }
+
+    private void optionalChannelIsPresent(Optional<Channel> channel) {
+        if (channel.isPresent()) {
+            throw new IllegalArgumentException("Channel 정보가 중복됩니다.");
+        }
     }
 }

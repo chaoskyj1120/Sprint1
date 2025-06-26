@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -51,8 +50,6 @@ public class BasicUserService implements UserService {
         profileImg.setReferenceId(user.getId());
         binaryContentsRepository.createBinaryContents(profileImg);
 
-
-
         return new UserResponseDto(
                 user.getId(),
                 user.getUserName(),
@@ -65,9 +62,9 @@ public class BasicUserService implements UserService {
     @Override
     public void updateUser(UserUpdateRequestDto userUpdateRequestDTO) {
 
-        User targetUser = userRepository.findUserById(userUpdateRequestDTO.getUserId());
-
-        isExistUserByUserId(userUpdateRequestDTO.getUserId());
+        Optional<User> userFromFile = userRepository.findUserById(userUpdateRequestDTO.getUserId());
+        optionalUserIsEmpty(userFromFile);
+        User targetUser = userFromFile.get();
 
         targetUser.setUserName(userUpdateRequestDTO.getNewUserName());
         targetUser.setEmail(userUpdateRequestDTO.getNewEmail());
@@ -89,7 +86,7 @@ public class BasicUserService implements UserService {
             }
             BinaryContents profileImg = new BinaryContents(userUpdateRequestDTO.getNewProfileImagePath(), BinaryContentType.USER_PROFILE_IMAGE, profileImageBytes);
             profileImg.setReferenceId(targetUser.getId());
-            binaryContentsRepository.delete(targetUser.getProfileId());
+            binaryContentsRepository.deleteBinaryContensByBinaryContentsId(targetUser.getProfileId());
             targetUser.setProfileId(profileImg.getId());
             binaryContentsRepository.createBinaryContents(profileImg);
         }
@@ -101,17 +98,14 @@ public class BasicUserService implements UserService {
     public void deleteUser(UserResponseDto userResponseDto) {
 
         Optional<User> userFromFile = userRepository.findUserByUserId(userResponseDto.getUserId());
+        optionalUserIsEmpty(userFromFile); // 검증 메서드 활용
 
-        if (userFromFile.isEmpty()){
-            System.out.println("해당 유저가 존재하지 않습니다.");
-            return;
-        }
         User user = userFromFile.get();
         /*
         [ ] 관련된 도메인도 같이 삭제합니다.
         BinaryContent(프로필), UserStatus
         */
-        binaryContentsRepository.delete(user.getProfileId());
+        binaryContentsRepository.deleteBinaryContensByBinaryContentsId(user.getProfileId());
         channelRepository.deleteUserFromChannels(user);
         userRepository.deleteUser(user);
     }
@@ -128,7 +122,7 @@ public class BasicUserService implements UserService {
         List<User> usersFromFile = userRepository.loadUsers();
         List<UserResponseDto> userResponseDtos = new ArrayList<>();
         for (User user : usersFromFile) {
-            userResponseDtos.add(new UserResponseDto(user.getId(), user.getUserName(), user.getEmail(), binaryContentsRepository.getBinaryContentsByBinaryContentsId(user.getProfileId()).getBinaryData()));
+            userResponseDtos.add(new UserResponseDto(user.getId(), user.getUserName(), user.getEmail(), binaryContentsRepository.findBinaryContentsByBinaryContentsId(user.getProfileId()).get().getBinaryData()));
         }
         return userResponseDtos;
     }
@@ -142,7 +136,7 @@ public class BasicUserService implements UserService {
                         user.getUserName(),
                         user.getEmail(),
                         binaryContentsRepository
-                                .getBinaryContentsByBinaryContentsId(user.getProfileId())
+                                .findBinaryContentsByBinaryContentsId(user.getProfileId()).get()
                                 .getBinaryData()
                 ))
                 .collect(Collectors.toList());
@@ -190,9 +184,22 @@ public class BasicUserService implements UserService {
     }
 
     private boolean compareProfile(UserUpdateRequestDto userUpdateRequestDTO){
-        User targetUser = userRepository.findUserById(userUpdateRequestDTO.getUserId());
-        BinaryContents profileImg = binaryContentsRepository.getBinaryContentsByBinaryContentsId(targetUser.getProfileId());
+        Optional<User> targetUser = userRepository.findUserById(userUpdateRequestDTO.getUserId());
+        optionalUserIsEmpty(targetUser);
+        User user = targetUser.get();
+        Optional<BinaryContents> profileImgFromFile= binaryContentsRepository.findBinaryContentsByBinaryContentsId(user.getProfileId());
+
+        if(profileImgFromFile.isEmpty()){
+            throw new IllegalArgumentException("profileImg 정보가 없습니다.");
+        }
+        BinaryContents profileImg = profileImgFromFile.get();
 
         return profileImg.getBinaryContentsPath().equals(userUpdateRequestDTO.getNewProfileImagePath());
+    }
+
+    private void optionalUserIsEmpty(Optional<User> user) {
+        if (user.isEmpty()) {
+            throw new IllegalArgumentException("User 정보가 없습니다.");
+        }
     }
 }

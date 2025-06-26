@@ -1,6 +1,7 @@
-package com.sprint.mission.discodeit.repository.file;
+package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.BinaryContents;
+import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,37 +11,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class FileBinaryContentsRepository implements BinaryContentsRepository, Serializable {
+@Repository
+public class JcfBinaryContentsRepository implements BinaryContentsRepository {
 
-    private final String filePath;
-
-    public FileBinaryContentsRepository(String fileDirectory) {
-        this.filePath = fileDirectory + "/binary.ser";
-    }
+    private List<BinaryContents> binaryContentsData = new ArrayList<>();
 
     @Override
     public List<BinaryContents> loadBinaryContents() {
-        File file = new File(filePath);
-
-        if (!file.exists() || file.length() == 0) {
-            return new ArrayList<>(); // 비어 있으면 빈 리스트 반환
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            return (List<BinaryContents>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+        return binaryContentsData;
     }
 
     @Override
     public void saveBinaryContents(List<BinaryContents> contentsList) {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(contentsList);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        binaryContentsData = contentsList;
     }
 
     @Override

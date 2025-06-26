@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.repository.file;
+package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
@@ -8,38 +8,20 @@ import org.springframework.stereotype.Repository;
 import java.io.*;
 import java.util.*;
 
+@RequiredArgsConstructor
+@Repository
+public class JcfMessageRepository implements MessageRepository {
 
-public class FileMessageRepository implements MessageRepository, Serializable {
-
-    private final String filePath;
-
-    public FileMessageRepository(String fileDirectory) {
-        this.filePath = fileDirectory + "/message.ser";
-    }
+    private List<Message> messageData = new ArrayList<>();
 
     @Override
     public List<Message> loadMessages(){
-        File file = new File(filePath);
-
-        if (!file.exists() || file.length() == 0) {
-            return new ArrayList<Message>(); // 해당 파일이 없거나 비어 있다면 빈 ArrayList를 반환
-        }
-        // ArrayList<User> 역직렬화및 반환
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
-            return (List<Message>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+        return messageData;
     }
 
     @Override
     public void saveMessages(List<Message> messages){
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(messages);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        messageData = messages;
     }
 
     @Override

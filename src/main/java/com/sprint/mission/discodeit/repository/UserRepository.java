@@ -16,7 +16,7 @@ public interface UserRepository {
     List<User> loadUsers();
     void saveUsers(List<User> users);
 
-    User findUserById(UUID id);
+    Optional<User> findUserById(UUID id);
     Optional<User> findUserByEmail(String email);
     Optional<User> findUserByUserName(String username);
     Optional<User> findUserByUserId(UUID username);

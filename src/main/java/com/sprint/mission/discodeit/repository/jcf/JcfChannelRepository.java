@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.repository.file;
+package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.User;
@@ -13,36 +13,20 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class FileChannelRepository implements ChannelRepository, Serializable {
+@RequiredArgsConstructor
+@Repository
+public class JcfChannelRepository implements ChannelRepository {
 
-    private final String filePath;
-
-    public FileChannelRepository(String fileDirectory) {
-        this.filePath = fileDirectory + "/channel.ser";
-    }
+    private List<Channel> channelData = new ArrayList<>();
 
     @Override
     public List<Channel> loadChannels() {
-        File file = new File(filePath);
-        if (!file.exists() || file.length() == 0) {
-            return new ArrayList<>();
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            return (List<Channel>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+        return channelData;
     }
 
     @Override
     public void saveChannels(List<Channel> channels) {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(channels);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        channelData = channels;
     }
 
     @Override

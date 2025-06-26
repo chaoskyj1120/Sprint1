@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.repository.file;
+package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.repository.UserStatusRepository;
@@ -12,37 +12,20 @@ import java.util.Optional;
 import java.util.UUID;
 
 
-public class FileUserStatusRepository implements UserStatusRepository, Serializable {
+@RequiredArgsConstructor
+@Repository
+public class JcfUserStatusRepository implements UserStatusRepository, Serializable {
 
-    private final String filePath;
-
-    public FileUserStatusRepository(String fileDirectory) {
-        this.filePath = fileDirectory + "/userStatus.ser";
-    }
+    private List<UserStatus> userStatusData;
 
     @Override
     public List<UserStatus> loadUserStatuses() {
-        File file = new File(filePath);
-
-        if (!file.exists() || file.length() == 0) {
-            return new ArrayList<>(); // 비어 있으면 빈 리스트 반환
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            return (List<UserStatus>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+        return userStatusData;
     }
 
     @Override
     public void saveStatuses(List<UserStatus> userStatuses) {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(userStatuses);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        userStatusData = userStatuses;
     }
 
     @Override

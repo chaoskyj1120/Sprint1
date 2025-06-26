@@ -12,7 +12,6 @@ public interface UserStatusRepository {
 
     List<UserStatus> loadUserStatuses();
     void saveStatuses(List<UserStatus> userStatuses);
-    UserStatus getLastUserStatus(User user);
 
     void deleteUserStatusByUserStatusId (UUID userStatusId);
     void deleteUserStatusByUserId (UUID userId);

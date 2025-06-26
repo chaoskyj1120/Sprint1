@@ -12,21 +12,18 @@ import java.util.*;
 
 @Getter
 public class ChannelResponseDto {
-    private final MessageRepository messageRepository = new FileMessageRepository();
-
     private final UUID channelId;
     private final String channelName;
     private final UUID hostUserId;
     private final ChannelType channelType;
     private final String channelDescription;
 
-    private final Instant lastMessageTime;
     private final UUID lastMessageId; // 추가된 필드
 
     private final Set<UUID> userIds;
     private final Set<UUID> messageIds;
 
-    public ChannelResponseDto(Channel channel) {
+    public ChannelResponseDto(Channel channel, UUID lastMessageId) {
         this.channelId = channel.getId();
         this.channelName = channel.getChannelName();
         this.hostUserId = channel.getHostUserId();
@@ -34,23 +31,6 @@ public class ChannelResponseDto {
         this.channelDescription = channel.getChannelDescription();
         this.userIds = channel.getUserIds();
         this.messageIds = channel.getMessageIds();
-
-        Instant lastMessageTime = null;
-        UUID lastMessageId = null;
-
-        if (!messageIds.isEmpty()) {
-            List<Message> messagesInChannel = messageRepository.findMessagesByMessageIds(messageIds);
-
-            Optional<Message> latestMessage = messagesInChannel.stream()
-                    .max(Comparator.comparing(Message::getCreatedAt));
-
-            if (latestMessage.isPresent()) {
-                lastMessageTime = latestMessage.get().getCreatedAt();
-                lastMessageId = latestMessage.get().getId();
-            }
-        }
-
-        this.lastMessageTime = lastMessageTime;
         this.lastMessageId = lastMessageId;
     }
 }

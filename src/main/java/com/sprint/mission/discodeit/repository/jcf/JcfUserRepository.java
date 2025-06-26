@@ -1,47 +1,29 @@
-package com.sprint.mission.discodeit.repository.file;
+package com.sprint.mission.discodeit.repository.jcf;
 
-import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.entity.UserActivationState;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class FileUserRepository implements UserRepository, Serializable {
+@RequiredArgsConstructor
+@Repository
+public class JcfUserRepository implements UserRepository {
 
-    private final String filePath;
-
-    public FileUserRepository(String fileDirectory) {
-        this.filePath = fileDirectory + "/user.ser";
-    }
-
+    private List<User> userData = new ArrayList<>();
     @Override
     public List<User> loadUsers() {
-        File file = new File(filePath);
-
-        if (!file.exists() || file.length() == 0) {
-            return new ArrayList<User>(); // 해당 파일이 없거나 비어 있다면 빈 ArrayList를 반환
-        }
-        // ArrayList<User> 역직렬화및 반환
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filePath))) {
-            return (List<User>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+        return userData;
     }
 
     @Override
     public void saveUsers(List<User> users) {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(users);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        userData = users;
     }
 
     @Override

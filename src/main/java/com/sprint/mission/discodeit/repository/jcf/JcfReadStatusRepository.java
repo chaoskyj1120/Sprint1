@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.repository.file;
+package com.sprint.mission.discodeit.repository.jcf;
 
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -11,38 +11,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class FileReadStatusRepository implements ReadStatusRepository, Serializable {
+@RequiredArgsConstructor
+@Repository
+public class JcfReadStatusRepository implements ReadStatusRepository {
 
-    private final String filePath;
-
-    public FileReadStatusRepository(String fileDirectory) {
-        this.filePath = fileDirectory + "/readStatus.ser";
-    }
-
+    private List<ReadStatus> readStatusData;
 
     @Override
     public List<ReadStatus> loadReadStatuses() {
-        File file = new File(filePath);
-
-        if (!file.exists() || file.length() == 0) {
-            return new ArrayList<>(); // 비어 있으면 빈 리스트 반환
-        }
-
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            return (List<ReadStatus>) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+        return readStatusData;
     }
 
     @Override
     public void saveReadStatuses(List<ReadStatus> readStatuses) {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-            oos.writeObject(readStatuses);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        readStatusData = readStatuses;
     }
 
     @Override

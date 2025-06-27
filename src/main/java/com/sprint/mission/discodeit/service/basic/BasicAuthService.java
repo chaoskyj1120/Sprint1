@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.auth_service_dto.LoginRequestDto;
 import com.sprint.mission.discodeit.dto.user_service_dto.UserResponseDto;
 import com.sprint.mission.discodeit.entity.BinaryContents;
-import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
@@ -22,35 +21,30 @@ public class BasicAuthService implements AuthService {
 
     @Override
     public UserResponseDto logInUser(LoginRequestDto loginRequest) {
-        Optional<User> targetUser = userRepository.findUserByUserName(loginRequest.getUserName());
-        optionalUserIsEmpty(targetUser);
-        User user = targetUser.get();
+
+        User user = findUserByUserName(loginRequest.getUserName());
 
         if (!user.getPassword().equals(loginRequest.getPassword())) {
             throw new IllegalArgumentException("일치하지 않은 비밀번호 입니다.");
         }
 
-        Optional<BinaryContents> currentUserPicture = binaryContentsRepository.findBinaryContentsByBinaryContentsId(user.getProfileId());
-        optionalBinaryContentsIsEmpty(currentUserPicture);
-        BinaryContents binaryContents = currentUserPicture.get();
+        BinaryContents currentUserPicture = findBinaryContentsByBinaryContentsId(user.getProfileId());
         // DTO 반환
         return new UserResponseDto(
                 user.getId(),
                 user.getUserName(),
                 user.getEmail(),
-                currentUserPicture != null ? binaryContents.getBinaryData() : null
+                currentUserPicture != null ? currentUserPicture.getBinaryData() : null
         );
     }
 
-    private void optionalUserIsEmpty(Optional<User> user) {
-        if (user.isEmpty()) {
-            throw new IllegalArgumentException("User 정보가 없습니다.");
-        }
+    private User findUserByUserName(String userName) {
+        return userRepository.findUserByUserName(userName)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 유저를 찾을 수 없습니다."));
     }
 
-    private void optionalBinaryContentsIsEmpty(Optional<BinaryContents> binaryContents) {
-        if (binaryContents.isEmpty()) {
-            throw new IllegalArgumentException("ReadStatus 정보가 없습니다.");
-        }
+    private BinaryContents findBinaryContentsByBinaryContentsId(UUID binaryContentsId) {
+        return binaryContentsRepository.findBinaryContentsByBinaryContentsId(binaryContentsId)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 바이너리 컨텐츠를 찾을 수 없습니다."));
     }
 }

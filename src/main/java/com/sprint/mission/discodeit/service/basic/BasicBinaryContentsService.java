@@ -29,7 +29,7 @@ public class BasicBinaryContentsService implements BinaryContentsService {
 
 
     @Override
-    public List<BinaryContentsResponseDto> findAllBinaryContentsDTOs(){
+    public List<BinaryContentsResponseDto> findAllBinaryContentsDtos(){
         List<BinaryContents> binaryContents = binaryContentsRepository.loadBinaryContents();
         List<BinaryContentsResponseDto> binaryContentsResponseDtos = new ArrayList<>();
 

@@ -61,10 +61,7 @@ public class BasicUserService implements UserService {
 
     @Override
     public void updateUser(UserUpdateRequestDto userUpdateRequestDTO) {
-
-        Optional<User> userFromFile = userRepository.findUserById(userUpdateRequestDTO.getUserId());
-        optionalUserIsEmpty(userFromFile);
-        User targetUser = userFromFile.get();
+        User targetUser = findUserByUserId(userUpdateRequestDTO.getUserId());
 
         targetUser.setUserName(userUpdateRequestDTO.getNewUserName());
         targetUser.setEmail(userUpdateRequestDTO.getNewEmail());
@@ -97,10 +94,7 @@ public class BasicUserService implements UserService {
     @Override
     public void deleteUser(UserResponseDto userResponseDto) {
 
-        Optional<User> userFromFile = userRepository.findUserByUserId(userResponseDto.getUserId());
-        optionalUserIsEmpty(userFromFile); // 검증 메서드 활용
-
-        User user = userFromFile.get();
+        User user = findUserByUserId(userResponseDto.getUserId());
         /*
         [ ] 관련된 도메인도 같이 삭제합니다.
         BinaryContent(프로필), UserStatus
@@ -184,9 +178,7 @@ public class BasicUserService implements UserService {
     }
 
     private boolean compareProfile(UserUpdateRequestDto userUpdateRequestDTO){
-        Optional<User> targetUser = userRepository.findUserById(userUpdateRequestDTO.getUserId());
-        optionalUserIsEmpty(targetUser);
-        User user = targetUser.get();
+        User user = findUserByUserId(userUpdateRequestDTO.getUserId());
         Optional<BinaryContents> profileImgFromFile= binaryContentsRepository.findBinaryContentsByBinaryContentsId(user.getProfileId());
 
         if(profileImgFromFile.isEmpty()){
@@ -197,9 +189,8 @@ public class BasicUserService implements UserService {
         return profileImg.getBinaryContentsPath().equals(userUpdateRequestDTO.getNewProfileImagePath());
     }
 
-    private void optionalUserIsEmpty(Optional<User> user) {
-        if (user.isEmpty()) {
-            throw new IllegalArgumentException("User 정보가 없습니다.");
-        }
+    private User findUserByUserId(UUID userId) {
+        return userRepository.findUserById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 유저를 찾을 수 없습니다."));
     }
 }

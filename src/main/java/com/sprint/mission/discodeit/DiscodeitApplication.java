@@ -1,10 +1,8 @@
 package com.sprint.mission.discodeit;
 
-import com.sprint.mission.discodeit.config.DiscodeitRepositoryProperties;
 import com.sprint.mission.discodeit.dto.auth_service_dto.LoginRequestDto;
 import com.sprint.mission.discodeit.dto.binary_contents_dto.BinaryContentsResponseDto;
 import com.sprint.mission.discodeit.dto.binary_contents_dto.CreateBinaryContentsRequestDto;
-import com.sprint.mission.discodeit.dto.binary_contents_dto.FindBinaryContentRequestDto;
 import com.sprint.mission.discodeit.dto.channel_service_dto.ChannelResponseDto;
 import com.sprint.mission.discodeit.dto.channel_service_dto.CreateChannelRequestDto;
 import com.sprint.mission.discodeit.dto.channel_service_dto.DeleteChannelRequestDto;
@@ -27,7 +25,6 @@ import com.sprint.mission.discodeit.service.*;
 import com.sprint.mission.discodeit.service.basic.BasicAuthService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.File;
@@ -266,7 +263,7 @@ public class DiscodeitApplication {
 		printMessageDTOs(messageService.findAllMessage());
 
 		System.out.println("\n=== 메시지 삭제 전 전체 바이너리 출력 출력===");
-		printBinaryContentsResponseDTOs(binaryContentsService.findAllBinaryContentsDTOs());
+		printBinaryContentsResponseDTOs(binaryContentsService.findAllBinaryContentsDtos());
 
 		System.out.println("\n=== 메시지2 삭제===");
 		DeleteMessageRequestDto deleteMessageRequestDTO = new DeleteMessageRequestDto(user1, messageResponseDto2);
@@ -276,7 +273,7 @@ public class DiscodeitApplication {
 		printMessageDTOs(messageService.findAllMessage());
 
 		System.out.println("\n=== 메시지 삭제 후 전체 바이너리 출력 출력===");
-		printBinaryContentsResponseDTOs(binaryContentsService.findAllBinaryContentsDTOs());
+		printBinaryContentsResponseDTOs(binaryContentsService.findAllBinaryContentsDtos());
 		// 정상적으로 수행 됨
 	}
 
@@ -396,7 +393,7 @@ public class DiscodeitApplication {
 		CreateBinaryContentsRequestDto createBinaryContentsRequestDto = new CreateBinaryContentsRequestDto(user1.getUserId(), profilePicture1Path, BinaryContentType.USER_PROFILE_IMAGE);
 		BinaryContentsResponseDto binaryContentsResponseDto = binaryContentsService.createBinaryContents(createBinaryContentsRequestDto);
 
-		List<BinaryContentsResponseDto> binaryContentsResponseDtos = binaryContentsService.findAllBinaryContentsDTOs();
+		List<BinaryContentsResponseDto> binaryContentsResponseDtos = binaryContentsService.findAllBinaryContentsDtos();
 		printBinaryContentsResponseDTOs(binaryContentsResponseDtos);
 
 		System.out.println("=== reference id로 전체 출력 ===");

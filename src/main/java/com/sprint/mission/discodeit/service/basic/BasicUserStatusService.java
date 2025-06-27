@@ -30,10 +30,7 @@ public class BasicUserStatusService implements UserStatusService {
         //[ ] DTO를 활용해 파라미터를 그룹화합니다.
         //[ ] 관련된 User가 존재하지 않으면 예외를 발생시킵니다.
         //[ ] 같은 User와 관련된 객체가 이미 존재하면 예외를 발생시킵니다.
-
-        Optional<User> userFromFile = userRepository.findUserById(createUserStatusRequestDto.getUserId());
-        optionalUserIsEmpty(userFromFile);
-        User user = userFromFile.get();
+        User user = findUserByUserId(createUserStatusRequestDto.getUserId());
 
         Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(user.getId());
 
@@ -52,14 +49,9 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatusResponseDto updateUserStatus(UpdateUserStatusRequestDto updateUserStatusRequestDto){
-        Optional<User> userFromFile  = userRepository.findUserById(updateUserStatusRequestDto.getUserId());
-        optionalUserIsEmpty(userFromFile);
-        User user = userFromFile.get();
+        User user = findUserByUserId(updateUserStatusRequestDto.getUserId());
 
-        Optional<UserStatus> optionalUserStatus = userStatusRepository.findUserStatusByUserId(updateUserStatusRequestDto.getUserId());
-        optionalUserStatusIsEmpty(optionalUserStatus);
-
-        UserStatus userStatus = optionalUserStatus.get();
+        UserStatus userStatus = findUserStatusByUserIdAtPrivate(updateUserStatusRequestDto.getUserId());
 
         // ✅ 잘못된 비교 수정: ID가 같지 않으면 예외를 던져야 하는 것이 맞습니다.
         if (!userStatus.getUserId().equals(updateUserStatusRequestDto.getUserId())) {
@@ -90,10 +82,7 @@ public class BasicUserStatusService implements UserStatusService {
         List<UserStatus> userStatuses = userStatusRepository.loadUserStatuses();
 
         for (UserStatus userStatus : userStatuses) {
-            Optional<User> userFromFile = userRepository.findUserById(userStatus.getUserId());
-            optionalUserIsEmpty(userFromFile);
-            User user = userFromFile.get();
-
+            User user = findUserByUserId(userStatus.getUserId());
             UserStatusResponseDto userStatusResponseDto = new UserStatusResponseDto(userStatus.getId(), userStatus.getUserId(), user.getUserName(), userStatus.getLoggedIn(), userStatus.getUpdatedAt());
             userStatusResponse.add(userStatusResponseDto);
         }
@@ -103,11 +92,8 @@ public class BasicUserStatusService implements UserStatusService {
 
     @Override
     public UserStatusResponseDto findUserStatusByUserId(UUID userId){
-        Optional<UserStatus> optionalUserStatus = userStatusRepository.findUserStatusByUserStatusId(userId);
-        UserStatus userStatus = optionalUserStatus.get();
-        Optional<User> userFromFile = userRepository.findUserById(userId);
-        optionalUserIsEmpty(userFromFile);
-        User user = userFromFile.get();
+        UserStatus userStatus = findUserStatusByUserIdAtPrivate(userId);
+        User user = findUserByUserId(userId);
 
         return new UserStatusResponseDto(userStatus.getId(), user.getId(), user.getUserName(), userStatus.getLoggedIn(), userStatus.getUpdatedAt());
     }
@@ -123,22 +109,13 @@ public class BasicUserStatusService implements UserStatusService {
         userStatusRepository.deleteUserStatusByUserStatusId(userStatusId);
     }
 
-
-    private void optionalUserIsEmpty(Optional<User> user) {
-        if (user.isEmpty()) {
-            throw new IllegalArgumentException("User 정보가 없습니다.");
-        }
+    private UserStatus findUserStatusByUserIdAtPrivate(UUID userId) {
+        return userStatusRepository.findUserStatusByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("해당하는 유저 스테이터스를 찾을 수 없습니다."));
     }
 
-    private void optionalChannelIsEmpty(Optional<Channel> channel) {
-        if (channel.isEmpty()) {
-            throw new IllegalArgumentException("Channel 정보가 없습니다.");
-        }
-    }
-
-    private void optionalUserStatusIsEmpty(Optional<UserStatus> userStatus) {
-        if (userStatus.isEmpty()) {
-            throw new IllegalArgumentException("UserStatus 정보가 없습니다.");
-        }
+    private User findUserByUserId(UUID userId) {
+        return userRepository.findUserById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 유저를 찾을 수 없습니다."));
     }
 }

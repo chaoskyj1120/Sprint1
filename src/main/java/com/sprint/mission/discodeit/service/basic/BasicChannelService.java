@@ -30,10 +30,6 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponseDto createPublicChannel(CreateChannelRequestDto createChannelRequestDTO) {
-
-        Optional<User> user = userRepository.findUserById(createChannelRequestDTO.getHostUserId());
-        optionalUserIsEmpty(user);
-
         Optional<Channel> duplicateChannel = channelRepository.findChannelByChannelName(createChannelRequestDTO.getChannelName());
         optionalChannelIsPresent(duplicateChannel);
 
@@ -41,10 +37,7 @@ public class BasicChannelService implements ChannelService {
                 createChannelRequestDTO.getChannelName(),
                 createChannelRequestDTO.getDescription());
 
-        Optional<User> hostUserFromFile = userRepository.findUserById(createChannelRequestDTO.getHostUserId());
-        optionalUserIsEmpty(hostUserFromFile);
-
-        User hostUser = hostUserFromFile.get();
+        User hostUser = findUserByUserId(createChannelRequestDTO.getHostUserId());
 
         channel.addUser(hostUser);
         hostUser.addChannel(channel);
@@ -61,14 +54,8 @@ public class BasicChannelService implements ChannelService {
     @Override
     public ChannelResponseDto createPrivateChannel(CreateChannelRequestDto createChannelRequestDTO, UserResponseDto enterUserResponseDto) {
 
-        Optional<User> hostUserFromFile = userRepository.findUserById(createChannelRequestDTO.getHostUserId());
-        optionalUserIsEmpty(hostUserFromFile);
-        User hostUser = hostUserFromFile.get();
-
-
-        Optional<User> enterUserFromFile = userRepository.findUserById(enterUserResponseDto.getUserId());
-        optionalUserIsEmpty(enterUserFromFile);
-        User enterUser = enterUserFromFile.get();
+        User hostUser = findUserByUserId(createChannelRequestDTO.getHostUserId());
+        User enterUser = findUserByUserId(enterUserResponseDto.getUserId());
 
         List<Channel> channelsInHostUser = channelRepository.findChannelsByUserId(hostUser.getId());
 
@@ -95,16 +82,8 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void updateChannelName(ChannelNameUpdateRequestDto channelNameUpdateRequestDTO) {
-        // 1. 채널의 호스티인지 검증
-        // 2. 변경된 채넝을 넘겨주기
-        Optional<User> userFromFile = userRepository.findUserById(channelNameUpdateRequestDTO.getUserResponseDto().getUserId());
-        Optional<Channel> channelFromFile = channelRepository.findChannelByChannelId(channelNameUpdateRequestDTO.getChannelResponseDto().getChannelId());
-
-        optionalUserIsEmpty(userFromFile);
-        optionalChannelIsEmpty(channelFromFile);
-
-        User user = userFromFile.get();
-        Channel channel = channelFromFile.get();
+        User user = findUserByUserId(channelNameUpdateRequestDTO.getUserResponseDto().getUserId());
+        Channel channel = findChannelByChannelId(channelNameUpdateRequestDTO.getChannelResponseDto().getChannelId());
 
         if (!user.equalsId(channel.getHostUserId())){
             System.out.println("해당 채널의 호스트가 아니라 권한이 없습니다.\n"); //테스트용 나중에 throw로 바꾸기
@@ -120,14 +99,9 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void deleteChannel(DeleteChannelRequestDto deleteChannelRequestDTO) {
-        Optional<User> userFromFile = userRepository.findUserById(deleteChannelRequestDTO.getUserResponseDto().getUserId());
-        Optional<Channel> channelFromFile = channelRepository.findChannelByChannelId(deleteChannelRequestDTO.getChannelResponseDto().getChannelId());
 
-        optionalUserIsEmpty(userFromFile);
-        optionalChannelIsEmpty(channelFromFile);
-
-        User user = userFromFile.get();
-        Channel channel = channelFromFile.get();
+        User user = findUserByUserId(deleteChannelRequestDTO.getUserResponseDto().getUserId());
+        Channel channel = findChannelByChannelId(deleteChannelRequestDTO.getChannelResponseDto().getChannelId());
 
         if (user.getStatus() == UserActivationState.DEACTIVE){
             System.out.println("유저 상태가 비활성입니다.\n");
@@ -155,14 +129,9 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void addUserToChannel(AddUserToChannelRequestDto addUserToChannelRequestDTO) {
-        Optional<User> userFromFile = userRepository.findUserById(addUserToChannelRequestDTO.getUserResponseDto().getUserId());
-        Optional<Channel> channelFromFile = channelRepository.findChannelByChannelId(addUserToChannelRequestDTO.getChannelResponseDto().getChannelId());
 
-        optionalUserIsEmpty(userFromFile);
-        optionalChannelIsEmpty(channelFromFile);
-        User user = userFromFile.get();
-        Channel channel = channelFromFile.get();
-
+        User user = findUserByUserId(addUserToChannelRequestDTO.getUserResponseDto().getUserId());
+        Channel channel = findChannelByChannelId(addUserToChannelRequestDTO.getChannelResponseDto().getChannelId());
 
         if (user.getStatus() == UserActivationState.DEACTIVE){
             System.out.println("유저 상태가 비활성입니다.");
@@ -178,15 +147,8 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public void leaveUserFromChannel(LeaveUserFromChannelRequestDto leaveUserFromChannelRequestDTO) {
-
-        Optional<User> userFromFile = userRepository.findUserById(leaveUserFromChannelRequestDTO.getUserResponseDto().getUserId());
-        Optional<Channel> channelFromFile = channelRepository.findChannelByChannelId(leaveUserFromChannelRequestDTO.getChannelResponseDto().getChannelId());
-
-        optionalUserIsEmpty(userFromFile);
-        optionalChannelIsEmpty(channelFromFile);
-
-        User user = userFromFile.get();
-        Channel channel = channelFromFile.get();
+        User user = findUserByUserId(leaveUserFromChannelRequestDTO.getUserResponseDto().getUserId());
+        Channel channel = findChannelByChannelId(leaveUserFromChannelRequestDTO.getChannelResponseDto().getChannelId());
 
         user.removeChannel(channel);
         userRepository.updateUser(user);
@@ -199,17 +161,9 @@ public class BasicChannelService implements ChannelService {
     @Override
     public void updateHostUser(ChannelHostUserUpdateRequestDto channelHostUserUpdateRequestDTO) {
 
-        Optional<User> oldHostUserFromFile = userRepository.findUserById(channelHostUserUpdateRequestDTO.getOldHostUserResponseDto().getUserId());
-        Optional<User> newHostUserFromFile = userRepository.findUserById(channelHostUserUpdateRequestDTO.getNewHostUserResponseDto().getUserId());
-        Optional<Channel> channelFromFile = channelRepository.findChannelByChannelId(channelHostUserUpdateRequestDTO.getChannelResponseDto().getChannelId());
-
-        optionalUserIsEmpty(oldHostUserFromFile);
-        optionalUserIsEmpty(newHostUserFromFile);
-        optionalChannelIsEmpty(channelFromFile);
-
-        User oldHostUser = oldHostUserFromFile.get();
-        User newHostUser = newHostUserFromFile.get();
-        Channel channel = channelFromFile.get();
+        User oldHostUser = findUserByUserId(channelHostUserUpdateRequestDTO.getOldHostUserResponseDto().getUserId());
+        User newHostUser = findUserByUserId(channelHostUserUpdateRequestDTO.getNewHostUserResponseDto().getUserId());
+        Channel channel = findChannelByChannelId(channelHostUserUpdateRequestDTO.getChannelResponseDto().getChannelId());
 
         if (!(channel.getUserIds().contains(newHostUser.getId()) && channel.getUserIds().contains(oldHostUser.getId()))) {
             System.out.println("유저들이 해당 채널에 없어 변경할 수 없습니다.");
@@ -248,11 +202,9 @@ public class BasicChannelService implements ChannelService {
 
     @Override
     public ChannelResponseDto findChannelDTOByCannelId(UUID chanelId){
-        Optional<Channel> channel = channelRepository.findChannelByChannelId(chanelId);
-        optionalChannelIsEmpty(channel);
-
-        List<Message> messages = messageRepository.findMessagesByChannelId(channel.get().getId());
-        return new ChannelResponseDto(channel.get(), messages.get(messages.size()-1).getId());
+        Channel channel = findChannelByChannelId(chanelId);
+        List<Message> messages = messageRepository.findMessagesByChannelId(channel.getId());
+        return new ChannelResponseDto(channel, messages.get(messages.size()-1).getId());
     }
 
     @Override
@@ -260,21 +212,21 @@ public class BasicChannelService implements ChannelService {
         return readStatusRepository.loadReadStatuses();
     }
 
-    private void optionalUserIsEmpty(Optional<User> user) {
-        if (user.isEmpty()) {
-            throw new IllegalArgumentException("User 정보가 없습니다.");
-        }
-    }
-
-    private void optionalChannelIsEmpty(Optional<Channel> channel) {
-        if (channel.isEmpty()) {
-            throw new IllegalArgumentException("Channel 정보가 없습니다.");
-        }
-    }
 
     private void optionalChannelIsPresent(Optional<Channel> channel) {
         if (channel.isPresent()) {
             throw new IllegalArgumentException("Channel 정보가 중복됩니다.");
         }
+    }
+
+    private Channel findChannelByChannelId(UUID channelId) {
+        return channelRepository.findChannelByChannelId(channelId)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 채널을 찾을 수 없습니다."));
+    }
+
+
+    private User findUserByUserId(UUID userId) {
+        return userRepository.findUserById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 유저를 찾을 수 없습니다."));
     }
 }

@@ -78,7 +78,7 @@ public class BasicMessageService implements MessageService {
     }
 
     private static BinaryContent getBinaryContent(MultipartFile file) {
-        String filePath = "./extraContentsFile/" + file.getOriginalFilename();
+        String filePath = "./src/main/resources/extraContentsFile/" + file.getOriginalFilename();
         byte[] extraFileBytes = null;
         try (FileInputStream fis = new FileInputStream(filePath)) {
             extraFileBytes = fis.readAllBytes();

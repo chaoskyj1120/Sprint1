@@ -15,7 +15,7 @@ import java.util.UUID;
 @Repository
 public class JcfReadStatusRepository implements ReadStatusRepository {
 
-    private List<ReadStatus> readStatusData;
+    private List<ReadStatus> readStatusData = new ArrayList<>();
 
     @Override
     public List<ReadStatus> loadReadStatuses() {

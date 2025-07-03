@@ -5,19 +5,22 @@ import com.sprint.mission.discodeit.dto.message_service_dto.MessageCreateRequest
 import com.sprint.mission.discodeit.dto.message_service_dto.MessageResponseDto;
 import com.sprint.mission.discodeit.dto.message_service_dto.MessageUpdateRequestDto;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -27,13 +30,13 @@ public class BasicMessageService implements MessageService {
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
     private final MessageRepository messageRepository;
-    private final BinaryContentsRepository binaryContentsRepository;
+    private final BinaryContentRepository binaryContentRepository;
 
     @Override
-    public MessageResponseDto createMessage(MessageCreateRequestDto messageCreateRequestDTO) {
+    public MessageResponseDto createMessage(MessageCreateRequestDto messageCreateRequestDTO) throws IOException {
 
         User user = findUserByUserId(messageCreateRequestDTO.getUserResponseDto().getUserId());
-        Channel channel = findChannelByChannelId(messageCreateRequestDTO.getChannelResponseDto().getChannelId());
+        Channel channel = findChannelByChannelName(messageCreateRequestDTO.getChannelName());
 
         String contents = messageCreateRequestDTO.getMessageContents();
 
@@ -46,31 +49,21 @@ public class BasicMessageService implements MessageService {
         Message newMessage = new Message(user, channel, contents);
         newMessage.registerMessageToUserAndChannel(user, channel);
 
-        List<BinaryContents> binaryContentsList;
 
-        if (messageCreateRequestDTO.getExtraContentsFilePath() != null){
-            // 메세지 첨부 파일이 있다는 의미
-            // 첨부 파일 바이트화 -> 바이너리 컨텐츠 추가 -> 메세지의 바이너리컨텐츠 ids에 해당 바이너리 컨튼체으 객체의 아이디 추가
-            // 유저 프로필 참고하기
+        List<MultipartFile> extraContentsFiles = messageCreateRequestDTO.getExtraContentsFiles();
+        saveExtraFiles(extraContentsFiles);
 
-            for (String filePath : messageCreateRequestDTO.getExtraContentsFilePath()) {
-                byte[] extraFileBytes = null;
-                try (FileInputStream fis = new FileInputStream(filePath)) {
-                    extraFileBytes = fis.readAllBytes();
-                } catch (IOException e) {
-                    throw new RuntimeException("바이트화가 불가능합니다: " + e.getMessage(), e);
-                }
+        if (messageCreateRequestDTO.getExtraContentsFiles() != null){
 
-                BinaryContents newBinaryContent = new BinaryContents(filePath, BinaryContentType.USER_PROFILE_IMAGE, extraFileBytes);
-                newMessage.addBinaryContentsId(newBinaryContent.getId());
+            for (MultipartFile file : messageCreateRequestDTO.getExtraContentsFiles()) {
+                BinaryContent newBinaryContent = getBinaryContent(file);
+                newMessage.addBinaryContentId(newBinaryContent.getId());
                 newBinaryContent.setReferenceId(newMessage.getId());
 
-                binaryContentsRepository.createBinaryContents(newBinaryContent);
+                binaryContentRepository.createBinaryContent(newBinaryContent);
             }
         }
 
-        //binaryContentsList = binaryContentsRepository.loadBinaryContents();
-        //System.out.println(binaryContentsList.size());
         messageRepository.createMessage(newMessage);
 
         User updateMessageUser = findUserByUserId(newMessage.getAuthorId());
@@ -84,18 +77,30 @@ public class BasicMessageService implements MessageService {
         return new MessageResponseDto(newMessage);
     }
 
+    private static BinaryContent getBinaryContent(MultipartFile file) {
+        String filePath = "./extraContentsFile/" + file.getOriginalFilename();
+        byte[] extraFileBytes = null;
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            extraFileBytes = fis.readAllBytes();
+        } catch (IOException e) {
+            throw new RuntimeException("바이트화가 불가능합니다: " + e.getMessage(), e);
+        }
+
+        return new BinaryContent(filePath, BinaryContentType.MESSAGE_ATTACHMENT, extraFileBytes);
+    }
+
     @Override
     public void deleteMessage(DeleteMessageRequestDto deleteMessageRequestDTO) {
 
         User user = findUserByUserId(deleteMessageRequestDTO.getUserResponseDto().getUserId());
-        Message message = findMessageByMessageId(deleteMessageRequestDTO.getMessageResponseDTO().getMessageId());
+        Message message = findMessageByMessageId(deleteMessageRequestDTO.getMessageId());
         Channel channel = findChannelByChannelId(message.getChannelId());
 
         user.getMessageIds().remove(message.getId());
         channel.getMessageIds().remove(message.getId());
 
-        for (UUID binaryContentId : message.getBinaryContentsIds()) {
-            binaryContentsRepository.deleteBinaryContensByBinaryContentsId(binaryContentId);
+        for (UUID binaryContentId : message.getBinaryContentIds()) {
+            binaryContentRepository.deleteBinaryContentByBinaryContentId(binaryContentId);
         }
 
         userRepository.updateUser(user);
@@ -126,7 +131,7 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public MessageResponseDto updateMessage(MessageUpdateRequestDto messageUpdateRequestDTO) {
-        Message message = findMessageByMessageId(messageUpdateRequestDTO.getMessageResponseDTO().getMessageId());
+        Message message = findMessageByMessageId(messageUpdateRequestDTO.getMessageId());
 
         User user = findUserByUserId(messageUpdateRequestDTO.getUserResponseDto().getUserId());
 
@@ -141,28 +146,18 @@ public class BasicMessageService implements MessageService {
 
         message.setMessageContents(messageUpdateRequestDTO.getNewContent());
 
-        for (UUID binaryContentId : message.getBinaryContentsIds()) {
-            binaryContentsRepository.deleteBinaryContensByBinaryContentsId(binaryContentId);
+        for (UUID binaryContentId : message.getBinaryContentIds()) {
+            binaryContentRepository.deleteBinaryContentByBinaryContentId(binaryContentId);
         }
-        message.clearBinaryContentsId();
+        message.clearBinaryContentId();
 
-        if (messageUpdateRequestDTO.getExtraContentsFilePath() != null){
-            // 메세지 첨부 파일이 있다는 의미
-            // 첨부 파일 바이트화 -> 바이너리 컨텐츠 추가 -> 메세지의 바이너리컨텐츠 ids에 해당 바이너리 컨튼체으 객체의 아이디 추가
-            // 유저 프로필 참고하기
+        List<MultipartFile> extraContentsFiles = messageUpdateRequestDTO.getExtraContentsFiles();
+        saveExtraFiles(extraContentsFiles);
 
-            for (String filePath : messageUpdateRequestDTO.getExtraContentsFilePath()) {
-                byte[] extraFileBytes = null;
-                try (FileInputStream fis = new FileInputStream(filePath)) {
-                    extraFileBytes = fis.readAllBytes();
-                } catch (IOException e) {
-                    throw new RuntimeException("바이트화가 불가능합니다: " + e.getMessage(), e);
-                }
-
-                BinaryContents extraFile = new BinaryContents(filePath, BinaryContentType.USER_PROFILE_IMAGE, extraFileBytes);
-                message.addBinaryContentsId(extraFile.getId());
-
-                binaryContentsRepository.createBinaryContents(extraFile);
+        if (messageUpdateRequestDTO.getExtraContentsFiles() != null){
+            for (MultipartFile file : messageUpdateRequestDTO.getExtraContentsFiles()) {
+                BinaryContent newBinaryContent = getBinaryContent(file);
+                binaryContentRepository.createBinaryContent(newBinaryContent);
             }
         }
 
@@ -184,5 +179,28 @@ public class BasicMessageService implements MessageService {
     private User findUserByUserId(UUID userId) {
         return userRepository.findUserById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당하는 유저를 찾을 수 없습니다."));
+    }
+
+    private Channel findChannelByChannelName(String channelName) {
+        return channelRepository.findChannelByChannelName(channelName)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 채널을 찾을 수 없습니다."));
+    }
+
+    // 1. 파일 저장 메서드
+    private void saveExtraFiles(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) return;
+
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                String originalFileName = file.getOriginalFilename();
+                Path savePath = Paths.get("./extraContentsFile/", originalFileName);
+                try {
+                    Files.createDirectories(savePath.getParent());
+                    file.transferTo(savePath);
+                } catch (IOException e) {
+                    throw new RuntimeException("파일 저장 실패: " + e.getMessage(), e);
+                }
+            }
+        }
     }
 }

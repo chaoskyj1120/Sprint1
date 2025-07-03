@@ -16,7 +16,7 @@ public class Message extends BaseEntity implements Serializable {
     private UUID authorId;
     private UUID channelId;
 
-    private List<UUID> binaryContentsIds = new ArrayList<>();
+    private List<UUID> binaryContentIds = new ArrayList<>();
 
 
     public Message(User user, Channel channel, String contents) {
@@ -36,11 +36,11 @@ public class Message extends BaseEntity implements Serializable {
         channel.addMessage(this);
     }
 
-    public void addBinaryContentsId(UUID binaryContentsId) {
-        binaryContentsIds.add(binaryContentsId);
+    public void addBinaryContentId(UUID binaryContentsId) {
+        binaryContentIds.add(binaryContentsId);
     }
 
-    public void clearBinaryContentsId() {
-        binaryContentsIds.clear();
+    public void clearBinaryContentId() {
+        binaryContentIds.clear();
     }
 }

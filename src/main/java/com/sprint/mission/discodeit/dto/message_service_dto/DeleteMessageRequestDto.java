@@ -2,14 +2,18 @@ package com.sprint.mission.discodeit.dto.message_service_dto;
 
 import com.sprint.mission.discodeit.dto.user_service_dto.UserResponseDto;
 import lombok.Getter;
+import lombok.Setter;
 
+import java.util.UUID;
+
+@Setter
 @Getter
 public class DeleteMessageRequestDto {
     UserResponseDto userResponseDto;
-    MessageResponseDto messageResponseDTO;
+    UUID messageId;
 
-    public DeleteMessageRequestDto(UserResponseDto userResponseDto, MessageResponseDto messageResponseDTO) {
+    public DeleteMessageRequestDto(UserResponseDto userResponseDto, UUID messageId) {
         this.userResponseDto = userResponseDto;
-        this.messageResponseDTO = messageResponseDTO;
+        this.messageId = messageId;
     }
 }

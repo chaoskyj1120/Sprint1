@@ -2,30 +2,30 @@ package com.sprint.mission.discodeit.service;
 
 import com.sprint.mission.discodeit.dto.channel_service_dto.*;
 import com.sprint.mission.discodeit.dto.user_service_dto.UserResponseDto;
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.entity.User;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface ChannelService {
 
-    ChannelResponseDto createPublicChannel(CreateChannelRequestDto createChannelRequestDTO);
-    ChannelResponseDto createPrivateChannel(CreateChannelRequestDto createChannelRequestDTO, UserResponseDto enterUserResponseDto);
+    ChannelResponseDto createPublicChannel(CreatePublicChannelRequestDto createPublicChannelRequestDTO);
+    ChannelResponseDto createPrivateChannel(CreatePrivateChannelRequestDto createPrivateChannelRequestDto);
 
     void deleteChannel(DeleteChannelRequestDto deleteChannelRequestDTO);
 
     void addUserToChannel(AddUserToChannelRequestDto addUserToChannelRequestDTO);
     void leaveUserFromChannel(LeaveUserFromChannelRequestDto leaveUserFromChannelRequestDTO);
 
-    void updateChannelName(ChannelNameUpdateRequestDto channelNameUpdateRequestDTO);
+    ChannelResponseDto updateChannelName(ChannelNameUpdateRequestDto channelNameUpdateRequestDTO);
     void updateHostUser(ChannelHostUserUpdateRequestDto channelHostUserUpdateRequestDTO);
 
-    List<ChannelResponseDto> findPublicChannel();
-    List<ChannelResponseDto> findPrivateChannel(UserResponseDto user);
+    List<ChannelResponseDto> findPublicChannels();
+    List<ChannelResponseDto> findPrivateChannelsByUserId(UserResponseDto user);
+    List<ChannelResponseDto> findAllChannelByUserId(UUID userId);
 
-    ChannelResponseDto findChannelDTOByCannelId(UUID chanelId);
+    ChannelResponseDto findChannelDtoByChannelId(UUID chanelId);
+    ChannelResponseDto findChannelDtoByChannelName(String channelName);
 
-    List<ReadStatus> findAllReadStatus();
+    void enterChannel(UUID userId, UUID channelId);
+
 }

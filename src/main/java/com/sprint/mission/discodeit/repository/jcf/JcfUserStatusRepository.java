@@ -16,7 +16,7 @@ import java.util.UUID;
 @Repository
 public class JcfUserStatusRepository implements UserStatusRepository, Serializable {
 
-    private List<UserStatus> userStatusData;
+    private List<UserStatus> userStatusData = new ArrayList<>();
 
     @Override
     public List<UserStatus> loadUserStatuses() {
@@ -52,6 +52,7 @@ public class JcfUserStatusRepository implements UserStatusRepository, Serializab
     @Override
     public Optional<UserStatus> findUserStatusByUserId (UUID userId){
         List<UserStatus> userStatuses = loadUserStatuses();
+
         return userStatuses.stream()
                 .filter(userStatus ->userStatus.getUserId().equals(userId)).findFirst();
     }

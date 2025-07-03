@@ -25,10 +25,10 @@ public class RepositoryConfig {
     }
 
     @Bean
-    public BinaryContentsRepository binaryContentsRepository() {
+    public BinaryContentRepository binaryContentsRepository() {
         return useFile() ?
-                new FileBinaryContentsRepository(properties.getFileDirectory()) :
-                new JcfBinaryContentsRepository();
+                new FileBinaryContentRepository(properties.getFileDirectory()) :
+                new JcfBinaryContentRepository();
     }
 
     @Bean

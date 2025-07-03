@@ -1,17 +1,26 @@
 package com.sprint.mission.discodeit.service.basic;
 
 import com.sprint.mission.discodeit.dto.user_service_dto.*;
+import com.sprint.mission.discodeit.dto.user_status_dto.UserStatusResponseDto;
+import com.sprint.mission.discodeit.dto.user_status_dto.UserWithStatusResponseDto;
 import com.sprint.mission.discodeit.entity.*;
-import com.sprint.mission.discodeit.repository.BinaryContentsRepository;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.service.UserStatusService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,41 +29,47 @@ import java.util.stream.Collectors;
 public class BasicUserService implements UserService {
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
-    private final BinaryContentsRepository binaryContentsRepository;
+    private final BinaryContentRepository binaryContentRepository;
+    private final UserStatusService userStatusService;
 
     @Override
-    public UserResponseDto createUser(UserCreateRequestDto userCreateRequestDTO) {
-        final String DEFAULT_PROFILE_IMG_PATH = "./src/main/resources/static/basicUserProfileImage.png";
+    public UserResponseDto createUser(UserCreateRequestDto userCreateRequestDTO) throws IOException {
+        final String DEFAULT_PROFILE_IMG_PATH = "./profileImg/";
 
-        String userName = userCreateRequestDTO.getUsername();
+        MultipartFile profileImage = userCreateRequestDTO.getProfileImage();
+        String fileName = profileImage.getOriginalFilename(); // 업로드된 파일의 원본 이름을 가져옵니다.
+        Path savePath = Paths.get(DEFAULT_PROFILE_IMG_PATH, fileName); // 파일을 저장할 경로를 설정합니다.
+        Files.createDirectories(savePath.getParent()); // 상위 디렉터리가 없으면 생성합니다.
+        profileImage.transferTo(savePath); // 업로드된 파일을 지정된 경로로 저장합니다.
+
+        String userName = userCreateRequestDTO.getUserName();
         String password = userCreateRequestDTO.getPassword();
         String userEmail = userCreateRequestDTO.getEmail();
-        String profilePicturePath = Optional.ofNullable(userCreateRequestDTO.getProfileImagePath())
-                .orElse(DEFAULT_PROFILE_IMG_PATH);
 
         validateUserNameNotDuplicated(userName);
         validateUserEmailNotDuplicated(userEmail);
-
         byte[] profileImageBytes;
-        try (FileInputStream fis = new FileInputStream(profilePicturePath)) {
+
+        String profileImagePath = DEFAULT_PROFILE_IMG_PATH + userCreateRequestDTO.getProfileImage().getOriginalFilename();
+
+        try (FileInputStream fis = new FileInputStream(profileImagePath)) {
             profileImageBytes = fis.readAllBytes();
         } catch (IOException e) {
             throw new RuntimeException("프로필 이미지를 읽는 데 실패했습니다: " + e.getMessage(), e);
         }
-
-        BinaryContents profileImg = new BinaryContents(profilePicturePath, BinaryContentType.USER_PROFILE_IMAGE, profileImageBytes);
+        BinaryContent profileImg = new BinaryContent(profileImagePath, BinaryContentType.USER_PROFILE_IMAGE, profileImageBytes);
 
         User user = new User(userName, password, userEmail, profileImg.getId());
         userRepository.createUser(user);
 
         profileImg.setReferenceId(user.getId());
-        binaryContentsRepository.createBinaryContents(profileImg);
+        binaryContentRepository.createBinaryContent(profileImg);
 
         return new UserResponseDto(
                 user.getId(),
                 user.getUserName(),
                 user.getEmail(),
-                profileImageBytes // 프로필 이미지 바이트 직접 반환
+                profileImagePath // 프로필 이미지 바이트 직접 반환
         );
     }
 
@@ -81,11 +96,11 @@ public class BasicUserService implements UserService {
                     return;
                 }
             }
-            BinaryContents profileImg = new BinaryContents(userUpdateRequestDTO.getNewProfileImagePath(), BinaryContentType.USER_PROFILE_IMAGE, profileImageBytes);
+            BinaryContent profileImg = new BinaryContent(userUpdateRequestDTO.getNewProfileImagePath(), BinaryContentType.USER_PROFILE_IMAGE, profileImageBytes);
             profileImg.setReferenceId(targetUser.getId());
-            binaryContentsRepository.deleteBinaryContensByBinaryContentsId(targetUser.getProfileId());
+            binaryContentRepository.deleteBinaryContentByBinaryContentId(targetUser.getProfileId());
             targetUser.setProfileId(profileImg.getId());
-            binaryContentsRepository.createBinaryContents(profileImg);
+            binaryContentRepository.createBinaryContent(profileImg);
         }
         
         userRepository.updateUser(targetUser);
@@ -99,7 +114,7 @@ public class BasicUserService implements UserService {
         [ ] 관련된 도메인도 같이 삭제합니다.
         BinaryContent(프로필), UserStatus
         */
-        binaryContentsRepository.deleteBinaryContensByBinaryContentsId(user.getProfileId());
+        binaryContentRepository.deleteBinaryContentByBinaryContentId(user.getProfileId());
         channelRepository.deleteUserFromChannels(user);
         userRepository.deleteUser(user);
     }
@@ -116,7 +131,7 @@ public class BasicUserService implements UserService {
         List<User> usersFromFile = userRepository.loadUsers();
         List<UserResponseDto> userResponseDtos = new ArrayList<>();
         for (User user : usersFromFile) {
-            userResponseDtos.add(new UserResponseDto(user.getId(), user.getUserName(), user.getEmail(), binaryContentsRepository.findBinaryContentsByBinaryContentsId(user.getProfileId()).get().getBinaryData()));
+            userResponseDtos.add(new UserResponseDto(user.getId(), user.getUserName(), user.getEmail(), binaryContentRepository.findBinaryContentByBinaryContentId(user.getProfileId()).get().getBytes()));
         }
         return userResponseDtos;
     }
@@ -129,9 +144,9 @@ public class BasicUserService implements UserService {
                         user.getId(),
                         user.getUserName(),
                         user.getEmail(),
-                        binaryContentsRepository
-                                .findBinaryContentsByBinaryContentsId(user.getProfileId()).get()
-                                .getBinaryData()
+                        binaryContentRepository
+                                .findBinaryContentByBinaryContentId(user.getProfileId()).get()
+                                .getBinaryContentPath()
                 ))
                 .collect(Collectors.toList());
     }
@@ -144,7 +159,7 @@ public class BasicUserService implements UserService {
                         user.getId(),
                         user.getUserName(),
                         user.getEmail(),
-                        null //삭제된 유저이므로 사진이 없음
+                        ""
                 ))
                 .collect(Collectors.toList());
     }
@@ -179,18 +194,93 @@ public class BasicUserService implements UserService {
 
     private boolean compareProfile(UserUpdateRequestDto userUpdateRequestDTO){
         User user = findUserByUserId(userUpdateRequestDTO.getUserId());
-        Optional<BinaryContents> profileImgFromFile= binaryContentsRepository.findBinaryContentsByBinaryContentsId(user.getProfileId());
+        Optional<BinaryContent> profileImgFromFile= binaryContentRepository.findBinaryContentByBinaryContentId(user.getProfileId());
 
         if(profileImgFromFile.isEmpty()){
             throw new IllegalArgumentException("profileImg 정보가 없습니다.");
         }
-        BinaryContents profileImg = profileImgFromFile.get();
+        BinaryContent profileImg = profileImgFromFile.get();
 
-        return profileImg.getBinaryContentsPath().equals(userUpdateRequestDTO.getNewProfileImagePath());
+        return profileImg.getBinaryContentPath().equals(userUpdateRequestDTO.getNewProfileImagePath());
     }
 
     private User findUserByUserId(UUID userId) {
         return userRepository.findUserById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당하는 유저를 찾을 수 없습니다."));
+    }
+
+    @Override
+    public UserResponseDto findUserDtoByUserName(String userName) {
+        return userRepository.findUserByUserName(userName)
+                .filter(user -> user.getStatus() == UserActivationState.ACTIVE)
+                .map(user -> {
+                    /*
+                    byte[] profileBytes = null;
+
+                    if (user.getProfileId() != null) {
+                        profileBytes = binaryContentsRepository.findBinaryContentsByBinaryContentsId(user.getProfileId())
+                                .map(BinaryContents::getBinaryData)
+                                .orElse(null);
+                    }
+
+                    return new UserResponseDto(
+                            user.getId(),
+                            user.getUserName(),
+                            user.getEmail(),
+                            profileBytes
+                    );*/ //바이트로 반환
+
+                    Optional<BinaryContent> binaryContent = binaryContentRepository.findBinaryContentByBinaryContentId(user.getProfileId());
+                    String profilePath = binaryContent.get().getBinaryContentPath();
+
+                    return new UserResponseDto(
+                            user.getId(),
+                            user.getUserName(),
+                            user.getEmail(),
+                            profilePath
+                    );
+
+                })
+                .orElseThrow(() -> new NoSuchElementException("유저를 찾을 수 없습니다: " + userName));
+    }
+    @Override
+    public UserResponseDto findUserDtoByUserId(UUID userId) {
+        User user = userRepository.findUserByUserId(userId)
+                .orElseThrow(() -> new NoSuchElementException("해당하는 유저를 찾을 수 없습니다."));
+        byte[] userProfileImgByte = binaryContentRepository.findBinaryContentByBinaryContentId(user.getProfileId()).get().getBytes();
+        return new UserResponseDto(user.getId(), user.getUserName(), user.getEmail(), userProfileImgByte);
+    }
+
+    @Override
+    public List<UserWithStatusResponseDto> findAllUserAndUserStatus() {
+        List<UserResponseDto> users = findAllActiveUserDTO();
+        List<UserWithStatusResponseDto> userList = new ArrayList<>();
+
+        for (UserResponseDto user : users) {
+            UserStatusResponseDto status = userStatusService.findUserStatusByUserId(user.getUserId());
+            // 잘못 사용하면 순환참조 일어 날 수 있음
+            Duration duration = Duration.between(status.getLoginTime(), Instant.now());
+            String loginStatus = duration.toMinutes() < 5 ? "로그인" : "로그아웃";
+
+            userList.add(new UserWithStatusResponseDto(user, loginStatus));
+        }
+
+        return userList;
+    }
+
+    @Override
+    public List<UserDto> findAllUserDto(){
+        List<User> users = userRepository.loadUsers();
+        List<UserDto> userList = new ArrayList<>();
+
+        for (User user : users) {
+            UserStatusResponseDto status = userStatusService.findUserStatusByUserId(user.getId());
+            Duration duration = Duration.between(status.getLoginTime(), Instant.now());
+            Boolean loginStatus = duration.toMinutes() < 5;
+            UserDto userDto = new UserDto(user.getId(), user.getCreatedAt(), user.getUpdatedAt(), user.getUserName(), user.getEmail(), user.getProfileId(), loginStatus);
+            userList.add(userDto);
+        }
+
+        return userList;
     }
 }

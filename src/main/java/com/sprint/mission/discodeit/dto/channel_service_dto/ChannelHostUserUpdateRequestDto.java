@@ -5,9 +5,9 @@ import lombok.Getter;
 
 @Getter
 public class ChannelHostUserUpdateRequestDto {
-    UserResponseDto oldHostUserResponseDto;
-    UserResponseDto newHostUserResponseDto;
-    ChannelResponseDto channelResponseDto;
+    private final UserResponseDto oldHostUserResponseDto;
+    private final UserResponseDto newHostUserResponseDto;
+    private final ChannelResponseDto channelResponseDto;
 
     public ChannelHostUserUpdateRequestDto(UserResponseDto oldHostUserResponseDto, UserResponseDto newHostUserResponseDto, ChannelResponseDto channelResponseDto) {
         this.oldHostUserResponseDto = oldHostUserResponseDto;

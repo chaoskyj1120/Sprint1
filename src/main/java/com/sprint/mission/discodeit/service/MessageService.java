@@ -5,12 +5,13 @@ import com.sprint.mission.discodeit.dto.message_service_dto.MessageCreateRequest
 import com.sprint.mission.discodeit.dto.message_service_dto.MessageResponseDto;
 import com.sprint.mission.discodeit.dto.message_service_dto.MessageUpdateRequestDto;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
 public interface MessageService {
 
-    MessageResponseDto createMessage(MessageCreateRequestDto messageCreateRequestDTO);
+    MessageResponseDto createMessage(MessageCreateRequestDto messageCreateRequestDTO) throws IOException;
     void deleteMessage(DeleteMessageRequestDto deleteMessageRequestDTO);
 
 

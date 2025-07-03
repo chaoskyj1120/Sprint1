@@ -6,24 +6,25 @@ import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.util.*;
 
 @Getter
+@Setter
+@NoArgsConstructor
 public class ChannelResponseDto {
-    private final UUID channelId;
-    private final String channelName;
-    private final UUID hostUserId;
-    private final ChannelType channelType;
-    private final String channelDescription;
+    private UUID channelId;
+    private String channelName;
+    private UUID hostUserId;
+    private ChannelType channelType;
+    private String channelDescription;
+    private Set<UUID> userIds;
+    private Set<UUID> messageIds;
 
-    private final UUID lastMessageId; // 추가된 필드
-
-    private final Set<UUID> userIds;
-    private final Set<UUID> messageIds;
-
-    public ChannelResponseDto(Channel channel, UUID lastMessageId) {
+    public ChannelResponseDto(Channel channel) {
         this.channelId = channel.getId();
         this.channelName = channel.getChannelName();
         this.hostUserId = channel.getHostUserId();
@@ -31,6 +32,5 @@ public class ChannelResponseDto {
         this.channelDescription = channel.getChannelDescription();
         this.userIds = channel.getUserIds();
         this.messageIds = channel.getMessageIds();
-        this.lastMessageId = lastMessageId;
     }
 }

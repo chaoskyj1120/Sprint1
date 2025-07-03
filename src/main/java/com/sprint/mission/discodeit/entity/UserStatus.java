@@ -17,17 +17,6 @@ public class UserStatus extends BaseEntity{
         super();
         this.userId = user.getId();
     }
-
-    public String getLoggedIn() {
-        // 현재 시간과 변경된 시간의 차이가 5분내면 "로그인" 아니면 "로그아웃"을 반환
-        Duration duration = Duration.between(getUpdatedAt(), Instant.now());
-        long minutes = duration.toMinutes();
-        return minutes < 5 ? "로그인" : "로그아웃";
-    }
-
-    public void updateTime(){
-        updateUpdatedAt();
-    }
 }
 
 /*

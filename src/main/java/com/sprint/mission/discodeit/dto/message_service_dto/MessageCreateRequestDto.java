@@ -1,29 +1,24 @@
 package com.sprint.mission.discodeit.dto.message_service_dto;
 
-import com.sprint.mission.discodeit.dto.channel_service_dto.ChannelResponseDto;
 import com.sprint.mission.discodeit.dto.user_service_dto.UserResponseDto;
 import lombok.Getter;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Setter
 @Getter
 public class MessageCreateRequestDto {
-    private final UserResponseDto userResponseDto;
-    private final ChannelResponseDto channelResponseDto;
-    private final String messageContents;
-    private final List<String> extraContentsFilePath;
+    private UserResponseDto userResponseDto;
+    private String channelName;
+    private String messageContents;
+    private List<MultipartFile> extraContentsFiles;
 
-    public MessageCreateRequestDto(UserResponseDto userResponseDto, ChannelResponseDto channelResponseDto, String messageContents, List<String> extraContentsFilePath) {
+    public MessageCreateRequestDto(UserResponseDto userResponseDto, String channelName, String messageContents, List<MultipartFile> extraContentsFiles) {
         this.userResponseDto = userResponseDto;
-        this.channelResponseDto = channelResponseDto;
+        this.channelName = channelName;
         this.messageContents = messageContents;
-        this.extraContentsFilePath = extraContentsFilePath;
-    }
-
-    public MessageCreateRequestDto(UserResponseDto userResponseDto, ChannelResponseDto channelResponseDto, String messageContents) {
-        this.userResponseDto = userResponseDto;
-        this.channelResponseDto = channelResponseDto;
-        this.messageContents = messageContents;
-        this.extraContentsFilePath = null;
+        this.extraContentsFiles = extraContentsFiles;
     }
 }

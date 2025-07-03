@@ -21,5 +21,4 @@ public class ReadStatusResponseDto {
         this.channelId = readStatus.getChannelId();
         this.readTime = readStatus.getUpdatedAt();
     }
-
 }

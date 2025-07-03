@@ -24,7 +24,7 @@ public class MessageResponseDto {
         this.messageContents = message.getMessageContents();
         this.authorId = message.getAuthorId();
         this.channelId = message.getChannelId();
-        this.binaryContentIds = message.getBinaryContentsIds();
+        this.binaryContentIds = message.getBinaryContentIds();
         this.createdAt = message.getCreatedAt();
         this.updatedAt = message.getUpdatedAt();
     }

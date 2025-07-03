@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.dto.channel_service_dto.*;
 import com.sprint.mission.discodeit.dto.user_service_dto.UserResponseDto;
 import com.sprint.mission.discodeit.entity.*;
+import com.sprint.mission.discodeit.exception.UnauthorizedChannelAccessException;
 import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
@@ -22,22 +23,16 @@ public class BasicChannelService implements ChannelService {
     private final MessageRepository messageRepository;
     private final ReadStatusRepository readStatusRepository;
 
-    // TODO 메소드 명, 필드명 한 번 고민하기
-    // 모든 반환 타입을 DTO로
-    // 컨트롤러에서 넘어오는 파라미터는 모두 DTO로
-    // Repository에서 전체를 불러와서 조회하지 않도록 필요한 경우가 아니면
-
-
     @Override
-    public ChannelResponseDto createPublicChannel(CreateChannelRequestDto createChannelRequestDTO) {
-        Optional<Channel> duplicateChannel = channelRepository.findChannelByChannelName(createChannelRequestDTO.getChannelName());
+    public ChannelResponseDto createPublicChannel(CreatePublicChannelRequestDto createPublicChannelRequestDTO) {
+        Optional<Channel> duplicateChannel = channelRepository.findChannelByChannelName(createPublicChannelRequestDTO.getChannelName());
         optionalChannelIsPresent(duplicateChannel);
 
-        Channel channel = new Channel(createChannelRequestDTO.getHostUserId(),
-                createChannelRequestDTO.getChannelName(),
-                createChannelRequestDTO.getDescription());
+        Channel channel = new Channel(createPublicChannelRequestDTO.getHostUserId(),
+                createPublicChannelRequestDTO.getChannelName(),
+                createPublicChannelRequestDTO.getDescription());
 
-        User hostUser = findUserByUserId(createChannelRequestDTO.getHostUserId());
+        User hostUser = findUserByUserId(createPublicChannelRequestDTO.getHostUserId());
 
         channel.addUser(hostUser);
         hostUser.addChannel(channel);
@@ -47,19 +42,19 @@ public class BasicChannelService implements ChannelService {
 
         //createOrUpdateReadStatus(hostUser, channel);
 
-        List<Message> messages = messageRepository.findMessagesByChannelId(channel.getId());
-        return new ChannelResponseDto(channel, messages.get(messages.size()-1).getId());
+        //List<Message> messages = messageRepository.findMessagesByChannelId(channel.getId());
+        //return new ChannelResponseDto(channel, messages.get(messages.size()-1).getId());
+        return new ChannelResponseDto(channel);
     }
 
     @Override
-    public ChannelResponseDto createPrivateChannel(CreateChannelRequestDto createChannelRequestDTO, UserResponseDto enterUserResponseDto) {
+    public ChannelResponseDto createPrivateChannel(CreatePrivateChannelRequestDto createPrivateChannelRequestDto) {
 
-        User hostUser = findUserByUserId(createChannelRequestDTO.getHostUserId());
-        User enterUser = findUserByUserId(enterUserResponseDto.getUserId());
+        User hostUser = findUserByUserId(createPrivateChannelRequestDto.getHostUserId());
+        User enterUser = findUserByUserName(createPrivateChannelRequestDto.getGuestName());
 
         List<Channel> channelsInHostUser = channelRepository.findChannelsByUserId(hostUser.getId());
-
-        Optional<Channel> duplicateChannel = channelsInHostUser.stream().filter(ch -> ch.getUserIds().contains(enterUserResponseDto.getUserId())).findFirst();
+        Optional<Channel> duplicateChannel = channelsInHostUser.stream().filter(ch -> ch.getUserIds().contains(enterUser.getId())).findFirst();
         optionalChannelIsPresent(duplicateChannel);
 
         Channel channel = new Channel(hostUser.getId());
@@ -73,35 +68,32 @@ public class BasicChannelService implements ChannelService {
         userRepository.updateUser(hostUser);
         userRepository.updateUser(enterUser);
 
-        //createOrUpdateReadStatus(hostUser, channel);
-        //createOrUpdateReadStatus(enterUser, channel);
-
-        List<Message> messages = messageRepository.findMessagesByChannelId(channel.getId());
-        return new ChannelResponseDto(channel, messages.get(messages.size()-1).getId());
+        return new ChannelResponseDto(channel);
     }
 
     @Override
-    public void updateChannelName(ChannelNameUpdateRequestDto channelNameUpdateRequestDTO) {
-        User user = findUserByUserId(channelNameUpdateRequestDTO.getUserResponseDto().getUserId());
-        Channel channel = findChannelByChannelId(channelNameUpdateRequestDTO.getChannelResponseDto().getChannelId());
+    public ChannelResponseDto updateChannelName(ChannelNameUpdateRequestDto channelNameUpdateRequestDto) {
+        User user = findUserByUserId(channelNameUpdateRequestDto.getUserId());
+        Channel channel = findChannelByChannelName(channelNameUpdateRequestDto.getChannelOldName());
 
         if (!user.equalsId(channel.getHostUserId())){
-            System.out.println("해당 채널의 호스트가 아니라 권한이 없습니다.\n"); //테스트용 나중에 throw로 바꾸기
-            return;
+            throw new UnauthorizedChannelAccessException("해당 채널의 호스트가 아니라 권한이 없습니다.");
         }
 
-        Optional<Channel> duplicateNewName = channelRepository.findChannelByChannelName(channelNameUpdateRequestDTO.getChannelNewName());
+        Optional<Channel> duplicateNewName = channelRepository.findChannelByChannelName(channelNameUpdateRequestDto.getChannelNewName());
         optionalChannelIsPresent(duplicateNewName);
 
-        channel.setChannelName(channelNameUpdateRequestDTO.getChannelNewName());
+        channel.setChannelName(channelNameUpdateRequestDto.getChannelNewName());
         channelRepository.updateChannel(channel);
+
+        return new ChannelResponseDto(channel);
     }
 
     @Override
-    public void deleteChannel(DeleteChannelRequestDto deleteChannelRequestDTO) {
+    public void deleteChannel(DeleteChannelRequestDto deleteChannelRequestDto) {
 
-        User user = findUserByUserId(deleteChannelRequestDTO.getUserResponseDto().getUserId());
-        Channel channel = findChannelByChannelId(deleteChannelRequestDTO.getChannelResponseDto().getChannelId());
+        User user = findUserByUserId(deleteChannelRequestDto.getUserId());
+        Channel channel = findChannelByChannelName(deleteChannelRequestDto.getChannelName());
 
         if (user.getStatus() == UserActivationState.DEACTIVE){
             System.out.println("유저 상태가 비활성입니다.\n");
@@ -120,8 +112,7 @@ public class BasicChannelService implements ChannelService {
             u.getMessageIds().removeIf(messageId -> channel.getMessageIds().contains(messageId));
         }
 
-
-        readStatusRepository.deleteReadStatusByChannelId(deleteChannelRequestDTO.getChannelResponseDto().getChannelId());
+        readStatusRepository.deleteReadStatusByChannelId(channel.getId());
         messageRepository.deleteMessagesByChannelId(channel.getId());
         userRepository.saveUsers(users);
         channelRepository.deleteChannel(channel);
@@ -176,13 +167,14 @@ public class BasicChannelService implements ChannelService {
 
 
     @Override
-    public List<ChannelResponseDto> findPublicChannel() {
+    public List<ChannelResponseDto> findPublicChannels() {
         List<ChannelResponseDto> publicChannelsDTO = new ArrayList<>();
         List<Channel> channels = channelRepository.loadChannels();
         channels.stream()
                 .filter(channel -> channel.getChannelType().equals(ChannelType.PUBLIC_CHANNEL))
                 .forEach(channel -> {
-                    publicChannelsDTO.add(new ChannelResponseDto(channel, messageRepository.findMessagesByChannelId(channel.getId()).get(messageRepository.findMessagesByChannelId(channel.getId()).size() -1 ).getId()));
+                    //publicChannelsDTO.add(new ChannelResponseDto(channel, messageRepository.findMessagesByChannelId(channel.getId()).get(messageRepository.findMessagesByChannelId(channel.getId()).size() -1 ).getId()));
+                    publicChannelsDTO.add(new ChannelResponseDto(channel));
                 });
 
 
@@ -190,28 +182,52 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public List<ChannelResponseDto> findPrivateChannel(UserResponseDto userResponseDto) {
+    public List<ChannelResponseDto> findAllChannelByUserId(UUID userId) {
+        List<ChannelResponseDto> channelsDto = new ArrayList<>();
+
+        List<Channel> channels = channelRepository.findChannelsByUserId(userId);
+
+        for (Channel channel : channels) {
+            channelsDto.add(new ChannelResponseDto(channel));
+        }
+
+        return channelsDto;
+    }
+
+    @Override
+    public List<ChannelResponseDto> findPrivateChannelsByUserId(UserResponseDto userResponseDto) {
         List<ChannelResponseDto> publicChannelsDTO = new ArrayList<>();
         List<Channel> channels = channelRepository.findChannelsByUserId(userResponseDto.getUserId());
         channels.stream()
                 .filter(channel -> channel.getChannelType().equals(ChannelType.PRIVATE_CHANNEL))
-                .forEach(channel -> publicChannelsDTO.add(new ChannelResponseDto(channel, messageRepository.findMessagesByChannelId(channel.getId()).get(messageRepository.findMessagesByChannelId(channel.getId()).size() -1 ).getId())));
+                //.forEach(channel -> publicChannelsDTO.add(new ChannelResponseDto(channel, messageRepository.findMessagesByChannelId(channel.getId()).get(messageRepository.findMessagesByChannelId(channel.getId()).size() -1 ).getId())));
+                .forEach(channel -> publicChannelsDTO.add(new ChannelResponseDto(channel)));
 
         return publicChannelsDTO;
     }
 
     @Override
-    public ChannelResponseDto findChannelDTOByCannelId(UUID chanelId){
+    public ChannelResponseDto findChannelDtoByChannelId(UUID chanelId){
         Channel channel = findChannelByChannelId(chanelId);
-        List<Message> messages = messageRepository.findMessagesByChannelId(channel.getId());
-        return new ChannelResponseDto(channel, messages.get(messages.size()-1).getId());
+        //List<Message> messages = messageRepository.findMessagesByChannelId(channel.getId());
+        //return new ChannelResponseDto(channel, messages.get(messages.size()-1).getId());
+        return new ChannelResponseDto(channel);
     }
 
     @Override
-    public List<ReadStatus> findAllReadStatus(){
-        return readStatusRepository.loadReadStatuses();
+    public ChannelResponseDto findChannelDtoByChannelName(String channelName){
+        Channel channel = findChannelByChannelName(channelName);
+        return new ChannelResponseDto(channel);
     }
 
+    @Override
+    public void enterChannel(UUID userId, UUID channelId) {
+        User user = findUserByUserId(userId);
+        Channel channel = findChannelByChannelId(channelId);
+        if(!channel.getUserIds().contains(userId)){
+            throw new IllegalArgumentException("유저가 해당 채널을 가입되어 있지 않습니다.");
+        }
+    }
 
     private void optionalChannelIsPresent(Optional<Channel> channel) {
         if (channel.isPresent()) {
@@ -224,9 +240,20 @@ public class BasicChannelService implements ChannelService {
                 .orElseThrow(() -> new IllegalArgumentException("해당하는 채널을 찾을 수 없습니다."));
     }
 
-
     private User findUserByUserId(UUID userId) {
         return userRepository.findUserById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당하는 유저를 찾을 수 없습니다."));
     }
+
+    private User findUserByUserName(String userName) {
+        return userRepository.findUserByUserName(userName)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 유저를 찾을 수 없습니다."));
+    }
+
+    private Channel findChannelByChannelName(String channelName) {
+        return channelRepository.findChannelByChannelName(channelName)
+                .orElseThrow(() -> new IllegalArgumentException("해당하는 채널을 찾을 수 없습니다."));
+    }
+
+
 }

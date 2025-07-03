@@ -20,7 +20,7 @@ public class BinaryContentsController {
     private final BinaryContentService binaryContentService;
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<List<BinaryContentResponseDto>> findAllBinaryContents(HttpSession session) throws IOException {
+    public ResponseEntity<List<BinaryContentResponseDto>> findAllBinaryContents() throws IOException {
         List<BinaryContentResponseDto> binaryContentResponseDtoList = binaryContentService.findAllBinaryContentDtos();
         return ResponseEntity.ok(binaryContentResponseDtoList);
     }

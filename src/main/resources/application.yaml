@@ -1,4 +1,4 @@
 discodeit:
   repository:
     type: file
-    fileDirectory: ./data
+    fileDirectory: ./src/main/resources/data

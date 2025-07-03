@@ -193,7 +193,7 @@ public class BasicMessageService implements MessageService {
         for (MultipartFile file : files) {
             if (!file.isEmpty()) {
                 String originalFileName = file.getOriginalFilename();
-                Path savePath = Paths.get("./extraContentsFile/", originalFileName);
+                Path savePath = Paths.get("./src/main/resources/extraContentsFile/", originalFileName);
                 try {
                     Files.createDirectories(savePath.getParent());
                     file.transferTo(savePath);

@@ -34,7 +34,7 @@ public class BasicUserService implements UserService {
 
     @Override
     public UserResponseDto createUser(UserCreateRequestDto userCreateRequestDTO) throws IOException {
-        final String DEFAULT_PROFILE_IMG_PATH = "./profileImg/";
+        final String DEFAULT_PROFILE_IMG_PATH = "./src/main/resources/profileImg/";
 
         MultipartFile profileImage = userCreateRequestDTO.getProfileImage();
         String fileName = profileImage.getOriginalFilename(); // 업로드된 파일의 원본 이름을 가져옵니다.

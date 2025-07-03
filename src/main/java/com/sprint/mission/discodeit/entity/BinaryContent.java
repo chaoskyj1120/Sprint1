@@ -35,9 +35,5 @@ public class BinaryContent extends BaseEntity {
             throw new RuntimeException("파일을 읽는 데 실패했습니다: " + binaryContentPath, e);
         }
     }
-
-    public String getBase64() {
-        return Base64.getEncoder().encodeToString(this.bytes);
-    }
     // 생성자에서 주입 안하는 이유는 유저를 생성할려면 프로필 아이디를 먼저 생성해야하기 때문
 }

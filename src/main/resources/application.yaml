@@ -11,6 +11,6 @@ springdoc:
 
 logging:
   level:
-    org:
-      springframework:
-        security=DEBUG:
+    org.springframework.security: DEBUG
+    org.springframework: DEBUG
+    root: DEBUG

@@ -8,7 +8,6 @@ import com.codeit.discodeit.exception.exception.WrongPasswordException;
 import com.codeit.discodeit.repository.BinaryContentRepository;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.service.AuthService;
-import com.codeit.discodeit.service.UserStatusService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +18,6 @@ public class BasicAuthService implements AuthService {
 
   private final UserRepository userRepository;
   private final BinaryContentRepository binaryContentRepository;
-  private final UserStatusService userStatusService;
 
   @Override
   public User logInUser(LoginRequestDto loginRequest) {
@@ -28,7 +26,7 @@ public class BasicAuthService implements AuthService {
 
     String rawPassword = loginRequest.getPassword();
 
-    if (rawPassword.equals(user.getPassword())) {
+    if (!rawPassword.equals(user.getPassword())) {
       throw new WrongPasswordException("비밀번호가 일치하지 않음", "Wrong password");
     }
 

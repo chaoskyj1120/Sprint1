@@ -9,8 +9,9 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework: DEBUG
-    root: DEBUG
+
+#logging:
+  #level:
+    #org.springframework.security: DEBUG
+    #org.springframework: DEBUG
+    #root: DEBUG

@@ -78,13 +78,13 @@ public class UserController {
       method = RequestMethod.POST,
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE
   )
-  public ResponseEntity<User> createUser(
+  public ResponseEntity<UserDto> createUser(
       @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
       @RequestPart(value = "profile", required = false) MultipartFile profile) throws IOException {
 
     userCreateRequest.setProfileImage(profile);
-    User createdUser = userService.createUser(userCreateRequest);
-    userStatusService.createUserStatus(createdUser.getId());
+    UserDto createdUser = userService.createUser(userCreateRequest);
+    userStatusService.createUserStatus(createdUser.id());
     return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
   }
 
@@ -128,13 +128,14 @@ public class UserController {
           ))
   })
   @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<User> updateUser(
+  public ResponseEntity<UserDto> updateUser(
       @PathVariable UUID userId,
       @RequestPart("userUpdateRequest") @Valid UserUpdateRequest userUpdateRequest,
       @RequestPart(value = "profile", required = false) MultipartFile profileImage)
       throws IOException {
     userUpdateRequest.setUserId(userId);
-    User updatedUser = userService.updateUser(userUpdateRequest, profileImage);
+    UserDto updatedUser = userService.updateUser(userUpdateRequest, profileImage);
+
     return ResponseEntity.ok(updatedUser);
   }
 
@@ -168,8 +169,8 @@ public class UserController {
   }
 
   @GetMapping("/{userId}")
-  public ResponseEntity<User> getUser(@PathVariable UUID userId) {
-    User user = userService.findUserByUserId(userId);
+  public ResponseEntity<UserDto> getUser(@PathVariable UUID userId) {
+    UserDto user = userService.findUserDtoByUserId(userId);
     return ResponseEntity.ok(user);
   }
 }

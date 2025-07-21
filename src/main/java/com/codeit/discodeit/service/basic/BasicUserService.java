@@ -1,5 +1,6 @@
 package com.codeit.discodeit.service.basic;
 
+import com.codeit.discodeit.dto.binary_contents_dto.BinaryContentDto;
 import com.codeit.discodeit.dto.user_service_dto.*;
 import com.codeit.discodeit.entity.*;
 import com.codeit.discodeit.exception.exception.DuplicateUserException;
@@ -7,6 +8,7 @@ import com.codeit.discodeit.exception.exception.NoFindUserException;
 import com.codeit.discodeit.repository.BinaryContentRepository;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.UserRepository;
+import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.service.UserStatusService;
 import java.io.FileInputStream;
@@ -32,9 +34,10 @@ public class BasicUserService implements UserService {
   private final ChannelRepository channelRepository;
   private final BinaryContentRepository binaryContentRepository;
   private final UserStatusService userStatusService;
+  private final BinaryContentService binaryContentService;
 
   @Override
-  public User createUser(UserCreateRequest userCreateRequest) throws IOException {
+  public UserDto createUser(UserCreateRequest userCreateRequest) throws IOException {
     final String DEFAULT_PROFILE_IMG_PATH = "./src/main/resources/profileImg/";
 
     byte[] profileImageBytes;
@@ -87,12 +90,12 @@ public class BasicUserService implements UserService {
     channelRepository.saveChannels(channels);
     userRepository.createUser(user);
 
-    return user;
+    return getUserDtoByUserId(user.getId());
   }
 
 
   @Override
-  public User updateUser(UserUpdateRequest userUpdateRequest, MultipartFile profileImage)
+  public UserDto updateUser(UserUpdateRequest userUpdateRequest, MultipartFile profileImage)
       throws IOException {
     User targetUser = findActiveUserByUserId(userUpdateRequest.getUserId());
 
@@ -140,7 +143,7 @@ public class BasicUserService implements UserService {
 
     // DB에 사용자 정보 반영
     userRepository.updateUser(targetUser);
-    return targetUser;
+    return getUserDtoByUserId(targetUser.getId());
   }
 
 
@@ -175,6 +178,9 @@ public class BasicUserService implements UserService {
     return findActiveUserByUserId(userId);
   }
 
+  @Override
+  public UserDto findUserDtoByUserId(UUID userId) {return getUserDtoByUserId(userId);}
+
   private void validateUserNameNotDuplicated(String userName) {
     if (userRepository.findUserByUserName(userName).isPresent()) {
       throw new DuplicateUserException("같은 email 또는 username를 사용하는 User가 이미 존재함",
@@ -188,7 +194,6 @@ public class BasicUserService implements UserService {
           (userEmail + "은 이미 있는 이름입니다."));
     }
   }
-
 
   private User findActiveUserByUserId(UUID userId) {
     return userRepository.findActiveUserByUserId(userId)
@@ -212,7 +217,8 @@ public class BasicUserService implements UserService {
     UserStatus userStatus = userStatusService.findUserStatusByUserId(user.getId());
     Duration duration = Duration.between(userStatus.getLastActiveAt(), Instant.now());
     Boolean loginStatus = duration.toMinutes() < 5;
-    return new UserDto(user.getId(), user.getCreatedAt(), user.getUpdatedAt(),
-        user.getUsername(), user.getEmail(), user.getProfileId(), loginStatus);
+    BinaryContent binaryContent = binaryContentService.findBinaryContentByBinaryContentId(user.getProfileId());
+    BinaryContentDto binaryContentDto = new BinaryContentDto(binaryContent.getId(), binaryContent.getFileName(), binaryContent.getSize(), binaryContent.getContentType());
+    return new UserDto(user.getId(), user.getUsername(), user.getEmail(), binaryContentDto, loginStatus);
   }
 }

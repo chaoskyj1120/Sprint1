@@ -2,8 +2,11 @@ package com.codeit.discodeit.controller;
 
 import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
+import com.codeit.discodeit.dto.message_service_dto.MessageDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequest;
 import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequestDto;
+import com.codeit.discodeit.dto.message_service_dto.PageResponse;
+import com.codeit.discodeit.dto.message_service_dto.Pageable;
 import com.codeit.discodeit.entity.Message;
 import com.codeit.discodeit.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +23,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
@@ -55,11 +57,11 @@ public class MessageController {
           )
       )
   })
-  public ResponseEntity<Message> createMessage(
+  public ResponseEntity<MessageDto> createMessage(
       @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
       @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
   ) {
-    Message messageResponse = messageService.createMessage(messageCreateRequest, attachments);
+    MessageDto messageResponse = messageService.createMessage(messageCreateRequest, attachments);
     return ResponseEntity.status(HttpStatus.CREATED).body(messageResponse);
   }
 
@@ -73,12 +75,12 @@ public class MessageController {
           array = @ArraySchema(schema = @Schema(implementation = Message.class))
       )
   )
-  public ResponseEntity<List<Message>> findAllByChannelId(
-      @RequestParam("channelId") UUID channelId
+  public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
+      @RequestParam("channelId") UUID channelId, @RequestParam("page") int page, @RequestParam("size") int size, @RequestParam("sort") List<String> sort
   ) {
-    List<Message> messageList = messageService.findMessagesByChannelId(
-        channelId);
-    return ResponseEntity.ok(messageList);
+    Pageable pageable = new Pageable(page, size, sort);
+    PageResponse<MessageDto> pageResponse = messageService.findMessagesPerPage(channelId, pageable);
+    return ResponseEntity.ok(pageResponse);
   }
 
   @DeleteMapping("/{messageId}")
@@ -125,7 +127,7 @@ public class MessageController {
           )
       )
   })
-  public ResponseEntity<Message> updateMessage(
+  public ResponseEntity<MessageDto> updateMessage(
       @PathVariable("messageId") UUID messageId,
       @RequestBody MessageUpdateRequest messageUpdateRequest
   ) {
@@ -134,7 +136,7 @@ public class MessageController {
     messageUpdateRequestDto.setMessageId(messageId);
     messageUpdateRequestDto.setNewContent(messageUpdateRequest.getNewContent());
 
-    Message updatedMessage = messageService.updateMessage(messageUpdateRequestDto);
+    MessageDto updatedMessage = messageService.updateMessage(messageUpdateRequestDto);
 
     return ResponseEntity.ok(updatedMessage);
   }

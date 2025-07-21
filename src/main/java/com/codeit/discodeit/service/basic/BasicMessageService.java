@@ -1,8 +1,14 @@
 package com.codeit.discodeit.service.basic;
 
+import com.codeit.discodeit.dto.binary_contents_dto.BinaryContentDto;
+import com.codeit.discodeit.dto.channel_service_dto.ChannelDto;
 import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
+import com.codeit.discodeit.dto.message_service_dto.MessageDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequestDto;
+import com.codeit.discodeit.dto.message_service_dto.PageResponse;
+import com.codeit.discodeit.dto.message_service_dto.Pageable;
+import com.codeit.discodeit.dto.user_service_dto.UserDto;
 import com.codeit.discodeit.entity.*;
 import com.codeit.discodeit.exception.exception.NoFindChannelException;
 import com.codeit.discodeit.exception.exception.NoFindMessageException;
@@ -11,15 +17,21 @@ import com.codeit.discodeit.repository.BinaryContentRepository;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.MessageRepository;
 import com.codeit.discodeit.repository.UserRepository;
+import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.service.MessageService;
+import com.codeit.discodeit.service.UserStatusService;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,9 +43,11 @@ public class BasicMessageService implements MessageService {
   private final ChannelRepository channelRepository;
   private final MessageRepository messageRepository;
   private final BinaryContentRepository binaryContentRepository;
+  private final BinaryContentService binaryContentService;
+  private final UserStatusService userStatusService;
 
   @Override
-  public Message createMessage(MessageCreateRequest messageCreateRequest,
+  public MessageDto createMessage(MessageCreateRequest messageCreateRequest,
       List<MultipartFile> attachments) {
 
     User user = findUserByUserId(messageCreateRequest.getAuthorId());
@@ -70,7 +84,8 @@ public class BasicMessageService implements MessageService {
     updateMessageChannel.addMessage(newMessage);
     channelRepository.updateChannel(updateMessageChannel);
 
-    return newMessage;
+
+    return getMessageDtoByMessage(newMessage);
   }
 
   private static BinaryContent getBinaryContent(MultipartFile file) {
@@ -106,13 +121,17 @@ public class BasicMessageService implements MessageService {
   }
 
   @Override
-  public List<Message> findMessagesByChannelId(UUID channelId) {
-    return messageRepository.findMessagesByChannelId(channelId);
+  public List<MessageDto> findMessageDtoListByChannelId(UUID channelId) {
+    List<Message> messageList = messageRepository.findMessagesByChannelId(channelId);
+
+    return messageList.stream()
+        .map(this::getMessageDtoByMessage)
+        .toList();
   }
 
 
   @Override
-  public Message updateMessage(MessageUpdateRequestDto messageUpdateRequestDto) {
+  public MessageDto updateMessage(MessageUpdateRequestDto messageUpdateRequestDto) {
     Message message = findMessageByMessageId(messageUpdateRequestDto.getMessageId());
 
     User user = findUserByUserId(message.getAuthorId());
@@ -144,8 +163,32 @@ public class BasicMessageService implements MessageService {
     }
 
     messageRepository.updateMessage(message);
-    return message;
+    return getMessageDtoByMessage(message);
   }
+
+  @Override
+  public PageResponse<MessageDto> findMessagesPerPage(UUID channelId, Pageable pageable) {
+    List<Message> messageList = messageRepository.findMessagesByChannelId(channelId);
+
+    int size = pageable.getSize();
+    int page = pageable.getPage();  // 0-based
+    int totalElements = messageList.size();
+    int totalPages = (int) Math.ceil((double) totalElements / size);
+    boolean hasNext = page + 1 < totalPages;
+
+    int fromIndex = size * page;
+    int toIndex = Math.min(fromIndex + size, totalElements);
+
+    if (fromIndex >= totalElements) {
+      return new PageResponse<>(List.of(), page, size, false, totalElements);
+    }
+
+    List<MessageDto> messageDtoList = messageList.subList(fromIndex, toIndex)
+        .stream().map(this::getMessageDtoByMessage).toList();
+
+    return new PageResponse<>(messageDtoList, page, size, hasNext, totalElements);
+  }
+
 
   private Channel findChannelByChannelId(UUID channelId) {
     return channelRepository.findChannelByChannelId(channelId)
@@ -182,5 +225,40 @@ public class BasicMessageService implements MessageService {
         }
       }
     }
+  }
+
+  private UserDto getUserDtoByUserId(UUID userId) {
+    User user = findActiveUserByUserId(userId);
+    UserStatus userStatus = userStatusService.findUserStatusByUserId(user.getId());
+    Duration duration = Duration.between(userStatus.getLastActiveAt(), Instant.now());
+    Boolean loginStatus = duration.toMinutes() < 5;
+    BinaryContent binaryContent = binaryContentService.findBinaryContentByBinaryContentId(user.getProfileId());
+    BinaryContentDto binaryContentDto = new BinaryContentDto(binaryContent.getId(), binaryContent.getFileName(), binaryContent.getSize(), binaryContent.getContentType());
+    return new UserDto(user.getId(), user.getUsername(), user.getEmail(), binaryContentDto, loginStatus);
+  }
+
+  private List<BinaryContentDto> getBinaryContentDtoList(UUID messageId) {
+    List<BinaryContent> binaryContents = binaryContentRepository.findBinaryContentListByReferenceId(messageId);
+
+    return binaryContents.stream()
+        .map(binaryContent -> new BinaryContentDto(
+            binaryContent.getId(),
+            binaryContent.getFileName(),
+            binaryContent.getSize(),
+            binaryContent.getContentType()
+        ))
+        .toList();
+  }
+
+  private MessageDto getMessageDtoByMessage(Message message) {
+   UserDto userDto = getUserDtoByUserId(message.getAuthorId());
+   List<BinaryContentDto> binaryContentDtoList = getBinaryContentDtoList(message.getId());
+   return new MessageDto(message.getAuthorId(), message.getCreatedAt(), message.getContent(), message.getChannelId(), userDto, binaryContentDtoList);
+  }
+
+  private User findActiveUserByUserId(UUID userId) {
+    return userRepository.findActiveUserByUserId(userId)
+        .orElseThrow(() -> new NoFindUserException("User를 찾을 수 없음",
+            ("User with id {" + userId + "} not found")));
   }
 }

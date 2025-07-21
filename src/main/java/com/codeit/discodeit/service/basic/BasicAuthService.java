@@ -30,7 +30,7 @@ public class BasicAuthService implements AuthService {
       throw new WrongPasswordException("비밀번호가 일치하지 않음", "Wrong password");
     }
 
-    BinaryContent currentUserPicture = findBinaryContentByBinaryContentId(user.getProfileId());
+    findBinaryContentByBinaryContentId(user.getProfileId()); //검증
     // DTO 반환
     return user;
   }
@@ -41,8 +41,8 @@ public class BasicAuthService implements AuthService {
             ("User with username {" + userName + "} not found")));
   }
 
-  private BinaryContent findBinaryContentByBinaryContentId(UUID binaryContentId) {
-    return binaryContentRepository.findBinaryContentByBinaryContentId(binaryContentId)
+  private void findBinaryContentByBinaryContentId(UUID binaryContentId) {
+    binaryContentRepository.findBinaryContentByBinaryContentId(binaryContentId)
         .orElseThrow(() -> new IllegalArgumentException("해당하는 바이너리 컨텐츠를 찾을 수 없습니다."));
   }
 }

@@ -2,8 +2,10 @@ package com.codeit.discodeit.service;
 
 import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
+import com.codeit.discodeit.dto.message_service_dto.MessageDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequestDto;
-import com.codeit.discodeit.entity.Message;
+import com.codeit.discodeit.dto.message_service_dto.PageResponse;
+import com.codeit.discodeit.dto.message_service_dto.Pageable;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,11 +14,13 @@ public interface MessageService {
 
   void deleteMessage(DeleteMessageRequestDto deleteMessageRequestDTO);
 
-  List<Message> findMessagesByChannelId(UUID channelId);
+  List<MessageDto> findMessageDtoListByChannelId(UUID channelId);
 
-  Message updateMessage(MessageUpdateRequestDto messageUpdateRequestDto);
+  MessageDto updateMessage(MessageUpdateRequestDto messageUpdateRequestDto);
 
-  Message createMessage(MessageCreateRequest messageCreateRequest,
+  MessageDto createMessage(MessageCreateRequest messageCreateRequest,
       List<MultipartFile> attachments);
+
+  PageResponse<MessageDto> findMessagesPerPage(UUID channelId, Pageable pageable);
 
 }

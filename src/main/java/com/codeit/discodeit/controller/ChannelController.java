@@ -44,11 +44,11 @@ public class ChannelController {
           )
       }
   )
-  public ResponseEntity<Channel> createPublicChannel(
+  public ResponseEntity<ChannelDto> createPublicChannel(
       @RequestBody CreatePublicChannelRequestDto createPublicChannelRequestDto
   ) {
-    Channel channel = channelService.createPublicChannel(createPublicChannelRequestDto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(channel);
+    ChannelDto channelDto = channelService.createPublicChannel(createPublicChannelRequestDto);
+    return ResponseEntity.status(HttpStatus.CREATED).body(channelDto);
   } // 유저가 누구인지 알 수 없는데
 
 
@@ -63,11 +63,11 @@ public class ChannelController {
               )
           )
       })
-  public ResponseEntity<Channel> createPrivateChannel(
+  public ResponseEntity<ChannelDto> createPrivateChannel(
       @RequestBody CreatePrivateChannelRequestDto createPrivateChannelRequestDto) {
 
-    Channel channel = channelService.createPrivateChannel(createPrivateChannelRequestDto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(channel);
+    ChannelDto channelDto = channelService.createPrivateChannel(createPrivateChannelRequestDto);
+    return ResponseEntity.status(HttpStatus.CREATED).body(channelDto);
   }
 
   @Operation(
@@ -106,14 +106,13 @@ public class ChannelController {
       }
   )
   @PatchMapping("/{channelId}")
-  public ResponseEntity<Channel> updateChannel(
+  public ResponseEntity<ChannelDto> updateChannel(
       @PathVariable UUID channelId,
       @RequestBody PublicChannelUpdateRequest updateRequest
   ) {
-    Channel updatedChannel = channelService.updatePublicChannel(channelId, updateRequest);
-    return ResponseEntity.ok(updatedChannel);
+    ChannelDto updatedChannelDto = channelService.updatePublicChannel(channelId, updateRequest);
+    return ResponseEntity.ok(updatedChannelDto);
   }
-
 
   @GetMapping
   @Operation(
@@ -143,6 +142,4 @@ public class ChannelController {
     List<ChannelDto> channels = channelService.findChannelDtoListByUserId(userId);
     return ResponseEntity.ok(channels);
   }
-
-
 }

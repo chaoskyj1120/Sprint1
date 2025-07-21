@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -78,5 +79,20 @@ public class BinaryContentsController {
     BinaryContent binaryContent = binaryContentService.findBinaryContentByBinaryContentId(
         binaryContentId);
     return ResponseEntity.ok(binaryContent);
+  }
+
+  @GetMapping("/{binaryContentId}/download")
+  public ResponseEntity<?> download(@PathVariable UUID binaryContentId) {
+    // 실제 파일 데이터 및 메타데이터 가져오기
+    BinaryContent binaryContent = binaryContentService.findBinaryContentByBinaryContentId(binaryContentId);
+
+    byte[] fileBytes = binaryContent.getBytes();
+    String fileName = binaryContent.getFileName();
+    String contentType = binaryContent.getContentType();
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+        .header(HttpHeaders.CONTENT_TYPE, contentType)
+        .body(fileBytes);
   }
 }

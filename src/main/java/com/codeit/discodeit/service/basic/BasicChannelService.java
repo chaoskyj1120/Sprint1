@@ -28,7 +28,7 @@ public class BasicChannelService implements ChannelService {
   private final ReadStatusRepository readStatusRepository;
 
   @Override
-  public Channel createPublicChannel(
+  public ChannelDto createPublicChannel(
       CreatePublicChannelRequestDto createPublicChannelRequestDto) {
     Optional<Channel> duplicateChannel = channelRepository.findChannelByChannelName(
         createPublicChannelRequestDto.getName());
@@ -43,28 +43,19 @@ public class BasicChannelService implements ChannelService {
     for (User user : users) {
       channel.addUser(user);
     }
-
-    //channel.addUser(hostUser);
-    //hostUser.addChannel(channel);
-
     channelRepository.createChannel(channel);
-    //userRepository.updateUser(hostUser);
 
-    //createOrUpdateReadStatus(hostUser, channel);
-
-    //List<Message> messages = messageRepository.findMessagesByChannelId(channel.getId());
-    //return new ChannelResponseDto(channel, messages.get(messages.size()-1).getId());
-    return channel;
+    Message lastMessageInChannel = messageRepository.findLastMessageInChannel(channel.getId());
+    return new ChannelDto(channel, lastMessageInChannel);
   }
 
   @Override
-  public Channel createPrivateChannel(
+  public ChannelDto createPrivateChannel(
       CreatePrivateChannelRequestDto createPrivateChannelRequestDto) {
 
     ArrayList<UUID> enterUserIds = createPrivateChannelRequestDto.getParticipantIds();
 
     Channel channel = new Channel();
-    //channel.addUser(hostUser);
     for (UUID enterUserId : enterUserIds) {
       Optional<User> enterUser = userRepository.findUserByUserId(enterUserId);
       if (enterUser.isPresent()) {
@@ -74,12 +65,10 @@ public class BasicChannelService implements ChannelService {
         userRepository.updateUser(user);
       }
     }
-    //hostUser.addChannel(channel);
 
     channelRepository.createChannel(channel);
-    //userRepository.updateUser(hostUser);
-
-    return channel;
+    Message lastMessageInChannel = messageRepository.findLastMessageInChannel(channel.getId());
+    return new ChannelDto(channel, lastMessageInChannel);
   }
 
   @Override
@@ -112,7 +101,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
-  public Channel updatePublicChannel(UUID channelId,
+  public ChannelDto updatePublicChannel(UUID channelId,
       PublicChannelUpdateRequest publicChannelUpdateRequest) {
     Channel channel = findChannelByChannelId(channelId);
 
@@ -125,7 +114,8 @@ public class BasicChannelService implements ChannelService {
     channel.setChannelDescription(publicChannelUpdateRequest.getNewDescription());
     channelRepository.updateChannel(channel);
 
-    return channel;
+    Message lastMessageInChannel = messageRepository.findLastMessageInChannel(channel.getId());
+    return new ChannelDto(channel, lastMessageInChannel);
   }
 
   private void optionalChannelIsPresent(Optional<Channel> channel) {
@@ -142,9 +132,10 @@ public class BasicChannelService implements ChannelService {
             ("Channel with id {" + channelId + "} not found")));
   }
 
-  private User findUserByUserId(UUID userId) {
-    return userRepository.findUserById(userId)
-        .orElseThrow(
-            () -> new NoFindUserException("해당 유저를 찾을 수 없습니다.", userId + "유저를 찾을 수 없습니다."));
+  @Override
+  public ChannelDto findChannelDtoByChannelId(UUID channelId){
+    Channel channel = findChannelByChannelId(channelId);
+    Message lastMessageInChannel = messageRepository.findLastMessageInChannel(channel.getId());
+    return new ChannelDto(channel, lastMessageInChannel);
   }
 }

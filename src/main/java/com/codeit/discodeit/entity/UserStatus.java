@@ -1,52 +1,36 @@
 package com.codeit.discodeit.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
-import lombok.Getter;
-import lombok.Setter;
-
-import java.time.Duration;
+import com.codeit.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import java.time.Instant;
-import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
-@Setter
+
+@Entity
+@Table(name = "userStatuses")
 @Getter
-@Schema(description = "User 상태 정보")
-public class UserStatus implements Serializable {
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class UserStatus extends BaseUpdatableEntity {
 
-  private UUID id;
+  @OneToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "user", nullable = false)
+  private User user;
 
-  private Instant createdAt;
-
-  private Instant updatedAt;
-
-  private UUID userId;
-
+  @Column(name = "lastActiveAt", nullable = false)
   private Instant lastActiveAt;
-
-  private boolean online;
-
-  public UserStatus(User user) {
-    this.id = UUID.randomUUID();
-    this.createdAt = Instant.now();
-    this.updatedAt = createdAt;
-    this.userId = user.getId();
-    this.lastActiveAt = createdAt;
-    this.online = true;
-  }
-
-  public void updateUserStatus() {
-    this.updatedAt = Instant.now();
-    this.lastActiveAt = updatedAt;
-  }
-
-  public boolean getOnline() {
-    if (lastActiveAt == null) {
-      this.online = false;
-    } else {
-      Duration duration = Duration.between(lastActiveAt, Instant.now());
-      this.online = Math.abs(duration.toMinutes()) <= 5;
-    }
-    return this.online;
-  }
 }

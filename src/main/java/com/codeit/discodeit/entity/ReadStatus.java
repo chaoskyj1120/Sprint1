@@ -1,25 +1,42 @@
 package com.codeit.discodeit.entity;
 
+import com.codeit.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.time.Instant;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.util.UUID;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
+
+@Entity
+@Table(name = "readStatuses")
 @Getter
 @Setter
-public class ReadStatus extends BaseEntity {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ReadStatus extends BaseUpdatableEntity {
 
-  private final UUID channelId;
-  private final UUID userId;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  @OnDelete(action = OnDeleteAction.CASCADE)
+  private User user;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "channel_id", nullable = false)
+  @OnDelete(action = OnDeleteAction.CASCADE)
+  private Channel channel;
+
+  @Column(name = "lastReadAt", nullable = false)
   private Instant lastReadAt;
-
-  public ReadStatus(UUID userId, UUID channelId) {
-    this.userId = userId;
-    this.channelId = channelId;
-    this.lastReadAt = Instant.now();
-  }
-
-  public void updateLastReadAt() {
-    this.lastReadAt = Instant.now();
-  }
 }
+

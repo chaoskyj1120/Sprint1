@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/discodeit
+    username: discodeit_user
+    password: 0000
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # 또는 validate, create, none 등
+    show-sql: true       # 콘솔에 SQL 출력
+    properties:
+      hibernate:
+        format_sql: true # SQL 보기 좋게 출력
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace  # 파라미터 바인딩 로그까지 보고 싶다면 추가

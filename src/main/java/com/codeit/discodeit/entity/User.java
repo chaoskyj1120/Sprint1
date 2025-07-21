@@ -1,76 +1,42 @@
 package com.codeit.discodeit.entity;
 
+import com.codeit.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-
-@Setter
+@Entity
+@Table(name = "users")
 @Getter
-public class User extends BaseEntity implements Serializable {
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class User extends BaseUpdatableEntity {
 
+  @Column(name = "username", nullable = false, unique = true, length = 50)
   private String username;
-  private String password;
+
+  @Column(name = "email", nullable = false, unique = true, length = 100)
   private String email;
-  private UUID profileId; // 프로필 사진에 대한 것으로 BinaryContents를 참조하기 위한 필드
 
-  private final Set<UUID> channelIds = new HashSet<>();
-  private final Set<UUID> messageIds = new HashSet<>();
+  @Column(name = "password", nullable = false, length = 60)
+  private String password;
 
-  @Setter
-  private UserActivationState status = UserActivationState.ACTIVE;
+  @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "profile", nullable = false)
+  private BinaryContent profile;
 
-  public User(String username, String password, String email, UUID profileId) {
-    super();
-    this.username = username;
-    this.password = password;
-    this.username = username;
-    this.email = email;
-    this.profileId = profileId;
-  }
-
-  public void addChannel(Channel channel) {
-    if (!channelIds.add(channel.getId())) {
-      // 값이 추가되면 true 반환함 따라서 추가 안되면 메시지를 발행
-      // System.out.println("Channel: " + channel.getId() + ", already exists");
-      return; // 순환참조를 방지하기위한 메소드 종료
-    }
-    channel.addUser(this);
-  }
-
-  public void removeChannel(Channel channel) {
-    if (!channelIds.remove(channel.getId())) {
-      // System.out.println("Channel: " + channel.getId() + ", isn't exists");
-      return;
-    }
-    channel.removeUser(this);
-  }
-
-  public void addMessage(Message message) {
-    if (!messageIds.add(message.getId())) {
-      // System.out.println("Message: " + message.getId() + ", already exists");
-    }
-  }
-
-  public void removeMessage(Message message) {
-    if (!messageIds.remove(message.getId())) {
-      //System.out.println("Message: " + message.getId() + ", isn't exists");
-    }
-  }
-
-  public void setUsername(String username) {
-    this.username = username;
-    updateUpdatedAt();
-  }
-
-  public void clearChannelIds() {
-    channelIds.clear();
-  }
-
-  public void clearMessageIds() {
-    messageIds.clear();
-  }
+  @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "status", nullable = false)
+  private UserStatus status;
 }

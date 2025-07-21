@@ -1,46 +1,47 @@
 package com.codeit.discodeit.entity;
 
-import lombok.Getter;
-import lombok.Setter;
-
-import java.io.Serializable;
-import java.util.ArrayList;
+import com.codeit.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import java.util.List;
-import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
-@Setter
+
+@Entity
+@Table(name = "messages")
 @Getter
-public class Message extends BaseEntity implements Serializable {
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Message extends BaseUpdatableEntity {
 
+  @Column(name = "content", nullable = false)
   private String content;
-  private UUID authorId;
-  private UUID channelId;
 
-  private List<UUID> attachmentIds = new ArrayList<>();
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "channel_id", nullable = false)
+  @OnDelete(action = OnDeleteAction.CASCADE)
+  private Channel channel;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  @OnDelete(action = OnDeleteAction.SET_NULL)
+  private User author;
 
-  public Message(User user, Channel channel, String contents) {
-    super();
-    this.content = contents;
-    this.authorId = user.getId();
-    this.channelId = channel.getId();
-  }
-
-  public void updateMessageContent(String messageContents) {
-    updateUpdatedAt();
-    this.content = messageContents;
-  }
-
-  public void registerMessageToUserAndChannel(User user, Channel channel) {
-    user.addMessage(this);
-    channel.addMessage(this);
-  }
-
-  public void addBinaryContentId(UUID binaryContentsId) {
-    attachmentIds.add(binaryContentsId);
-  }
-
-  public void clearBinaryContentId() {
-    attachmentIds.clear();
-  }
+  @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<BinaryContent> attachments;
 }

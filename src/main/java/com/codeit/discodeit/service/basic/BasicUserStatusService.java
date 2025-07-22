@@ -20,17 +20,15 @@ public class BasicUserStatusService implements UserStatusService {
 
   @Override
   public UserStatus createUserStatus(UUID userId) {
+    // JPA 변경된 현재의 시점에서
+    // createUserStatus 메소드는 유저 스테이터스는 모종의 이유로 유저와 함께 삭제되는 것이 아닌 단독삭제 되었을 때만 실행됨
+    // 정상적인 실행과정에선 실행되지 않는 메소드
 
     User user = findUserByUserId(userId);
-
-    Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(user.getId());
-
-    if (userStatus.isPresent()) {
-      return userStatus.get();
-    }
-
-    UserStatus newUserStatus = new UserStatus(user); // 회원 가입할 때는 false로 생성
+    UserStatus newUserStatus = new UserStatus();
+    newUserStatus.setUser(user);
     userStatusRepository.createUserStatus(newUserStatus);
+
     return newUserStatus;
   }
 
@@ -44,26 +42,14 @@ public class BasicUserStatusService implements UserStatusService {
 
     UserStatus updateUserStatus = userStatus.get();
 
-    updateUserStatus.setLastActiveAt(newLastAt); // 이게 정답입니다.
+    updateUserStatus.setLastActiveAt(newLastAt);
     userStatusRepository.updateUserStatus(updateUserStatus);
 
     return updateUserStatus;
   }
 
-  @Override
-  public UserStatus findUserStatusByUserId(UUID userId) {
-    Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserStatusId(userId);
-    User user = findUserByUserId(userId);
-
-    if (userStatus.isEmpty()) {
-      return createUserStatus(userId);
-    }
-
-    return userStatus.get();
-  }
-
   private User findUserByUserId(UUID userId) {
-    return userRepository.findUserById(userId)
+    return userRepository.findUserByUserId(userId)
         .orElseThrow(() -> new IllegalStateException("해당하는 유저를 찾을 수 없습니다."));
   }
 }

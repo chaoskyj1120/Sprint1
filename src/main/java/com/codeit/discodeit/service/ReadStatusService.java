@@ -10,9 +10,6 @@ import java.util.UUID;
 public interface ReadStatusService {
 
   List<ReadStatus> findReadStatusesByUserId(UUID userId);
-
-  ReadStatus createReadStatus(User user, Channel channel);
-
   ReadStatus updateReadStatusByReadStatusId(UUID readStatusId,
       ReadStatusUpdateRequest readStatusUpdateRequest);
 }

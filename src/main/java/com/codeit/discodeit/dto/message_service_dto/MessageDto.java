@@ -10,6 +10,7 @@ import java.util.UUID;
 public record MessageDto(
     UUID id,
     Instant createdAt,
+    Instant updatedAt,
     String content,
     UUID channelId,
     UserDto author,

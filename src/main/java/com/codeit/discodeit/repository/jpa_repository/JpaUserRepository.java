@@ -39,7 +39,7 @@ public class JpaUserRepository implements UserRepository {
         .getResultList();
   }
   @Override
-  public Optional<User> findUserById(UUID userId) {
+  public Optional<User> findUserByUserId(UUID userId) {
     return Optional.ofNullable(em.find(User.class, userId));
   }
 
@@ -60,7 +60,10 @@ public class JpaUserRepository implements UserRepository {
   }
 
   @Override
-  public Optional<User> findUserByUserId(UUID userId) {
-    return findUserById(userId);
+  public List<User> findUserListByUserIdList(List<UUID> userIdList){
+    return em.createQuery("SELECT u FROM User u WHERE u.id in :userIdList", User.class)
+        .setParameter("userIdList", userIdList)
+        .getResultList();
   }
+
 }

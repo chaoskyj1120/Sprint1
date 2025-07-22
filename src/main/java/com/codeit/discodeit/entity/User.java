@@ -13,6 +13,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "users")
@@ -33,10 +35,17 @@ public class User extends BaseUpdatableEntity {
   private String password;
 
   @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(name = "profile", nullable = false)
+  @JoinColumn(name = "profile", nullable = true)
+  @OnDelete(action = OnDeleteAction.SET_NULL)
   private BinaryContent profile;
 
-  @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(name = "status", nullable = false)
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private UserStatus status;
+
+  public void setStatus(UserStatus status) {
+    this.status = status;
+    if (status.getUser() != this) {
+      status.setUser(this); // 양방향 모두 연결
+    }
+  }
 }

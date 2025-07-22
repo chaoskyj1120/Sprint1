@@ -6,8 +6,6 @@ import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.service.ChannelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -64,9 +62,9 @@ public class ChannelController {
           )
       })
   public ResponseEntity<ChannelDto> createPrivateChannel(
-      @RequestBody CreatePrivateChannelRequestDto createPrivateChannelRequestDto) {
+      @RequestBody PrivateChannelCreateRequest privateChannelCreateRequest) {
 
-    ChannelDto channelDto = channelService.createPrivateChannel(createPrivateChannelRequestDto);
+    ChannelDto channelDto = channelService.createPrivateChannel(privateChannelCreateRequest);
     return ResponseEntity.status(HttpStatus.CREATED).body(channelDto);
   }
 
@@ -114,32 +112,4 @@ public class ChannelController {
     return ResponseEntity.ok(updatedChannelDto);
   }
 
-  @GetMapping
-  @Operation(
-      summary = "User가 참여 중인 Channel 목록 조회",
-      description = "특정 userId가 참여한 채널들의 리스트를 반환합니다.",
-      parameters = {
-          @Parameter(
-              name = "userId",
-              description = "조회할 User ID",
-              required = true,
-              in = ParameterIn.QUERY,
-              schema = @Schema(type = "string", format = "uuid")
-          )
-      },
-      responses = {
-          @ApiResponse(
-              responseCode = "200",
-              description = "Channel 목록 조회 성공",
-              content = @Content(
-                  mediaType = "application/json",
-                  array = @ArraySchema(schema = @Schema(implementation = ChannelDto.class))
-              )
-          )
-      }
-  )
-  public ResponseEntity<List<ChannelDto>> findChannelByUser(@RequestParam UUID userId) {
-    List<ChannelDto> channels = channelService.findChannelDtoListByUserId(userId);
-    return ResponseEntity.ok(channels);
-  }
 }

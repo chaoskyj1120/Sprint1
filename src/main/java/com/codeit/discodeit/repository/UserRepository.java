@@ -16,11 +16,11 @@ public interface UserRepository {
 
   List<User> loadUsers();
 
-  Optional<User> findUserById(UUID id);
+  Optional<User> findUserByUserId(UUID id);
 
   Optional<User> findUserByEmail(String email);
 
   Optional<User> findUserByUserName(String username);
 
-  Optional<User> findUserByUserId(UUID username);
+  List<User> findUserListByUserIdList(List<UUID> userIdList);
 }

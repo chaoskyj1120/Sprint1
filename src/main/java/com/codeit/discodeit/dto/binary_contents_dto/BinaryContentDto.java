@@ -5,6 +5,6 @@ import java.util.UUID;
 public record BinaryContentDto(
     UUID id,
     String fileName,
-    Integer size,
+    long size,
     String contentType
 ) {}

@@ -84,7 +84,6 @@ public class UserController {
 
     userCreateRequest.setProfileImage(profile);
     UserDto createdUser = userService.createUser(userCreateRequest);
-    userStatusService.createUserStatus(createdUser.id());
     return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
   }
 

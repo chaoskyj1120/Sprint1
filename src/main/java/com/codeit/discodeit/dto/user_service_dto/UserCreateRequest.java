@@ -1,13 +1,17 @@
 package com.codeit.discodeit.dto.user_service_dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
 @Schema(description = "User 생성 정보")
 @Setter
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserCreateRequest {
 
   @Schema(description = "사용자 이름", example = "yj_k")
@@ -21,16 +25,4 @@ public class UserCreateRequest {
 
   @Schema(description = "프로필 이미지")
   private MultipartFile profileImage;
-
-  // 생성자, getter/setter, builder 등 추가
-  public UserCreateRequest(String username, String password, String email,
-      MultipartFile profileImage) {
-    this.username = username;
-    this.password = password;
-    this.email = email;
-    this.profileImage = profileImage;
-  }
-
-  public UserCreateRequest() {
-  }
 }

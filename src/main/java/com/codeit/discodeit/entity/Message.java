@@ -38,10 +38,11 @@ public class Message extends BaseUpdatableEntity {
   private Channel channel;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "user_id", nullable = false)
+  @JoinColumn(name = "user_id", nullable = true)
   @OnDelete(action = OnDeleteAction.SET_NULL)
   private User author;
 
   @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "message_id")
   private List<BinaryContent> attachments;
 }

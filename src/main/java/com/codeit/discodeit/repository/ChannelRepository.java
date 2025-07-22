@@ -14,6 +14,7 @@ public interface ChannelRepository {
     void updateChannel(Channel channel);
 
     List<Channel> loadChannels();
+    List<Channel> findAllPublicChannel();
 
     Optional<Channel> findChannelByChannelName(String channelName);
     Optional<Channel> findChannelByChannelId(UUID channelId);

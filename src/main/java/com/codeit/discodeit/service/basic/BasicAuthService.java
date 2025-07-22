@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 public class BasicAuthService implements AuthService {
 
   private final UserRepository userRepository;
-  private final BinaryContentRepository binaryContentRepository;
 
   @Override
   public User logInUser(LoginRequestDto loginRequest) {
@@ -29,9 +28,6 @@ public class BasicAuthService implements AuthService {
     if (!rawPassword.equals(user.getPassword())) {
       throw new WrongPasswordException("비밀번호가 일치하지 않음", "Wrong password");
     }
-
-    findBinaryContentByBinaryContentId(user.getProfileId()); //검증
-    // DTO 반환
     return user;
   }
 
@@ -39,10 +35,5 @@ public class BasicAuthService implements AuthService {
     return userRepository.findUserByUserName(userName)
         .orElseThrow(() -> new NoFindUserException("사용자를 찾을 수 없음",
             ("User with username {" + userName + "} not found")));
-  }
-
-  private void findBinaryContentByBinaryContentId(UUID binaryContentId) {
-    binaryContentRepository.findBinaryContentByBinaryContentId(binaryContentId)
-        .orElseThrow(() -> new IllegalArgumentException("해당하는 바이너리 컨텐츠를 찾을 수 없습니다."));
   }
 }

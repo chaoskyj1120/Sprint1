@@ -1,5 +1,6 @@
 package com.codeit.discodeit.repository.jpa_repository;
 
+import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.entity.Message;
 import com.codeit.discodeit.entity.ReadStatus;
 import com.codeit.discodeit.repository.ReadStatusRepository;
@@ -45,6 +46,13 @@ public class JpaReadStatusRepository implements ReadStatusRepository {
   public List<ReadStatus> findReadStatusesByUserId(UUID userId){
     return em.createQuery("SELECT rs FROM ReadStatus rs WHERE rs.user.id=:userId", ReadStatus.class)
         .setParameter("userId", userId)
+        .getResultList();
+  }
+
+  @Override
+  public List<ReadStatus> findReadStatusByChannel(Channel channel){
+    return em.createQuery("SELECT rs FROM ReadStatus rs WHERE rs.channel = :channel", ReadStatus.class)
+        .setParameter("channel", channel)
         .getResultList();
   }
 }

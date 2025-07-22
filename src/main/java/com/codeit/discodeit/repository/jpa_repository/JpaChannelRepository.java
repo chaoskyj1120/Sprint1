@@ -1,6 +1,7 @@
 package com.codeit.discodeit.repository.jpa_repository;
 
 import com.codeit.discodeit.entity.Channel;
+import com.codeit.discodeit.entity.ChannelType;
 import com.codeit.discodeit.repository.ChannelRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -29,6 +30,12 @@ public class JpaChannelRepository implements ChannelRepository {
   @Override
   public List<Channel> loadChannels(){
     return em.createQuery("select c from Channel c", Channel.class).getResultList();
+  }
+
+  @Override
+  public List<Channel> findAllPublicChannel(){
+    return em.createQuery("SELECT c FROM Channel c WHERE c.type= :PUBLIC_CHANNEL ", Channel.class)
+        .setParameter("PUBLIC_CHANNEL", ChannelType.PUBLIC).getResultList();
   }
 
   @Override

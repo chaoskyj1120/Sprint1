@@ -9,6 +9,4 @@ public interface UserStatusService {
   UserStatus createUserStatus(UUID userId);
 
   UserStatus updateUserStatus(UUID userId, Instant newLastAt);
-
-  UserStatus findUserStatusByUserId(UUID userId);
 }

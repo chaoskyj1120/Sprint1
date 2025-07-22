@@ -125,7 +125,7 @@ public class BasicUserService implements UserService {
       if (!compareProfile(targetUser, profileImagePath)) {
         // 기존 프로필 삭제
         if (targetUser.getProfileId() != null) {
-          binaryContentRepository.deleteBinaryContentByBinaryContentId(targetUser.getProfileId());
+          binaryContentRepository.deleteBinaryContent(targetUser.getProfileId());
         }
 
         // 새 프로필 이미지 객체 생성 및 저장
@@ -155,7 +155,7 @@ public class BasicUserService implements UserService {
         [ ] 관련된 도메인도 같이 삭제합니다.
         BinaryContent(프로필), UserStatus
         */
-    binaryContentRepository.deleteBinaryContentByBinaryContentId(user.getProfileId());
+    binaryContentRepository.deleteBinaryContent(user.getProfileId());
     channelRepository.deleteUserFromChannels(user);
     userRepository.deleteUser(user);
   }

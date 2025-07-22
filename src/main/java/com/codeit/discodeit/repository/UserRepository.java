@@ -14,11 +14,7 @@ public interface UserRepository {
 
   void deleteUser(User user);
 
-  void restoreUser(String userName);
-
   List<User> loadUsers();
-
-  void saveUsers(List<User> users);
 
   Optional<User> findUserById(UUID id);
 
@@ -27,6 +23,4 @@ public interface UserRepository {
   Optional<User> findUserByUserName(String username);
 
   Optional<User> findUserByUserId(UUID username);
-
-  Optional<User> findActiveUserByUserId(UUID userId);
 }

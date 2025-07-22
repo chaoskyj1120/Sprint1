@@ -11,14 +11,10 @@ public interface ChannelRepository {
 
     void createChannel(Channel channel);
     void deleteChannel(Channel channel);
-
-    void saveChannels(List<Channel> channels);
-    List<Channel> loadChannels();
-
     void updateChannel(Channel channel);
 
-    void deleteUserFromChannels(User user);
+    List<Channel> loadChannels();
+
     Optional<Channel> findChannelByChannelName(String channelName);
     Optional<Channel> findChannelByChannelId(UUID channelId);
-    List<Channel> findChannelsByUserId(UUID userId);
 }

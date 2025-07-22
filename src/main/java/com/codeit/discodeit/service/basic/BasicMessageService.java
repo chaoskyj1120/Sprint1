@@ -1,7 +1,6 @@
 package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.dto.binary_contents_dto.BinaryContentDto;
-import com.codeit.discodeit.dto.channel_service_dto.ChannelDto;
 import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
 import com.codeit.discodeit.dto.message_service_dto.MessageDto;
@@ -27,11 +26,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -111,13 +108,13 @@ public class BasicMessageService implements MessageService {
     channel.getMessageIds().remove(message.getId());
 
     for (UUID binaryContentId : message.getAttachmentIds()) {
-      binaryContentRepository.deleteBinaryContentByBinaryContentId(binaryContentId);
+      binaryContentRepository.deleteBinaryContent(binaryContentId);
     }
 
     userRepository.updateUser(user);
     channelRepository.updateChannel(channel);
 
-    messageRepository.deleteMessageByMessageId(message.getId());
+    messageRepository.deleteMessageByMessage(message.getId());
   }
 
   @Override
@@ -148,7 +145,7 @@ public class BasicMessageService implements MessageService {
     message.setContent(messageUpdateRequestDto.getNewContent());
 
     for (UUID binaryContentId : message.getAttachmentIds()) {
-      binaryContentRepository.deleteBinaryContentByBinaryContentId(binaryContentId);
+      binaryContentRepository.deleteBinaryContent(binaryContentId);
     }
     message.clearBinaryContentId();
 

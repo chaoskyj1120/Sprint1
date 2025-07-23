@@ -1,19 +1,19 @@
 package com.codeit.discodeit.service.basic;
 
-import com.codeit.discodeit.dto.binary_contents_dto.BinaryContentDto;
 import com.codeit.discodeit.dto.user_service_dto.*;
 import com.codeit.discodeit.entity.*;
 import com.codeit.discodeit.exception.exception.DuplicateUserException;
 import com.codeit.discodeit.exception.exception.NoFindUserException;
 import com.codeit.discodeit.repository.ChannelRepository;
-import com.codeit.discodeit.repository.ReadStatusRepository;
 import com.codeit.discodeit.repository.UserRepository;
+import com.codeit.discodeit.service.ReadStatusService;
 import com.codeit.discodeit.service.UserService;
+import com.codeit.discodeit.service.UserStatusService;
 import jakarta.transaction.Transactional;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,60 +28,43 @@ public class BasicUserService implements UserService {
 
   private final UserRepository userRepository;
   private final ChannelRepository channelRepository;
-  private final ReadStatusRepository readStatusRepository;
+  private final ReadStatusService readStatusService;
+  private final UserStatusService userStatusService;
 
   @Override
-  public UserDto createUser(UserCreateRequest userCreateRequest) throws IOException {
+  public User createUser(UserCreateRequest userCreateRequest) throws IOException {
 
-    BinaryContent profileImg = new BinaryContent();
-    profileImg.setSize(userCreateRequest.getProfileImage().getSize());
-    profileImg.setContentType(userCreateRequest.getProfileImage().getContentType());
-    profileImg.setBytes(userCreateRequest.getProfileImage().getBytes());
-    profileImg.setFileName(userCreateRequest.getProfileImage().getName());
+    validateUserNameNotDuplicated(userCreateRequest.getUsername());
+    validateUserEmailNotDuplicated(userCreateRequest.getEmail());
 
-    String userName = userCreateRequest.getUsername();
-    String userEmail = userCreateRequest.getEmail();
-    String rawPassword = userCreateRequest.getPassword(); // 암호화 추후 구현
-
-    validateUserNameNotDuplicated(userName);
-    validateUserEmailNotDuplicated(userEmail);
-
-    User user = new User();
-    user.setUsername(userName);
-    user.setPassword(rawPassword);
-    user.setEmail(userEmail);
-    user.setProfile(profileImg);
-
-    UserStatus userStatus = new UserStatus();
-    userStatus.setUser(user);
+    User user = toUser(userCreateRequest);
+    user.setStatus(userStatusService.createUserStatus(user.getId()));
 
     // 신규 유저 생성시 공용 채널의 readStatus 자동으로 추가
     List<Channel> channels = channelRepository.findAllPublicChannel();
     for (Channel channel : channels) {
-      ReadStatus readStatus = new ReadStatus();
-      readStatus.setChannel(channel);
-      readStatus.setUser(user);
-      readStatusRepository.createReadStatus(readStatus);
+      readStatusService.createReadStatus(user, channel);
     }
 
     userRepository.createUser(user);
-    return getUserDtoByUser(user);
+    return user;
   }
 
-
   @Override
-  public UserDto updateUser(UserUpdateRequest userUpdateRequest, MultipartFile profileImage)
+  public User updateUser(UserUpdateRequest userUpdateRequest, MultipartFile profileImage)
       throws IOException {
     User targetUser = findUserByUserId(userUpdateRequest.getUserId());
 
     // 사용자 기본 정보 수정
     if (userUpdateRequest.getNewEmail() != null && !userUpdateRequest.getNewEmail()
         .equals(targetUser.getEmail())) {
+      validateUserEmailNotDuplicated(userUpdateRequest.getNewEmail());
       targetUser.setEmail(userUpdateRequest.getNewEmail());
     }
 
     if (userUpdateRequest.getNewUsername() != null && !userUpdateRequest.getNewUsername()
         .equals(targetUser.getUsername())) {
+      validateUserNameNotDuplicated(userUpdateRequest.getNewUsername());
       targetUser.setUsername(userUpdateRequest.getNewUsername());
     }
 
@@ -91,17 +74,21 @@ public class BasicUserService implements UserService {
     }
 
     if (profileImage != null && !profileImage.isEmpty()) {
-      BinaryContent newProfileImg = new BinaryContent();
-      newProfileImg.setSize(profileImage.getSize());
-      newProfileImg.setContentType(profileImage.getContentType());
-      newProfileImg.setBytes(profileImage.getBytes());
-      newProfileImg.setFileName(profileImage.getName());
-      targetUser.setProfile(newProfileImg);
-    }
+      BinaryContent newProfileImg = MulitpartFiletoBinaryContent(profileImage);
+      BinaryContent currentProfile = targetUser.getProfile();
 
+      boolean isSameImage = currentProfile != null
+          && currentProfile.getSize() == newProfileImg.getSize()
+          && currentProfile.getContentType().equals(newProfileImg.getContentType())
+          && currentProfile.getFileName().equals(newProfileImg.getFileName());
+
+      if (!isSameImage) {
+        targetUser.setProfile(newProfileImg);
+      }
+    }
     // DB에 사용자 정보 반영
     userRepository.updateUser(targetUser);
-    return getUserDtoByUser(targetUser);
+    return targetUser;
   }
 
   @Override
@@ -111,16 +98,8 @@ public class BasicUserService implements UserService {
   }
 
   @Override
-  public List<UserDto> findAllUserDto() {
-    List<User> users = userRepository.loadUsers();
-    List<UserDto> userList = new ArrayList<>();
-
-    for (User user : users) {
-      UserDto userDto = getUserDtoByUser(user);
-      userList.add(userDto);
-    }
-
-    return userList;
+  public List<User> findAllUser() {
+    return userRepository.loadUsers();
   }
 
   @Override
@@ -131,9 +110,6 @@ public class BasicUserService implements UserService {
     }
     return user.get();
   }
-
-  @Override
-  public UserDto findUserDtoByUserId(UUID userId) {return getUserDtoByUserId(userId);}
 
   private void validateUserNameNotDuplicated(String userName) {
     if (userRepository.findUserByUserName(userName).isPresent()) {
@@ -149,28 +125,50 @@ public class BasicUserService implements UserService {
     }
   }
 
-  private UserDto getUserDtoByUserId(UUID userId) {
-    User user = findUserByUserId(userId);
-    return getUserDtoByUser(user);
-  }
+  private BinaryContent MulitpartFiletoBinaryContent(MultipartFile profileImg) throws IOException {
 
-  private UserDto getUserDtoByUser(User user) {
-    UserStatus userStatus = user.getStatus();
-    Duration duration = Duration.between(userStatus.getLastActiveAt(), Instant.now());
-    Boolean loginStatus = duration.toMinutes() < 5;
+    BinaryContent binaryContent = new BinaryContent();
 
-    BinaryContent binaryContent = user.getProfile();
-    BinaryContentDto binaryContentDto = null;
+    if (profileImg == null || profileImg.isEmpty()) {
+      File file = new File("src/main/resources/profileImg/basicUserProfileImage.png");
+      if (!file.exists()) {
+        throw new FileNotFoundException("기본 프로필 이미지가 존재하지 않습니다: " + file.getAbsolutePath());
+      }
 
-    if (binaryContent != null) {
-      binaryContentDto = new BinaryContentDto(
-          binaryContent.getId(),
-          binaryContent.getFileName(),
-          binaryContent.getSize(),
-          binaryContent.getContentType()
-      );
+      String contentType = Files.probeContentType(file.toPath());
+      if (contentType == null) {
+        contentType = "application/octet-stream";
+      }
+      binaryContent.setSize(file.length());
+      binaryContent.setContentType(contentType);
+      binaryContent.setBytes(Files.readAllBytes(file.toPath()));
+      binaryContent.setFileName(file.getName());
+      // 이미지를 선택하지 않았을 때 기본 이미지 설정
+    }
+    else {
+      binaryContent.setSize(profileImg.getSize());
+      binaryContent.setContentType(profileImg.getContentType());
+      binaryContent.setBytes(profileImg.getBytes());
+      binaryContent.setFileName(profileImg.getOriginalFilename());
     }
 
-    return new UserDto(user.getId(), user.getUsername(), user.getEmail(), binaryContentDto, loginStatus);
+    return binaryContent;
+  }
+
+  private User toUser(UserCreateRequest userCreateRequest) throws IOException {
+
+    BinaryContent profileImageBinaryContent = MulitpartFiletoBinaryContent(userCreateRequest.getProfileImage());
+
+    String rawPassword = userCreateRequest.getPassword(); // 암호화 추후 구현
+    String userName = userCreateRequest.getUsername();
+    String userEmail = userCreateRequest.getEmail();
+
+    User user = new User();
+    user.setUsername(userName);
+    user.setPassword(rawPassword);
+    user.setEmail(userEmail);
+    user.setProfile(profileImageBinaryContent);
+
+    return user;
   }
 }

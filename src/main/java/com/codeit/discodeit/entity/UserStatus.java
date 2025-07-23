@@ -28,7 +28,7 @@ public class UserStatus extends BaseUpdatableEntity {
   private User user;
 
   @Column(name = "lastActiveAt", nullable = false)
-  private Instant lastActiveAt;
+  private Instant lastActiveAt = Instant.EPOCH;
 
   public void setUser(User user) {
     this.user = user;

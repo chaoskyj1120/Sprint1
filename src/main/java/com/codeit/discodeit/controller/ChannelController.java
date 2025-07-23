@@ -1,9 +1,14 @@
 package com.codeit.discodeit.controller;
 
 
+import com.codeit.discodeit.controller.mapper.ChannelMapper;
 import com.codeit.discodeit.dto.channel_service_dto.*;
 import com.codeit.discodeit.entity.Channel;
+import com.codeit.discodeit.entity.Message;
+import com.codeit.discodeit.entity.ReadStatus;
 import com.codeit.discodeit.service.ChannelService;
+import com.codeit.discodeit.service.MessageService;
+import com.codeit.discodeit.service.ReadStatusService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,6 +32,8 @@ import java.util.*;
 public class ChannelController {
 
   private final ChannelService channelService;
+  private final MessageService messageService;
+  private final ReadStatusService readStatusService;
 
   @PostMapping(value = "/public", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
@@ -45,9 +52,11 @@ public class ChannelController {
   public ResponseEntity<ChannelDto> createPublicChannel(
       @RequestBody CreatePublicChannelRequestDto createPublicChannelRequestDto
   ) {
-    ChannelDto channelDto = channelService.createPublicChannel(createPublicChannelRequestDto);
+
+    Channel channel = channelService.createPublicChannel(createPublicChannelRequestDto);
+    ChannelDto channelDto = toChannelDto(channel);
     return ResponseEntity.status(HttpStatus.CREATED).body(channelDto);
-  } // 유저가 누구인지 알 수 없는데
+  }
 
 
   @PostMapping(value = "/private", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -64,7 +73,8 @@ public class ChannelController {
   public ResponseEntity<ChannelDto> createPrivateChannel(
       @RequestBody PrivateChannelCreateRequest privateChannelCreateRequest) {
 
-    ChannelDto channelDto = channelService.createPrivateChannel(privateChannelCreateRequest);
+    Channel channel = channelService.createPrivateChannel(privateChannelCreateRequest);
+    ChannelDto channelDto = toChannelDto(channel);
     return ResponseEntity.status(HttpStatus.CREATED).body(channelDto);
   }
 
@@ -108,8 +118,15 @@ public class ChannelController {
       @PathVariable UUID channelId,
       @RequestBody PublicChannelUpdateRequest updateRequest
   ) {
-    ChannelDto updatedChannelDto = channelService.updatePublicChannel(channelId, updateRequest);
+    Channel channel = channelService.updatePublicChannel(channelId, updateRequest);
+    ChannelDto updatedChannelDto = toChannelDto(channel);
     return ResponseEntity.ok(updatedChannelDto);
+  }
+
+  private ChannelDto toChannelDto(Channel channel) {
+    Optional<Message> lastMessage = messageService.findLastMessageInChannel(channel.getId());
+    List<ReadStatus> readStatuses = readStatusService.findReadStatusesByChannelId(channel);
+    return ChannelMapper.toDto(channel, lastMessage, readStatuses);
   }
 
 }

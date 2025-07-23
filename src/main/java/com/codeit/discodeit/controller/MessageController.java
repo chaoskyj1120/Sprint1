@@ -1,5 +1,6 @@
 package com.codeit.discodeit.controller;
 
+import com.codeit.discodeit.controller.mapper.MessageMapper;
 import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
 import com.codeit.discodeit.dto.message_service_dto.MessageDto;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -60,9 +62,10 @@ public class MessageController {
   public ResponseEntity<MessageDto> createMessage(
       @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
       @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
-  ) {
-    MessageDto messageResponse = messageService.createMessage(messageCreateRequest, attachments);
-    return ResponseEntity.status(HttpStatus.CREATED).body(messageResponse);
+  ) throws IOException {
+    Message message = messageService.createMessage(messageCreateRequest, attachments);
+    MessageDto messageDto = MessageMapper.toMessageDto(message);
+    return ResponseEntity.status(HttpStatus.CREATED).body(messageDto);
   }
 
   @GetMapping
@@ -79,8 +82,22 @@ public class MessageController {
       @RequestParam("channelId") UUID channelId, @RequestParam("page") int page, @RequestParam("size") int size, @RequestParam("sort") List<String> sort
   ) {
     Pageable pageable = new Pageable(page, size, sort);
-    PageResponse<MessageDto> pageResponse = messageService.findMessagesPerPage(channelId, pageable);
-    return ResponseEntity.ok(pageResponse);
+    PageResponse<Message> pageResponse = messageService.findMessagesPerPage(channelId, pageable);
+
+    List<MessageDto> messageDtoList = pageResponse.getContent().stream()
+        .map(MessageMapper::toMessageDto)
+        .toList();
+
+    PageResponse<MessageDto> dtoPageResponse = new PageResponse<>(
+        messageDtoList,
+        pageResponse.getNumber(),
+        pageResponse.getSize(),
+        pageResponse.isHasNext(),
+        pageResponse.getTotalElements()
+    );
+
+
+    return ResponseEntity.ok(dtoPageResponse);
   }
 
   @DeleteMapping("/{messageId}")
@@ -136,9 +153,10 @@ public class MessageController {
     messageUpdateRequestDto.setMessageId(messageId);
     messageUpdateRequestDto.setNewContent(messageUpdateRequest.getNewContent());
 
-    MessageDto updatedMessage = messageService.updateMessage(messageUpdateRequestDto);
+    Message message = messageService.updateMessage(messageUpdateRequestDto);
+    MessageDto updatedMessageDto = MessageMapper.toMessageDto(message);
 
-    return ResponseEntity.ok(updatedMessage);
+    return ResponseEntity.ok(updatedMessageDto);
   }
 
 }

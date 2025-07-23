@@ -22,7 +22,6 @@ public class BasicAuthService implements AuthService {
   public User logInUser(LoginRequestDto loginRequest) {
 
     User user = findUserByUserName(loginRequest.getUsername());
-
     String rawPassword = loginRequest.getPassword();
 
     if (!rawPassword.equals(user.getPassword())) {

@@ -67,11 +67,8 @@ public class ReadStatusController {
   @RequestMapping(method = RequestMethod.POST)
   public ResponseEntity<ReadStatus> createReadStatus(
       @RequestBody ReadStatusCreateRequest readStatusCreateRequest) {
-    User user = userService.findUserByUserId(readStatusCreateRequest.getUserId());
-    Channel channel = channelService.findChannelByChannelId(readStatusCreateRequest.getChannelId());
-
-    ReadStatus readStatus =
-        readStatusService.createReadStatus(user, channel);
+    ReadStatus readStatus = readStatusService
+        .findReadStatusByUserIdAndChannelId(readStatusCreateRequest.getUserId(), readStatusCreateRequest.getChannelId());
 
     return ResponseEntity
         .status(HttpStatus.CREATED) // 201 Created

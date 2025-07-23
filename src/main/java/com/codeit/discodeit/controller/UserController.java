@@ -1,5 +1,6 @@
 package com.codeit.discodeit.controller;
 
+import com.codeit.discodeit.controller.mapper.UserMapper;
 import com.codeit.discodeit.dto.user_service_dto.UserCreateRequest;
 import com.codeit.discodeit.dto.user_service_dto.UserDto;
 import com.codeit.discodeit.dto.user_service_dto.UserUpdateRequest;
@@ -51,7 +52,10 @@ public class UserController {
       )
   })
   public ResponseEntity<List<UserDto>> findAll() {
-    List<UserDto> userDtoList = userService.findAllUserDto();
+    List<User> users = userService.findAllUser();
+    List<UserDto> userDtoList = users.stream().map(UserMapper::toUserDto)
+        .toList();
+
     return ResponseEntity.ok(userDtoList);
   }
 
@@ -83,8 +87,9 @@ public class UserController {
       @RequestPart(value = "profile", required = false) MultipartFile profile) throws IOException {
 
     userCreateRequest.setProfileImage(profile);
-    UserDto createdUser = userService.createUser(userCreateRequest);
-    return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    User createdUser = userService.createUser(userCreateRequest);
+    UserDto userDto = UserMapper.toUserDto(createdUser);
+    return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
   }
 
   @Operation(summary = "User 삭제")
@@ -133,9 +138,9 @@ public class UserController {
       @RequestPart(value = "profile", required = false) MultipartFile profileImage)
       throws IOException {
     userUpdateRequest.setUserId(userId);
-    UserDto updatedUser = userService.updateUser(userUpdateRequest, profileImage);
-
-    return ResponseEntity.ok(updatedUser);
+    User updatedUser = userService.updateUser(userUpdateRequest, profileImage);
+    UserDto userDto = UserMapper.toUserDto(updatedUser);
+    return ResponseEntity.ok(userDto);
   }
 
   @Operation(
@@ -169,7 +174,8 @@ public class UserController {
 
   @GetMapping("/{userId}")
   public ResponseEntity<UserDto> getUser(@PathVariable UUID userId) {
-    UserDto user = userService.findUserDtoByUserId(userId);
-    return ResponseEntity.ok(user);
+    User user = userService.findUserByUserId(userId);
+    UserDto userDto = UserMapper.toUserDto(user);
+    return ResponseEntity.ok(userDto);
   }
 }

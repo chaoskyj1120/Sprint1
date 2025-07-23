@@ -37,6 +37,6 @@ public class ReadStatus extends BaseUpdatableEntity {
   private Channel channel;
 
   @Column(name = "lastReadAt", nullable = false)
-  private Instant lastReadAt;
+  private Instant lastReadAt = Instant.EPOCH;
 }
 

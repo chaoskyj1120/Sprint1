@@ -17,17 +17,12 @@ public class BasicUserStatusService implements UserStatusService {
   private final UserStatusRepository userStatusRepository;
   private final UserRepository userRepository;
 
-
   @Override
   public UserStatus createUserStatus(UUID userId) {
-    // JPA 변경된 현재의 시점에서
-    // createUserStatus 메소드는 유저 스테이터스는 모종의 이유로 유저와 함께 삭제되는 것이 아닌 단독삭제 되었을 때만 실행됨
-    // 정상적인 실행과정에선 실행되지 않는 메소드
-
     User user = findUserByUserId(userId);
     UserStatus newUserStatus = new UserStatus();
     newUserStatus.setUser(user);
-    userStatusRepository.createUserStatus(newUserStatus);
+    //userStatusRepository.createUserStatus(newUserStatus); // user 연결되어서 대신 생성
 
     return newUserStatus;
   }
@@ -37,7 +32,9 @@ public class BasicUserStatusService implements UserStatusService {
     Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(userId);
     
     if (userStatus.isEmpty()) {
-      return createUserStatus(userId);
+      UserStatus newUserStatus = createUserStatus(userId);
+      userStatusRepository.createUserStatus(newUserStatus);
+      return newUserStatus; // 모종의 이유로 유저는 존재하지만 userStatus가 없을 때
     }
 
     UserStatus updateUserStatus = userStatus.get();

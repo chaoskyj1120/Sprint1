@@ -9,15 +9,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
 
-  UserDto updateUser(UserUpdateRequest userUpdateRequest, MultipartFile profileImage)
+  User updateUser(UserUpdateRequest userUpdateRequest, MultipartFile profileImage)
       throws IOException;
 
   void deleteUser(UUID userId);
 
-  UserDto createUser(UserCreateRequest userCreateRequest) throws IOException;
+  User createUser(UserCreateRequest userCreateRequest) throws IOException;
 
-  List<UserDto> findAllUserDto();
+  List<User> findAllUser();
 
   User findUserByUserId(UUID userId);
-  UserDto findUserDtoByUserId(UUID userId);
 }

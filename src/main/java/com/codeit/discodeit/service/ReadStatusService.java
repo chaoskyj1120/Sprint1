@@ -12,4 +12,9 @@ public interface ReadStatusService {
   List<ReadStatus> findReadStatusesByUserId(UUID userId);
   ReadStatus updateReadStatusByReadStatusId(UUID readStatusId,
       ReadStatusUpdateRequest readStatusUpdateRequest);
+
+  ReadStatus findReadStatusByUserIdAndChannelId(UUID userId, UUID channelId);
+  void createReadStatus(User user, Channel channel);
+
+  List<ReadStatus> findReadStatusesByChannelId(Channel channel);
 }

@@ -38,7 +38,10 @@ public class BasicUserService implements UserService {
     validateUserEmailNotDuplicated(userCreateRequest.getEmail());
 
     User user = toUser(userCreateRequest);
-    user.setStatus(userStatusService.createUserStatus(user.getId()));
+    userRepository.createUser(user);
+
+    UserStatus userStatus = userStatusService.createUserStatus(user.getId());
+    user.setStatus(userStatus);
 
     // 신규 유저 생성시 공용 채널의 readStatus 자동으로 추가
     List<Channel> channels = channelRepository.findAllPublicChannel();
@@ -46,7 +49,6 @@ public class BasicUserService implements UserService {
       readStatusService.createReadStatus(user, channel);
     }
 
-    userRepository.createUser(user);
     return user;
   }
 

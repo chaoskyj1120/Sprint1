@@ -1,9 +1,11 @@
 package com.codeit.discodeit.controller;
 
 import com.codeit.discodeit.controller.mapper.UserMapper;
+import com.codeit.discodeit.controller.mapper.UserStatusMapper;
 import com.codeit.discodeit.dto.user_service_dto.UserCreateRequest;
 import com.codeit.discodeit.dto.user_service_dto.UserDto;
 import com.codeit.discodeit.dto.user_service_dto.UserUpdateRequest;
+import com.codeit.discodeit.dto.user_status_dto.UserStatusDto;
 import com.codeit.discodeit.dto.user_status_dto.UserStatusUpdateRequest;
 import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.entity.UserStatus;
@@ -163,13 +165,15 @@ public class UserController {
       )
   })
   @PatchMapping("/{userId}/userStatus")
-  public ResponseEntity<UserStatus> updateUserStatusByUserId(
+  public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
       @PathVariable UUID userId,
       @RequestBody UserStatusUpdateRequest request
   ) {
     UserStatus updatedStatus = userStatusService.updateUserStatus(userId,
         request.getNewLastActiveAt());
-    return ResponseEntity.ok(updatedStatus);
+
+    UserStatusDto userStatusDto = UserStatusMapper.userStatusDto(updatedStatus);
+    return ResponseEntity.ok(userStatusDto);
   }
 
   @GetMapping("/{userId}")

@@ -1,6 +1,8 @@
 package com.codeit.discodeit.controller;
 
+import com.codeit.discodeit.controller.mapper.ReadStatusMapper;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusCreateRequest;
+import com.codeit.discodeit.dto.readstatus_dto.ReadStatusDto;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusUpdateRequest;
 import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.entity.ReadStatus;
@@ -17,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -65,14 +68,15 @@ public class ReadStatusController {
       )
   })
   @RequestMapping(method = RequestMethod.POST)
-  public ResponseEntity<ReadStatus> createReadStatus(
+  public ResponseEntity<ReadStatusDto> createReadStatus(
       @RequestBody ReadStatusCreateRequest readStatusCreateRequest) {
     ReadStatus readStatus = readStatusService
         .findReadStatusByUserIdAndChannelId(readStatusCreateRequest.getUserId(), readStatusCreateRequest.getChannelId());
 
+    ReadStatusDto readStatusDto = ReadStatusMapper.toReadStatusDto(readStatus);
     return ResponseEntity
         .status(HttpStatus.CREATED) // 201 Created
-        .body(readStatus);
+        .body(readStatusDto);
   }
 
   @Operation(
@@ -84,14 +88,19 @@ public class ReadStatusController {
       description = "Message 읽음 상태 목록 조회 성공"
   )
   @GetMapping
-  public ResponseEntity<List<ReadStatus>> findAllByUserId(@RequestParam UUID userId) {
+  public ResponseEntity<List<ReadStatusDto>> findAllByUserId(@RequestParam UUID userId) {
 
     User user = userService.findUserByUserId(userId);
 
     List<ReadStatus> readStatusesList =
         readStatusService.findReadStatusesByUserId(user.getId());
 
-    return ResponseEntity.ok(readStatusesList);
+    List<ReadStatusDto> readStatusDtoList = readStatusesList.stream()
+        .map(ReadStatusMapper::toReadStatusDto)
+        .toList();
+
+
+    return ResponseEntity.ok(readStatusDtoList);
   }
 
   @Operation(summary = "Message 읽음 상태 수정")
@@ -114,7 +123,7 @@ public class ReadStatusController {
       )
   })
   @PatchMapping("/{readStatusId}")
-  public ResponseEntity<ReadStatus> update(
+  public ResponseEntity<ReadStatusDto> update(
       @Parameter(
           name = "readStatusId",
           description = "수정할 읽음 상태 ID",
@@ -126,7 +135,9 @@ public class ReadStatusController {
 
     ReadStatus updateReadStatus = readStatusService.updateReadStatusByReadStatusId(
         readStatusId, readStatusUpdateRequest);
-    return ResponseEntity.ok(updateReadStatus);
+
+    ReadStatusDto readStatusDto = ReadStatusMapper.toReadStatusDto(updateReadStatus);
+    return ResponseEntity.ok(readStatusDto);
   }
 
 }

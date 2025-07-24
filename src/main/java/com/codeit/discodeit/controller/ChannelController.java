@@ -6,9 +6,11 @@ import com.codeit.discodeit.dto.channel_service_dto.*;
 import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.entity.Message;
 import com.codeit.discodeit.entity.ReadStatus;
+import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.MessageService;
 import com.codeit.discodeit.service.ReadStatusService;
+import com.codeit.discodeit.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,6 +36,7 @@ public class ChannelController {
   private final ChannelService channelService;
   private final MessageService messageService;
   private final ReadStatusService readStatusService;
+  private final UserService userService;
 
   @PostMapping(value = "/public", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
@@ -122,6 +125,14 @@ public class ChannelController {
     ChannelDto updatedChannelDto = toChannelDto(channel);
     return ResponseEntity.ok(updatedChannelDto);
   }
+
+  @GetMapping
+  public ResponseEntity<List<ChannelDto>> getAllChannelsByUserId(@RequestParam("userId") UUID userId) {
+    List<Channel> channelList = channelService.findChannelListByUserId(userId);
+    List<ChannelDto> channelDtoList = channelList.stream().map(this::toChannelDto).toList();
+    return ResponseEntity.ok(channelDtoList);
+  }
+
 
   private ChannelDto toChannelDto(Channel channel) {
     Optional<Message> lastMessage = messageService.findLastMessageInChannel(channel.getId());

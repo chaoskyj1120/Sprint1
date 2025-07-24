@@ -11,6 +11,7 @@ import com.codeit.discodeit.service.ReadStatusService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.Locked.Read;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +77,13 @@ public class BasicChannelService implements ChannelService {
 
     channelRepository.updateChannel(channel);
     return channel;
+  }
+
+  @Override
+  public List<Channel> findChannelListByUserId(UUID userId){
+    List<ReadStatus> readStatusList = readStatusService.findReadStatusesByUserId(userId);
+    return readStatusList.stream().map(ReadStatus::getChannel)
+        .toList();
   }
 
   private Channel findChannelByChannelId(UUID channelId) {

@@ -1,7 +1,10 @@
 package com.codeit.discodeit.controller;
 
+import com.codeit.discodeit.dto.binary_contents_dto.BinaryContentDto;
 import com.codeit.discodeit.entity.BinaryContent;
+import com.codeit.discodeit.mapper.BinaryContentMapper;
 import com.codeit.discodeit.service.BinaryContentService;
+import com.codeit.discodeit.storage.BinaryContentStorage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -25,6 +28,7 @@ import java.util.UUID;
 public class BinaryContentsController {
 
   private final BinaryContentService binaryContentService;
+  private final BinaryContentMapper binaryContentMapper;
 
   @Operation(summary = "여러 첨부 파일 조회")
   @ApiResponse(
@@ -84,8 +88,10 @@ public class BinaryContentsController {
   @GetMapping("/{binaryContentId}/download")
   public ResponseEntity<?> download(@PathVariable UUID binaryContentId) {
     // 실제 파일 데이터 및 메타데이터 가져오기
-    BinaryContent binaryContent = binaryContentService.findBinaryContentByBinaryContentId(binaryContentId);
 
-    return ResponseEntity.ok().body(binaryContent.getBytes());
+    BinaryContent binaryContent = binaryContentService.findBinaryContentByBinaryContentId(binaryContentId);
+    BinaryContentDto binaryContentDto = binaryContentMapper.toBinaryContentDto(binaryContent);
+
+    return binaryContentService.download(binaryContentDto);
   }
 }

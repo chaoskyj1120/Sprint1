@@ -1,6 +1,7 @@
 package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.entity.*;
+import com.codeit.discodeit.exception.exception.NoFindUserStatusException;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.repository.UserStatusRepository;
 import com.codeit.discodeit.service.UserStatusService;
@@ -18,8 +19,7 @@ public class BasicUserStatusService implements UserStatusService {
   private final UserRepository userRepository;
 
   @Override
-  public UserStatus createUserStatus(UUID userId) {
-    User user = findUserByUserId(userId);
+  public UserStatus createUserStatus(User user) {
     UserStatus newUserStatus = new UserStatus();
     newUserStatus.setUser(user);
     //userStatusRepository.createUserStatus(newUserStatus); // user 연결되어서 대신 생성
@@ -32,9 +32,7 @@ public class BasicUserStatusService implements UserStatusService {
     Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(userId);
     
     if (userStatus.isEmpty()) {
-      UserStatus newUserStatus = createUserStatus(userId);
-      userStatusRepository.createUserStatus(newUserStatus);
-      return newUserStatus; // 모종의 이유로 유저는 존재하지만 userStatus가 없을 때
+      throw new NoFindUserStatusException("유저 스테이터스를 찾을 수 없습니다.", "유저 스테이터스를 찾을 수 없습니다.");
     }
 
     UserStatus updateUserStatus = userStatus.get();

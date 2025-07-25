@@ -1,7 +1,9 @@
 package com.codeit.discodeit.controller;
 
-import com.codeit.discodeit.controller.mapper.UserMapper;
-import com.codeit.discodeit.controller.mapper.UserStatusMapper;
+import com.codeit.discodeit.entity.BinaryContent;
+import com.codeit.discodeit.mapper.BinaryContentMapper;
+import com.codeit.discodeit.mapper.UserMapper;
+import com.codeit.discodeit.mapper.UserStatusMapper;
 import com.codeit.discodeit.dto.user_service_dto.UserCreateRequest;
 import com.codeit.discodeit.dto.user_service_dto.UserDto;
 import com.codeit.discodeit.dto.user_service_dto.UserUpdateRequest;
@@ -9,6 +11,7 @@ import com.codeit.discodeit.dto.user_status_dto.UserStatusDto;
 import com.codeit.discodeit.dto.user_status_dto.UserStatusUpdateRequest;
 import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.entity.UserStatus;
+import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.service.UserStatusService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +44,10 @@ public class UserController {
 
   private final UserService userService;
   private final UserStatusService userStatusService;
+  private final UserMapper userMapper;
+  private final UserStatusMapper userStatusMapper;
+  private final BinaryContentService binaryContentService;
+  private final BinaryContentMapper binaryContentMapper;
 
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
   @Operation(summary = "전체 User 목록 조회", responses = {
@@ -55,7 +62,7 @@ public class UserController {
   })
   public ResponseEntity<List<UserDto>> findAll() {
     List<User> users = userService.findAllUser();
-    List<UserDto> userDtoList = users.stream().map(UserMapper::toUserDto)
+    List<UserDto> userDtoList = users.stream().map(userMapper::toUserDto)
         .toList();
 
     return ResponseEntity.ok(userDtoList);
@@ -89,8 +96,16 @@ public class UserController {
       @RequestPart(value = "profile", required = false) MultipartFile profile) throws IOException {
 
     userCreateRequest.setProfileImage(profile);
-    User createdUser = userService.createUser(userCreateRequest);
-    UserDto userDto = UserMapper.toUserDto(createdUser);
+    byte[] profileBytes;
+    if (profile == null || profile.isEmpty()) {
+      profileBytes = BinaryContentMapper.getBasicProfileBytes(); // 기본 이미지
+    } else {
+      profileBytes = profile.getBytes();
+    }
+
+    User createdUser = userService.createUser(userMapper.toUser(userCreateRequest), profileBytes);
+    UserDto userDto = userMapper.toUserDto(createdUser);
+
     return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
   }
 
@@ -139,9 +154,12 @@ public class UserController {
       @RequestPart("userUpdateRequest") @Valid UserUpdateRequest userUpdateRequest,
       @RequestPart(value = "profile", required = false) MultipartFile profileImage)
       throws IOException {
+
     userUpdateRequest.setUserId(userId);
-    User updatedUser = userService.updateUser(userUpdateRequest, profileImage);
-    UserDto userDto = UserMapper.toUserDto(updatedUser);
+
+    BinaryContent profileImg = BinaryContentMapper.attachmentToBinaryContent(profileImage);
+    User updatedUser = userService.updateUser(userUpdateRequest, profileImg, profileImage.getBytes());
+    UserDto userDto = userMapper.toUserDto(updatedUser);
     return ResponseEntity.ok(userDto);
   }
 
@@ -172,14 +190,14 @@ public class UserController {
     UserStatus updatedStatus = userStatusService.updateUserStatus(userId,
         request.getNewLastActiveAt());
 
-    UserStatusDto userStatusDto = UserStatusMapper.userStatusDto(updatedStatus);
+    UserStatusDto userStatusDto = userStatusMapper.toUserStatusDto(updatedStatus);
     return ResponseEntity.ok(userStatusDto);
   }
 
   @GetMapping("/{userId}")
   public ResponseEntity<UserDto> getUser(@PathVariable UUID userId) {
     User user = userService.findUserByUserId(userId);
-    UserDto userDto = UserMapper.toUserDto(user);
+    UserDto userDto = userMapper.toUserDto(user);
     return ResponseEntity.ok(userDto);
   }
 }

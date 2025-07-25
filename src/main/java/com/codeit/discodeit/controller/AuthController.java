@@ -1,7 +1,7 @@
 package com.codeit.discodeit.controller;
 
 
-import com.codeit.discodeit.controller.mapper.UserMapper;
+import com.codeit.discodeit.mapper.UserMapper;
 import com.codeit.discodeit.dto.auth_service_dto.LoginRequestDto;
 import com.codeit.discodeit.dto.user_service_dto.UserDto;
 import com.codeit.discodeit.entity.User;
@@ -21,12 +21,13 @@ public class AuthController {
 
   private final AuthService authService;
   private final UserService userService;
+  private final UserMapper userMapper;
 
   @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<UserDto> loginUser(@RequestBody LoginRequestDto loginRequestDto) {
 
     User loginUser = authService.logInUser(loginRequestDto);
-    UserDto userDto = UserMapper.toUserDto(loginUser);
+    UserDto userDto = userMapper.toUserDto(loginUser);
     return ResponseEntity.ok(userDto);
   }
 }

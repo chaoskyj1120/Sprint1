@@ -1,13 +1,16 @@
 package com.codeit.discodeit.service.basic;
 
+import com.codeit.discodeit.dto.binary_contents_dto.BinaryContentDto;
 import com.codeit.discodeit.entity.BinaryContent;
 import com.codeit.discodeit.exception.exception.NoFindBinaryContent;
 import com.codeit.discodeit.repository.BinaryContentRepository;
 import com.codeit.discodeit.service.BinaryContentService;
+import com.codeit.discodeit.storage.BinaryContentStorage;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -15,6 +18,12 @@ import org.springframework.stereotype.Service;
 public class BasicBinaryContentService implements BinaryContentService {
 
   private final BinaryContentRepository binaryContentRepository;
+  private final BinaryContentStorage binaryContentStorage;
+
+  @Override
+  public void createByteFile(BinaryContent binaryContent, byte[] bytes) {
+    binaryContentStorage.put(binaryContent.getId(), bytes);
+  }
 
   @Override
   public List<BinaryContent> findBinaryContentsByBinaryContentIds(List<UUID> binaryContentIds) {
@@ -30,5 +39,10 @@ public class BasicBinaryContentService implements BinaryContentService {
           "BinaryContent with id {" + binaryContentId + "} not found");
     }
     return binaryContent.get();
+  }
+
+  @Override
+  public ResponseEntity<?> download(BinaryContentDto binaryContentDto) {
+    return binaryContentStorage.download(binaryContentDto);
   }
 }

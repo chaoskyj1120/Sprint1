@@ -1,10 +1,9 @@
 package com.codeit.discodeit.controller;
 
-import com.codeit.discodeit.controller.mapper.ReadStatusMapper;
+import com.codeit.discodeit.mapper.ReadStatusMapper;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusCreateRequest;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusDto;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusUpdateRequest;
-import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.entity.ReadStatus;
 import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.service.ChannelService;
@@ -19,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.ArrayList;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -39,6 +37,7 @@ public class ReadStatusController {
   private final UserService userService;
   private final ChannelService channelService;
   private final ReadStatusService readStatusService;
+  private final ReadStatusMapper readStatusMapper;
 
   @Operation(summary = "Message 읽음 상태 생성")
   @ApiResponses(value = {
@@ -73,7 +72,7 @@ public class ReadStatusController {
     ReadStatus readStatus = readStatusService
         .findReadStatusByUserIdAndChannelId(readStatusCreateRequest.getUserId(), readStatusCreateRequest.getChannelId());
 
-    ReadStatusDto readStatusDto = ReadStatusMapper.toReadStatusDto(readStatus);
+    ReadStatusDto readStatusDto = readStatusMapper.toReadStatusDto(readStatus);
     return ResponseEntity
         .status(HttpStatus.CREATED) // 201 Created
         .body(readStatusDto);
@@ -96,7 +95,7 @@ public class ReadStatusController {
         readStatusService.findReadStatusesByUserId(user.getId());
 
     List<ReadStatusDto> readStatusDtoList = readStatusesList.stream()
-        .map(ReadStatusMapper::toReadStatusDto)
+        .map(readStatusMapper::toReadStatusDto)
         .toList();
 
 
@@ -136,7 +135,7 @@ public class ReadStatusController {
     ReadStatus updateReadStatus = readStatusService.updateReadStatusByReadStatusId(
         readStatusId, readStatusUpdateRequest);
 
-    ReadStatusDto readStatusDto = ReadStatusMapper.toReadStatusDto(updateReadStatus);
+    ReadStatusDto readStatusDto = readStatusMapper.toReadStatusDto(updateReadStatus);
     return ResponseEntity.ok(readStatusDto);
   }
 

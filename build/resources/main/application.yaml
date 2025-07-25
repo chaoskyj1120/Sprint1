@@ -21,7 +21,8 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-logging:
-  level:
-    org.hibernate.SQL: debug
-    org.hibernate.type: trace  # 파라미터 바인딩 로그까지 보고 싶다면 추가
+discodeit:
+  storage:
+    type: local  # 조건부 Bean 활성화 조건
+    local:
+      root-path: ./uploads  # 바이너리 데이터를 저장할 로컬 디렉터리 경로

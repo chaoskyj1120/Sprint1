@@ -5,14 +5,11 @@ import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.entity.ReadStatus;
 import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.exception.exception.NoFindReadStatusException;
-import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.ReadStatusRepository;
-import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.service.ReadStatusService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.Locked.Read;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,8 +18,6 @@ import org.springframework.stereotype.Service;
 public class BasicReadStatusService implements ReadStatusService {
 
   private final ReadStatusRepository readStatusRepository;
-  private final UserRepository userRepository;
-  private final ChannelRepository channelRepository;
 
   @Override
   public void createReadStatus(User user, Channel channel){

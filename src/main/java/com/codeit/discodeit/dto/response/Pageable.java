@@ -1,4 +1,4 @@
-package com.codeit.discodeit.dto.message_service_dto;
+package com.codeit.discodeit.dto.response;
 
 import jakarta.validation.constraints.Min;
 import java.util.List;

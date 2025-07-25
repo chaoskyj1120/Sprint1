@@ -1,4 +1,4 @@
-package com.codeit.discodeit.dto.message_service_dto;
+package com.codeit.discodeit.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,5 +13,5 @@ public class PageResponse<T> {
   private int number;
   private int size;
   private boolean hasNext;
-  private long totalElements;
+  private Long totalElements;
 }

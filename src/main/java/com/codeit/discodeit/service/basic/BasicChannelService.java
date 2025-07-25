@@ -11,7 +11,6 @@ import com.codeit.discodeit.service.ReadStatusService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.Locked.Read;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,15 +23,9 @@ public class BasicChannelService implements ChannelService {
   private final ReadStatusService readStatusService;
 
   @Override
-  public Channel createPublicChannel(
-      CreatePublicChannelRequestDto createPublicChannelRequestDto) {
+  public Channel createPublicChannel(Channel channel) {
 
-    validateChannelName(createPublicChannelRequestDto.getName());
-
-    Channel channel = new Channel();
-    channel.setName(createPublicChannelRequestDto.getName());
-    channel.setDescription(createPublicChannelRequestDto.getDescription());
-    channel.setType(ChannelType.PUBLIC);
+    validateChannelName(channel.getName());
     channelRepository.createChannel(channel);
 
     List<User> users = userRepository.loadUsers();
@@ -44,16 +37,9 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
-  public Channel createPrivateChannel(
-      PrivateChannelCreateRequest privateChannelCreateRequest) {
-
-    Channel channel = new Channel();
-    channel.setType(ChannelType.PRIVATE);
+  public Channel createPrivateChannel(Channel channel, List<UUID> userIdList) {
     channelRepository.createChannel(channel);
-
-    List<UUID> userIdList = privateChannelCreateRequest.getParticipantIds();
     List<User> userList = userRepository.findUserListByUserIdList(userIdList);
-    // 시간 복잡도 상 for문에 User를 매번 가져오는 것보다 쿼리문에서 in을 통해 한 번에 가져오는 것이 더 빠름
 
     for (User user : userList) {
       readStatusService.createReadStatus(user,channel);
@@ -86,7 +72,8 @@ public class BasicChannelService implements ChannelService {
         .toList();
   }
 
-  private Channel findChannelByChannelId(UUID channelId) {
+  @Override
+  public Channel findChannelByChannelId(UUID channelId) {
     return channelRepository.findChannelByChannelId(channelId)
         .orElseThrow(() -> new NoFindChannelException("Channel을 찾을 수 없음",
             ("Channel with id {" + channelId + "} not found")));

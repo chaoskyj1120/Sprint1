@@ -1,15 +1,20 @@
 package com.codeit.discodeit.controller;
 
-import com.codeit.discodeit.controller.mapper.MessageMapper;
+import com.codeit.discodeit.entity.BinaryContent;
+import com.codeit.discodeit.entity.Channel;
+import com.codeit.discodeit.entity.User;
+import com.codeit.discodeit.mapper.BinaryContentMapper;
+import com.codeit.discodeit.mapper.MessageMapper;
 import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
 import com.codeit.discodeit.dto.message_service_dto.MessageDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequest;
-import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequestDto;
-import com.codeit.discodeit.dto.message_service_dto.PageResponse;
-import com.codeit.discodeit.dto.message_service_dto.Pageable;
+import com.codeit.discodeit.dto.response.PageResponse;
+import com.codeit.discodeit.dto.response.Pageable;
 import com.codeit.discodeit.entity.Message;
+import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.MessageService;
+import com.codeit.discodeit.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -36,6 +41,10 @@ import org.springframework.web.multipart.MultipartFile;
 public class MessageController {
 
   private final MessageService messageService;
+  private final MessageMapper messageMapper;
+  private final UserService userService;
+  private final ChannelService channelService;
+  private final BinaryContentMapper binaryContentMapper;
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @Operation(summary = "Message 생성")
@@ -63,8 +72,34 @@ public class MessageController {
       @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
       @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
   ) throws IOException {
-    Message message = messageService.createMessage(messageCreateRequest, attachments);
-    MessageDto messageDto = MessageMapper.toMessageDto(message);
+
+    User user = userService.findUserByUserId(messageCreateRequest.getAuthorId());
+    Channel channel = channelService.findChannelByChannelId(messageCreateRequest.getChannelId());
+
+    List<BinaryContent> binaryContents = null;
+    List<byte []> attachmentBytes = null;
+    if (attachments != null && !attachments.isEmpty()) {
+      binaryContents = attachments.stream()
+          .map(attachment -> {
+            try {
+              return BinaryContentMapper.attachmentToBinaryContent(attachment);
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          })
+          .toList();
+
+      attachmentBytes = attachments.stream().map(attachment -> {
+        try {
+          return attachment.getBytes();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }).toList();
+    }
+
+    Message message = messageService.createMessage(messageMapper.toMessage(messageCreateRequest.getContent(), user, channel, binaryContents), attachmentBytes);
+    MessageDto messageDto = messageMapper.toMessageDto(message);
     return ResponseEntity.status(HttpStatus.CREATED).body(messageDto);
   }
 
@@ -85,7 +120,7 @@ public class MessageController {
     PageResponse<Message> pageResponse = messageService.findMessagesPerPage(channelId, pageable);
 
     List<MessageDto> messageDtoList = pageResponse.getContent().stream()
-        .map(MessageMapper::toMessageDto)
+        .map(messageMapper::toMessageDto)
         .toList();
 
     PageResponse<MessageDto> dtoPageResponse = new PageResponse<>(
@@ -149,14 +184,9 @@ public class MessageController {
       @RequestBody MessageUpdateRequest messageUpdateRequest
   ) {
 
-    MessageUpdateRequestDto messageUpdateRequestDto = new MessageUpdateRequestDto();
-    messageUpdateRequestDto.setMessageId(messageId);
-    messageUpdateRequestDto.setNewContent(messageUpdateRequest.getNewContent());
-
-    Message message = messageService.updateMessage(messageUpdateRequestDto);
-    MessageDto updatedMessageDto = MessageMapper.toMessageDto(message);
+    Message message = messageService.updateMessage(messageId, messageUpdateRequest);
+    MessageDto updatedMessageDto = messageMapper.toMessageDto(message);
 
     return ResponseEntity.ok(updatedMessageDto);
   }
-
 }

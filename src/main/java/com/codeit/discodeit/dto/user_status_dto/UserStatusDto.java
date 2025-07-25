@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public record UserStatusDto(
     UUID id,
-    UUID channelId,
+    UUID userId,
     Instant lastActiveAt
 ) {
 }

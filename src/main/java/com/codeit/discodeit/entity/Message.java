@@ -1,6 +1,7 @@
 package com.codeit.discodeit.entity;
 
 import com.codeit.discodeit.entity.base.BaseUpdatableEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -40,9 +41,7 @@ public class Message extends BaseUpdatableEntity {
   @OnDelete(action = OnDeleteAction.SET_NULL)
   private User author;
 
-  @OneToMany
+  @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "message_id", nullable = true)
   private List<BinaryContent> attachments;
-  // 외래 키는 BinaryContent에 생성됨,
-  // 프로필 이미지일 경우 message_id가 생성 되지 않으므로 nullable=true로 해야함
 }

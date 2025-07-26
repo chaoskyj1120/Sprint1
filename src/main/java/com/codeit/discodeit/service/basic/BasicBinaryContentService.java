@@ -2,7 +2,8 @@ package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.dto.binary_contents_dto.BinaryContentDto;
 import com.codeit.discodeit.entity.BinaryContent;
-import com.codeit.discodeit.exception.exception.NoFindBinaryContent;
+import com.codeit.discodeit.exception.ErrorCode;
+import com.codeit.discodeit.exception.exception.BusinessException;
 import com.codeit.discodeit.repository.BinaryContentRepository;
 import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.storage.BinaryContentStorage;
@@ -35,8 +36,7 @@ public class BasicBinaryContentService implements BinaryContentService {
     Optional<BinaryContent> binaryContent = binaryContentRepository.findBinaryContentByBinaryContentId(
         binaryContentId);
     if (binaryContent.isEmpty()) {
-      throw new NoFindBinaryContent("첨부 파일을 찾을 수 없음",
-          "BinaryContent with id {" + binaryContentId + "} not found");
+      throw new BusinessException(ErrorCode.NO_FIND_BINARY_CONTENT);
     }
     return binaryContent.get();
   }

@@ -2,8 +2,8 @@ package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.dto.user_service_dto.*;
 import com.codeit.discodeit.entity.*;
-import com.codeit.discodeit.exception.exception.DuplicateUserException;
-import com.codeit.discodeit.exception.exception.NoFindUserException;
+import com.codeit.discodeit.exception.ErrorCode;
+import com.codeit.discodeit.exception.exception.BusinessException;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.repository.UserStatusRepository;
@@ -109,22 +109,20 @@ public class BasicUserService implements UserService {
   public User findUserByUserId(UUID userId) {
     Optional<User> user = userRepository.findUserByUserId(userId);
     if (user.isEmpty()) {
-      throw new NoFindUserException("유저를 찾을 수 없습니다.", "Id: " + userId + " 는 없는 유저입니다.");
+      throw new BusinessException(ErrorCode.NO_FIND_USER);
     }
     return user.get();
   }
 
   private void validateUserNameNotDuplicated(String userName) {
     if (userRepository.findUserByUserName(userName).isPresent()) {
-      throw new DuplicateUserException("같은 email 또는 username를 사용하는 User가 이미 존재함",
-          (userName + "은 이미 있는 이름입니다."));
+      throw new BusinessException(ErrorCode.DUPLICATE_USER);
     }
   }
 
   private void validateUserEmailNotDuplicated(String userEmail) {
     if (userRepository.findUserByUserName(userEmail).isPresent()) {
-      throw new DuplicateUserException("같은 email 또는 username를 사용하는 User가 이미 존재함",
-          (userEmail + "은 이미 있는 이름입니다."));
+      throw new BusinessException(ErrorCode.DUPLICATE_USER);
     }
   }
 

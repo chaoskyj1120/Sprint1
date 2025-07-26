@@ -4,7 +4,8 @@ import com.codeit.discodeit.dto.readstatus_dto.ReadStatusUpdateRequest;
 import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.entity.ReadStatus;
 import com.codeit.discodeit.entity.User;
-import com.codeit.discodeit.exception.exception.NoFindReadStatusException;
+import com.codeit.discodeit.exception.ErrorCode;
+import com.codeit.discodeit.exception.exception.BusinessException;
 import com.codeit.discodeit.repository.ReadStatusRepository;
 import com.codeit.discodeit.service.ReadStatusService;
 import java.util.List;
@@ -38,7 +39,7 @@ public class BasicReadStatusService implements ReadStatusService {
     ReadStatus readStatus = findReadStatusByReadStatusId(readStatusId);
 
     if (readStatus == null) {
-      throw new NoFindReadStatusException("Message 읽음 상태를 찾을 수 없음", readStatusId + " is not found");
+      throw new BusinessException(ErrorCode.NO_FIND_READ_STATUS);
     }
 
     readStatus.setLastReadAt(readStatusUpdateRequest.getNewLastReadAt());
@@ -51,8 +52,7 @@ public class BasicReadStatusService implements ReadStatusService {
   public ReadStatus findReadStatusByUserIdAndChannelId(UUID userId, UUID channelId) {
     Optional<ReadStatus> readStatus = readStatusRepository.findReadStatusesByUserIdAndChannelId(userId, channelId);
     if (readStatus.isEmpty()) {
-      throw new NoFindReadStatusException("해당하는 ReadStatus를 찾을 수 없습니다.",
-          "userId:  {" + userId + "}, channelId: {"+channelId+"} isn't exists");
+      throw new BusinessException(ErrorCode.NO_FIND_READ_STATUS);
     }
 
     return readStatus.get();
@@ -65,7 +65,6 @@ public class BasicReadStatusService implements ReadStatusService {
 
   private ReadStatus findReadStatusByReadStatusId(UUID readStatusId) {
     return readStatusRepository.findReadStatusesByReadStatusId(readStatusId)
-        .orElseThrow(() -> new NoFindReadStatusException("해당하는 ReadStatus를 찾을 수 없습니다.",
-            "ReadStatusId  {" + readStatusId + "} isn't exists"));
+        .orElseThrow(() -> new BusinessException(ErrorCode.NO_FIND_READ_STATUS));
   }
 }

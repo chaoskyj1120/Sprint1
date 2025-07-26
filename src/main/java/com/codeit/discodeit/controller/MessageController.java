@@ -25,6 +25,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -114,9 +117,9 @@ public class MessageController {
       )
   )
   public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
-      @RequestParam("channelId") UUID channelId, @RequestParam("page") int page, @RequestParam("size") int size, @RequestParam("sort") List<String> sort
+      @RequestParam("channelId") UUID channelId,
+      @PageableDefault(size = 50, page = 0, sort = "createdAt", direction = Direction.DESC) Pageable pageable
   ) {
-    Pageable pageable = new Pageable(page, size, sort);
     PageResponse<Message> pageResponse = messageService.findMessagesPerPage(channelId, pageable);
 
     List<MessageDto> messageDtoList = pageResponse.getContent().stream()

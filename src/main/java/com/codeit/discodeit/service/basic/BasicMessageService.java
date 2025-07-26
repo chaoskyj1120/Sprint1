@@ -5,9 +5,8 @@ import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequest;
 import com.codeit.discodeit.dto.response.PageResponse;
 import com.codeit.discodeit.dto.response.Pageable;
 import com.codeit.discodeit.entity.*;
-import com.codeit.discodeit.exception.exception.NoFindChannelException;
-import com.codeit.discodeit.exception.exception.NoFindMessageException;
-import com.codeit.discodeit.exception.exception.NoFindUserException;
+import com.codeit.discodeit.exception.ErrorCode;
+import com.codeit.discodeit.exception.exception.BusinessException;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.MessageRepository;
 import com.codeit.discodeit.repository.UserRepository;
@@ -93,17 +92,17 @@ public class BasicMessageService implements MessageService {
   public Message findMessageByMessageId(UUID messageId) {
     return messageRepository.findMessageByMessageId(messageId)
         .orElseThrow(
-            () -> new NoFindMessageException("해당하는 메시지를 찾을 수 없습니다.", messageId + "can't found"));
+            () -> new BusinessException(ErrorCode.NO_FIND_MESSAGE));
   }
 
-  private Channel findChannelByChannelId(UUID channelId) {
-    return channelRepository.findChannelByChannelId(channelId)
+  private void findChannelByChannelId(UUID channelId) {
+    channelRepository.findChannelByChannelId(channelId)
         .orElseThrow(
-            () -> new NoFindChannelException("해당하는 채널을 찾을 수 없습니다.", channelId + "can't found"));
+            () -> new BusinessException(ErrorCode.NO_FIND_CHANNEL));
   }
 
-  private User findUserByUserId(UUID userId) {
-    return userRepository.findUserByUserId(userId)
-        .orElseThrow(() -> new NoFindUserException("해당하는 유저를 찾을 수 없습니다.", userId + "can't found"));
+  private void findUserByUserId(UUID userId) {
+    userRepository.findUserByUserId(userId)
+        .orElseThrow(() -> new BusinessException(ErrorCode.NO_FIND_USER));
   }
 }

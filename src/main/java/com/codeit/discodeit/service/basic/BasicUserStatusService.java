@@ -1,7 +1,8 @@
 package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.entity.*;
-import com.codeit.discodeit.exception.exception.NoFindUserStatusException;
+import com.codeit.discodeit.exception.ErrorCode;
+import com.codeit.discodeit.exception.exception.BusinessException;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.repository.UserStatusRepository;
 import com.codeit.discodeit.service.UserStatusService;
@@ -32,7 +33,7 @@ public class BasicUserStatusService implements UserStatusService {
     Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(userId);
     
     if (userStatus.isEmpty()) {
-      throw new NoFindUserStatusException("유저 스테이터스를 찾을 수 없습니다.", "유저 스테이터스를 찾을 수 없습니다.");
+      throw new BusinessException(ErrorCode.NO_FIND_USER_STATUS);
     }
 
     UserStatus updateUserStatus = userStatus.get();

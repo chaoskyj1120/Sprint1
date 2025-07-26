@@ -2,8 +2,8 @@ package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.dto.channel_service_dto.*;
 import com.codeit.discodeit.entity.*;
-import com.codeit.discodeit.exception.exception.DuplicateChannelException;
-import com.codeit.discodeit.exception.exception.NoFindChannelException;
+import com.codeit.discodeit.exception.ErrorCode;
+import com.codeit.discodeit.exception.exception.BusinessException;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.service.ChannelService;
@@ -75,14 +75,13 @@ public class BasicChannelService implements ChannelService {
   @Override
   public Channel findChannelByChannelId(UUID channelId) {
     return channelRepository.findChannelByChannelId(channelId)
-        .orElseThrow(() -> new NoFindChannelException("Channel을 찾을 수 없음",
-            ("Channel with id {" + channelId + "} not found")));
+        .orElseThrow(() -> new BusinessException(ErrorCode.NO_FIND_CHANNEL));
   }
 
   private void validateChannelName(String channelName) {
     Optional<Channel> channel = channelRepository.findChannelByChannelName(channelName);
     if (channel.isPresent()) {
-      throw new DuplicateChannelException("채널 이름이 중복됩니다.", channelName + "은 이미 사용 중입니다.");
+      throw new BusinessException(ErrorCode.DUPLICATE_CHANNEL);
     }
   }
 

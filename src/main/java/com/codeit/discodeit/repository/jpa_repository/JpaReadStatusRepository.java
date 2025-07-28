@@ -44,15 +44,24 @@ public class JpaReadStatusRepository implements ReadStatusRepository {
 
   @Override
   public List<ReadStatus> findReadStatusesByUserId(UUID userId){
-    return em.createQuery("SELECT rs FROM ReadStatus rs WHERE rs.user.id=:userId", ReadStatus.class)
+    return em.createQuery(
+            "SELECT rs FROM ReadStatus rs " +
+                "JOIN FETCH rs.user " +
+                "JOIN FETCH rs.channel " +
+                "WHERE rs.user.id = :userId", ReadStatus.class)
         .setParameter("userId", userId)
         .getResultList();
+
   }
 
   @Override
   public List<ReadStatus> findReadStatusByChannel(Channel channel){
-    return em.createQuery("SELECT rs FROM ReadStatus rs WHERE rs.channel = :channel", ReadStatus.class)
+    return em.createQuery(
+            "SELECT rs FROM ReadStatus rs " +
+                "JOIN FETCH rs.user " +
+                "WHERE rs.channel = :channel", ReadStatus.class)
         .setParameter("channel", channel)
         .getResultList();
+
   }
 }

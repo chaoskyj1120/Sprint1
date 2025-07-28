@@ -41,7 +41,7 @@ public class JpaMessageRepository implements MessageRepository {
   @Override
   public List<Message> findMessagesByChannelId(UUID channelId) {
     return em.createQuery(
-            "SELECT m FROM Message m WHERE m.channel.id = :channelId ORDER BY m.createdAt ASC",
+            "SELECT DISTINCT m FROM Message m JOIN FETCH m.author JOIN FETCH m.channel JOIN FETCH m.attachments WHERE m.channel.id = :channelId ORDER BY m.createdAt ASC",
             Message.class)
         .setParameter("channelId", channelId)
         .getResultList();

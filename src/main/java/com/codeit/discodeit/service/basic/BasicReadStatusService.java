@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,7 +30,7 @@ public class BasicReadStatusService implements ReadStatusService {
   }
 
   @Override
-  public List<ReadStatus> findReadStatusesByUserId(UUID userId) {
+  public List<ReadStatus> findReadStatusesByUserId(@Param("userId") UUID userId) {
     return readStatusRepository.findReadStatusesByUserId(userId);
   }
 

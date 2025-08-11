@@ -1,4 +1,4 @@
-package com.codeit.discodeit.controller;
+package com.codeit.discodeit.swagger;
 
 import com.codeit.discodeit.dto.user_service_dto.UserCreateRequest;
 import com.codeit.discodeit.dto.user_service_dto.UserDto;

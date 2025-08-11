@@ -11,16 +11,9 @@ import com.codeit.discodeit.dto.user_status_dto.UserStatusDto;
 import com.codeit.discodeit.dto.user_status_dto.UserStatusUpdateRequest;
 import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.entity.UserStatus;
-import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.service.UserStatusService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import com.codeit.discodeit.swagger.SwaggerUserController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -29,7 +22,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,7 +32,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "User", description = "User API")
 @RequestMapping("/api/users")
-public class UserController implements SwaggerUserController{
+public class UserController implements SwaggerUserController {
 
   private final UserService userService;
   private final UserStatusService userStatusService;

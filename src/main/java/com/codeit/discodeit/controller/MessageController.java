@@ -15,6 +15,7 @@ import com.codeit.discodeit.entity.Message;
 import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.MessageService;
 import com.codeit.discodeit.service.UserService;
+import com.codeit.discodeit.swagger.SwaggerMessageController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -41,41 +42,18 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @Tag(name = "Message", description = "Message API")
 @RequestMapping("/api/messages")
-public class MessageController {
+public class MessageController implements SwaggerMessageController {
 
   private final MessageService messageService;
   private final MessageMapper messageMapper;
   private final UserService userService;
   private final ChannelService channelService;
-  private final BinaryContentMapper binaryContentMapper;
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @Operation(summary = "Message 생성")
-  @ApiResponses(value = {
-      @ApiResponse(
-          responseCode = "201",
-          description = "Message가 성공적으로 생성됨",
-          content = @Content(
-              mediaType = "application/json",
-              schema = @Schema(implementation = Message.class)
-          )
-      ),
-      @ApiResponse(
-          responseCode = "404",
-          description = "Channel 또는 User를 찾을 수 없음",
-          content = @Content(
-              mediaType = "*/*",
-              examples = @ExampleObject(
-                  value = "Channel | Author with id {channelId | authorId} not found"
-              )
-          )
-      )
-  })
   public ResponseEntity<MessageDto> createMessage(
       @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
       @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
   ) throws IOException {
-
     User user = userService.findUserByUserId(messageCreateRequest.getAuthorId());
     Channel channel = channelService.findChannelByChannelId(messageCreateRequest.getChannelId());
 
@@ -109,19 +87,9 @@ public class MessageController {
   }
 
   @GetMapping
-  @Operation(summary = "Channel의 Message 목록 조회")
-  @ApiResponse(
-      responseCode = "200",
-      description = "Message 목록 조회 성공",
-      content = @Content(
-          mediaType = "application/json",
-          array = @ArraySchema(schema = @Schema(implementation = Message.class))
-      )
-  )
   public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
       @RequestParam("channelId") UUID channelId,
-      @PageableDefault(size = 50, page = 0, sort = "createdAt", direction = Direction.DESC) Pageable pageable
-  ) {
+      @PageableDefault(size = 50, page = 0, sort = "createdAt", direction = Direction.DESC) Pageable pageable) {
     PageResponse<Message> pageResponse = messageService.findMessagesPerPage(channelId, pageable);
 
     List<MessageDto> messageDtoList = pageResponse.getContent().stream()
@@ -140,22 +108,8 @@ public class MessageController {
   }
 
   @DeleteMapping("/{messageId}")
-  @Operation(summary = "Message 삭제")
-  @ApiResponses(value = {
-      @ApiResponse(responseCode = "204", description = "Message가 성공적으로 삭제됨"),
-      @ApiResponse(
-          responseCode = "404",
-          description = "Message를 찾을 수 없음",
-          content = @Content(
-              mediaType = "*/*",
-              examples = @ExampleObject(value = "Message with id {messageId} not found")
-          )
-      )
-  })
   public ResponseEntity<Void> deleteMessage(
-      @PathVariable("messageId") UUID messageId
-  ) {
-
+      @PathVariable("messageId") UUID messageId) {
     DeleteMessageRequestDto requestDto = new DeleteMessageRequestDto();
     requestDto.setMessageId(messageId);
     messageService.deleteMessage(requestDto);
@@ -164,30 +118,9 @@ public class MessageController {
   }
 
   @PatchMapping("/{messageId}")
-  @Operation(summary = "Message 내용 수정")
-  @ApiResponses(value = {
-      @ApiResponse(
-          responseCode = "200",
-          description = "Message가 성공적으로 수정됨",
-          content = @Content(
-              mediaType = "application/json",
-              schema = @Schema(implementation = Message.class)
-          )
-      ),
-      @ApiResponse(
-          responseCode = "404",
-          description = "Message를 찾을 수 없음",
-          content = @Content(
-              mediaType = "*/*",
-              examples = @ExampleObject(value = "Message with id {messageId} not found")
-          )
-      )
-  })
   public ResponseEntity<MessageDto> updateMessage(
       @PathVariable("messageId") UUID messageId,
-      @RequestBody MessageUpdateRequest messageUpdateRequest
-  ) {
-
+      @RequestBody MessageUpdateRequest messageUpdateRequest) {
     Message message = messageService.updateMessage(messageId, messageUpdateRequest);
     MessageDto updatedMessageDto = messageMapper.toMessageDto(message);
 

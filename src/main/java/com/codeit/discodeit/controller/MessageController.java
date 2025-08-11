@@ -16,17 +16,9 @@ import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.MessageService;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.swagger.SwaggerMessageController;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -54,7 +46,7 @@ public class MessageController implements SwaggerMessageController {
       @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
       @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
   ) throws IOException {
-    User user = userService.findUserByUserId(messageCreateRequest.getAuthorId());
+    User user = userService.findUserDtoByUserId(messageCreateRequest.getAuthorId());
     Channel channel = channelService.findChannelByChannelId(messageCreateRequest.getChannelId());
 
     List<BinaryContent> binaryContents = null;

@@ -2,15 +2,11 @@ package com.codeit.discodeit.controller;
 
 import com.codeit.discodeit.entity.BinaryContent;
 import com.codeit.discodeit.mapper.BinaryContentMapper;
-import com.codeit.discodeit.mapper.UserMapper;
-import com.codeit.discodeit.mapper.UserStatusMapper;
 import com.codeit.discodeit.dto.user_service_dto.UserCreateRequest;
 import com.codeit.discodeit.dto.user_service_dto.UserDto;
 import com.codeit.discodeit.dto.user_service_dto.UserUpdateRequest;
 import com.codeit.discodeit.dto.user_status_dto.UserStatusDto;
 import com.codeit.discodeit.dto.user_status_dto.UserStatusUpdateRequest;
-import com.codeit.discodeit.entity.User;
-import com.codeit.discodeit.entity.UserStatus;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.service.UserStatusService;
 import com.codeit.discodeit.swagger.SwaggerUserController;
@@ -36,16 +32,11 @@ public class UserController implements SwaggerUserController {
 
   private final UserService userService;
   private final UserStatusService userStatusService;
-  private final UserMapper userMapper;
-  private final UserStatusMapper userStatusMapper;
 
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<List<UserDto>> findAll() {
-    List<User> users = userService.findAllUser();
-    List<UserDto> userDtoList = users.stream().map(userMapper::toUserDto)
-        .toList();
-
-    return ResponseEntity.ok(userDtoList);
+    List<UserDto> users = userService.findAllUser();
+    return ResponseEntity.ok(users);
   }
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -54,22 +45,14 @@ public class UserController implements SwaggerUserController {
       @RequestPart(value = "profile", required = false) MultipartFile profile) throws IOException {
 
     userCreateRequest.setProfileImage(profile);
-    byte[] profileBytes;
-    if (profile == null || profile.isEmpty()) {
-      profileBytes = BinaryContentMapper.getBasicProfileBytes(); // 기본 이미지
-    } else {
-      profileBytes = profile.getBytes();
-    }
+    UserDto createdUser = userService.createUser(userCreateRequest);
 
-    User createdUser = userService.createUser(userMapper.toUser(userCreateRequest), profileBytes);
-    UserDto userDto = userMapper.toUserDto(createdUser);
-
-    return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
+    return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
   }
 
   @DeleteMapping("/{userId}")
   public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
-    userService.findUserByUserId(userId); // 존재하지 않으면 내부에서 예외 발생
+    userService.findUserDtoByUserId(userId); // 존재하지 않으면 내부에서 예외 발생
     userService.deleteUser(userId);
     return ResponseEntity.noContent().build(); // 204 No Content
   }
@@ -84,9 +67,8 @@ public class UserController implements SwaggerUserController {
     userUpdateRequest.setUserId(userId);
 
     BinaryContent profileImg = BinaryContentMapper.attachmentToBinaryContent(profileImage);
-    User updatedUser = userService.updateUser(userUpdateRequest, profileImg, profileImage.getBytes());
-    UserDto userDto = userMapper.toUserDto(updatedUser);
-    return ResponseEntity.ok(userDto);
+    UserDto updatedUser = userService.updateUser(userUpdateRequest, profileImg, profileImage.getBytes());
+    return ResponseEntity.ok(updatedUser);
   }
 
   @PatchMapping("/{userId}/userStatus")
@@ -94,17 +76,15 @@ public class UserController implements SwaggerUserController {
       @PathVariable UUID userId,
       @RequestBody UserStatusUpdateRequest request
   ) {
-    UserStatus updatedStatus = userStatusService.updateUserStatus(userId,
+    UserStatusDto updatedStatus = userStatusService.updateUserStatus(userId,
         request.getNewLastActiveAt());
 
-    UserStatusDto userStatusDto = userStatusMapper.toUserStatusDto(updatedStatus);
-    return ResponseEntity.ok(userStatusDto);
+    return ResponseEntity.ok(updatedStatus);
   }
 
   @GetMapping("/{userId}")
   public ResponseEntity<UserDto> getUser(@PathVariable UUID userId) {
-    User user = userService.findUserByUserId(userId);
-    UserDto userDto = userMapper.toUserDto(user);
-    return ResponseEntity.ok(userDto);
+    UserDto user = userService.findUserDtoByUserId(userId);
+    return ResponseEntity.ok(user);
   }
 }

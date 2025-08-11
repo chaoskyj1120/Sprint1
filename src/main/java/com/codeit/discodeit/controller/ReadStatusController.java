@@ -6,18 +6,10 @@ import com.codeit.discodeit.dto.readstatus_dto.ReadStatusDto;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusUpdateRequest;
 import com.codeit.discodeit.entity.ReadStatus;
 import com.codeit.discodeit.entity.User;
-import com.codeit.discodeit.service.ChannelService;
-import com.codeit.discodeit.service.MessageService;
 import com.codeit.discodeit.service.ReadStatusService;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.swagger.SwaggerReadStatusController;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +45,7 @@ public class ReadStatusController implements SwaggerReadStatusController {
 
   @GetMapping
   public ResponseEntity<List<ReadStatusDto>> findAllByUserId(@RequestParam UUID userId) {
-    User user = userService.findUserByUserId(userId);
+    User user = userService.findUserDtoByUserId(userId);
     List<ReadStatus> readStatusesList =
         readStatusService.findReadStatusesByUserId(user.getId());
     List<ReadStatusDto> readStatusDtoList = readStatusesList.stream()

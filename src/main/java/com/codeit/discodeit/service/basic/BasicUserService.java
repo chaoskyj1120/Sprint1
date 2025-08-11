@@ -4,6 +4,8 @@ import com.codeit.discodeit.dto.user_service_dto.*;
 import com.codeit.discodeit.entity.*;
 import com.codeit.discodeit.exception.ErrorCode;
 import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.mapper.BinaryContentMapper;
+import com.codeit.discodeit.mapper.UserMapper;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.repository.UserStatusRepository;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @RequiredArgsConstructor
 @Service
@@ -31,13 +34,23 @@ public class BasicUserService implements UserService {
   private final UserStatusService userStatusService;
   private final BinaryContentService binaryContentService;
   private final UserStatusRepository userStatusRepository;
+  private final UserMapper userMapper;
 
   @Override
   @Transactional
-  public User createUser(User user, byte[] profileImgBytes) {
+  public UserDto createUser(UserCreateRequest userCreateRequest) throws IOException {
 
-    validateUserNameNotDuplicated(user.getUsername());
-    validateUserEmailNotDuplicated(user.getEmail());
+    validateUserNameNotDuplicated(userCreateRequest.getUsername());
+    validateUserEmailNotDuplicated(userCreateRequest.getEmail());
+
+    byte[] profileImgBytes;
+    MultipartFile profile = userCreateRequest.getProfileImage();
+    if (profile == null || profile.isEmpty()) {
+      profileImgBytes = BinaryContentMapper.getBasicProfileBytes(); // 기본 이미지
+    } else {
+      profileImgBytes = profile.getBytes();
+    }
+    User user = userMapper.toUser(userCreateRequest);
 
     userRepository.createUser(user);
     binaryContentService.createByteFile(user.getProfile(), profileImgBytes);
@@ -52,12 +65,12 @@ public class BasicUserService implements UserService {
       readStatusService.createReadStatus(user, channel);
     }
 
-    return user;
+    return userMapper.toUserDto(user);
   }
 
   @Override
   @Transactional
-  public User updateUser(UserUpdateRequest userUpdateRequest, BinaryContent newProfileImage, byte[] profileImgBytes)
+  public UserDto updateUser(UserUpdateRequest userUpdateRequest, BinaryContent newProfileImage, byte[] profileImgBytes)
       throws IOException {
     User targetUser = findUserByUserId(userUpdateRequest.getUserId());
 
@@ -94,7 +107,7 @@ public class BasicUserService implements UserService {
       }
     }
     userRepository.updateUser(targetUser);
-    return targetUser;
+    return userMapper.toUserDto(targetUser);
   }
 
   @Override
@@ -106,13 +119,22 @@ public class BasicUserService implements UserService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<User> findAllUser() {
-    return userRepository.loadUsers();
+  public List<UserDto> findAllUser() {
+    List<User> userList = userRepository.loadUsers();
+    return userList.stream().map(userMapper::toUserDto).toList();
   }
 
   @Override
   @Transactional(readOnly = true)
-  public User findUserByUserId(UUID userId) {
+  public UserDto findUserDtoByUserId(UUID userId) {
+    Optional<User> user = userRepository.findUserByUserId(userId);
+    if (user.isEmpty()) {
+      throw new BusinessException(ErrorCode.NO_FIND_USER);
+    }
+    return userMapper.toUserDto(user.get());
+  }
+
+  private User findUserByUserId(UUID userId) {
     Optional<User> user = userRepository.findUserByUserId(userId);
     if (user.isEmpty()) {
       throw new BusinessException(ErrorCode.NO_FIND_USER);
@@ -131,5 +153,4 @@ public class BasicUserService implements UserService {
       throw new BusinessException(ErrorCode.DUPLICATE_USER);
     }
   }
-
 }

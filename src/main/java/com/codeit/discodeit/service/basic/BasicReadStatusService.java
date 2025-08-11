@@ -14,6 +14,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ public class BasicReadStatusService implements ReadStatusService {
   private final ReadStatusRepository readStatusRepository;
 
   @Override
+  @Transactional
   public void createReadStatus(User user, Channel channel){
     ReadStatus readStatus = new ReadStatus();
     readStatus.setChannel(channel);
@@ -30,11 +32,7 @@ public class BasicReadStatusService implements ReadStatusService {
   }
 
   @Override
-  public List<ReadStatus> findReadStatusesByUserId(@Param("userId") UUID userId) {
-    return readStatusRepository.findReadStatusesByUserId(userId);
-  }
-
-  @Override
+  @Transactional
   public ReadStatus updateReadStatusByReadStatusId(UUID readStatusId,
       ReadStatusUpdateRequest readStatusUpdateRequest) {
     ReadStatus readStatus = findReadStatusByReadStatusId(readStatusId);
@@ -50,6 +48,13 @@ public class BasicReadStatusService implements ReadStatusService {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public List<ReadStatus> findReadStatusesByUserId(UUID userId) {
+    return readStatusRepository.findReadStatusesByUserId(userId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public ReadStatus findReadStatusByUserIdAndChannelId(UUID userId, UUID channelId) {
     Optional<ReadStatus> readStatus = readStatusRepository.findReadStatusesByUserIdAndChannelId(userId, channelId);
     if (readStatus.isEmpty()) {
@@ -60,6 +65,7 @@ public class BasicReadStatusService implements ReadStatusService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<ReadStatus> findReadStatusesByChannelId(Channel channel){
     return readStatusRepository.findReadStatusByChannel(channel);
   }

@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -23,6 +24,7 @@ public class BasicChannelService implements ChannelService {
   private final ReadStatusService readStatusService;
 
   @Override
+  @Transactional
   public Channel createPublicChannel(Channel channel) {
 
     validateChannelName(channel.getName());
@@ -37,6 +39,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
+  @Transactional
   public Channel createPrivateChannel(Channel channel, List<UUID> userIdList) {
     channelRepository.createChannel(channel);
     List<User> userList = userRepository.findUserListByUserIdList(userIdList);
@@ -49,12 +52,14 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
+  @Transactional
   public void deleteChannel(UUID channelId) {
     Optional<Channel> channel = channelRepository.findChannelByChannelId(channelId);
     channel.ifPresent(channelRepository::deleteChannel);
   }
 
   @Override
+  @Transactional
   public Channel updatePublicChannel(UUID channelId,
       PublicChannelUpdateRequest publicChannelUpdateRequest) {
     Channel channel = findChannelByChannelId(channelId);
@@ -66,6 +71,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<Channel> findChannelListByUserId(UUID userId){
     List<ReadStatus> readStatusList = readStatusService.findReadStatusesByUserId(userId);
     return readStatusList.stream().map(ReadStatus::getChannel)
@@ -73,6 +79,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Channel findChannelByChannelId(UUID channelId) {
     return channelRepository.findChannelByChannelId(channelId)
         .orElseThrow(() -> new BusinessException(ErrorCode.NO_FIND_CHANNEL));

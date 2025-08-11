@@ -80,7 +80,7 @@ public class MessageController {
     Channel channel = channelService.findChannelByChannelId(messageCreateRequest.getChannelId());
 
     List<BinaryContent> binaryContents = null;
-    List<byte []> attachmentBytes = null;
+    List<byte[]> attachmentBytes = null;
     if (attachments != null && !attachments.isEmpty()) {
       binaryContents = attachments.stream()
           .map(attachment -> {
@@ -101,7 +101,9 @@ public class MessageController {
       }).toList();
     }
 
-    Message message = messageService.createMessage(messageMapper.toMessage(messageCreateRequest.getContent(), user, channel, binaryContents), attachmentBytes);
+    Message message = messageService.createMessage(
+        messageMapper.toMessage(messageCreateRequest.getContent(), user, channel, binaryContents),
+        attachmentBytes);
     MessageDto messageDto = messageMapper.toMessageDto(message);
     return ResponseEntity.status(HttpStatus.CREATED).body(messageDto);
   }
@@ -133,7 +135,6 @@ public class MessageController {
         pageResponse.isHasNext(),
         pageResponse.getTotalElements()
     );
-
 
     return ResponseEntity.ok(dtoPageResponse);
   }

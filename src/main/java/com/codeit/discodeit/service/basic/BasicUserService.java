@@ -11,7 +11,8 @@ import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.service.ReadStatusService;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.service.UserStatusService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +33,7 @@ public class BasicUserService implements UserService {
   private final UserStatusRepository userStatusRepository;
 
   @Override
+  @Transactional
   public User createUser(User user, byte[] profileImgBytes) {
 
     validateUserNameNotDuplicated(user.getUsername());
@@ -54,6 +56,7 @@ public class BasicUserService implements UserService {
   }
 
   @Override
+  @Transactional
   public User updateUser(UserUpdateRequest userUpdateRequest, BinaryContent newProfileImage, byte[] profileImgBytes)
       throws IOException {
     User targetUser = findUserByUserId(userUpdateRequest.getUserId());
@@ -95,17 +98,20 @@ public class BasicUserService implements UserService {
   }
 
   @Override
+  @Transactional
   public void deleteUser(UUID userId) {
     User user = findUserByUserId(userId);
     userRepository.deleteUser(user);
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<User> findAllUser() {
     return userRepository.loadUsers();
   }
 
   @Override
+  @Transactional(readOnly = true)
   public User findUserByUserId(UUID userId) {
     Optional<User> user = userRepository.findUserByUserId(userId);
     if (user.isEmpty()) {

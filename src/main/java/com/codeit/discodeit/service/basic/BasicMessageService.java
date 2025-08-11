@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -29,6 +30,7 @@ public class BasicMessageService implements MessageService {
   private final BinaryContentService binaryContentService;
 
   @Override
+  @Transactional
   public Message createMessage(Message message, List<byte[]> attachmentsBytes) throws IOException {
 
     findUserByUserId(message.getAuthor().getId());
@@ -47,12 +49,14 @@ public class BasicMessageService implements MessageService {
   }
 
   @Override
+  @Transactional
   public void deleteMessage(DeleteMessageRequestDto deleteMessageRequestDTO) {
     Message message = findMessageByMessageId(deleteMessageRequestDTO.getMessageId());
     messageRepository.deleteMessage(message);
   }
 
   @Override
+  @Transactional
   public Message updateMessage(UUID messageId, MessageUpdateRequest messageUpdateRequest) {
     Message message = findMessageByMessageId(messageId);
     message.setContent(messageUpdateRequest.getNewContent());
@@ -62,6 +66,7 @@ public class BasicMessageService implements MessageService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public PageResponse<Message> findMessagesPerPage(UUID channelId, Pageable pageable) {
     List<Message> messageList = messageRepository.findMessagesByChannelId(channelId);
 
@@ -84,11 +89,13 @@ public class BasicMessageService implements MessageService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Optional<Message> findLastMessageInChannel(UUID channelId){
     return messageRepository.findLastMessageInChannel(channelId);
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Message findMessageByMessageId(UUID messageId) {
     return messageRepository.findMessageByMessageId(messageId)
         .orElseThrow(

@@ -46,8 +46,7 @@ public class JpaMessageRepository implements MessageRepository {
         .setParameter("channelId", channelId)
         .getResultList();
   }
-
-
+  
   @Override
   public Optional<Message> findLastMessageInChannel(UUID channelId) {
     return em.createQuery(
@@ -58,6 +57,4 @@ public class JpaMessageRepository implements MessageRepository {
         .getResultStream()
         .findFirst();
   }
-
-
 }

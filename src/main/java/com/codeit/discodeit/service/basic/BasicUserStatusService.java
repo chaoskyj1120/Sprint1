@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +21,7 @@ public class BasicUserStatusService implements UserStatusService {
   private final UserRepository userRepository;
 
   @Override
+  @Transactional
   public UserStatus createUserStatus(User user) {
     UserStatus newUserStatus = new UserStatus();
     newUserStatus.setUser(user);
@@ -29,6 +31,7 @@ public class BasicUserStatusService implements UserStatusService {
   }
 
   @Override
+  @Transactional
   public UserStatus updateUserStatus(UUID userId, Instant newLastAt) {
     Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(userId);
     
@@ -42,10 +45,5 @@ public class BasicUserStatusService implements UserStatusService {
     userStatusRepository.updateUserStatus(updateUserStatus);
 
     return updateUserStatus;
-  }
-
-  private User findUserByUserId(UUID userId) {
-    return userRepository.findUserByUserId(userId)
-        .orElseThrow(() -> new IllegalStateException("해당하는 유저를 찾을 수 없습니다."));
   }
 }

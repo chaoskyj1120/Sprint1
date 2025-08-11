@@ -1,11 +1,9 @@
 package com.codeit.discodeit.controller;
 
-import com.codeit.discodeit.mapper.ReadStatusMapper;
+import com.codeit.discodeit.dto.user_service_dto.UserDto;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusCreateRequest;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusDto;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusUpdateRequest;
-import com.codeit.discodeit.entity.ReadStatus;
-import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.service.ReadStatusService;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.swagger.SwaggerReadStatusController;
@@ -16,9 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
-
 
 @RestController
 @RequiredArgsConstructor
@@ -28,16 +24,14 @@ public class ReadStatusController implements SwaggerReadStatusController {
 
   private final UserService userService;
   private final ReadStatusService readStatusService;
-  private final ReadStatusMapper readStatusMapper;
 
   @PostMapping
   public ResponseEntity<ReadStatusDto> createReadStatus(
       @RequestBody ReadStatusCreateRequest readStatusCreateRequest) {
 
-    ReadStatus readStatus = readStatusService
+    ReadStatusDto readStatusDto = readStatusService
         .findReadStatusByUserIdAndChannelId(readStatusCreateRequest.getUserId(), readStatusCreateRequest.getChannelId());
 
-    ReadStatusDto readStatusDto = readStatusMapper.toReadStatusDto(readStatus);
     return ResponseEntity
         .status(HttpStatus.CREATED) // 201 Created
         .body(readStatusDto);
@@ -45,12 +39,9 @@ public class ReadStatusController implements SwaggerReadStatusController {
 
   @GetMapping
   public ResponseEntity<List<ReadStatusDto>> findAllByUserId(@RequestParam UUID userId) {
-    User user = userService.findUserDtoByUserId(userId);
-    List<ReadStatus> readStatusesList =
-        readStatusService.findReadStatusesByUserId(user.getId());
-    List<ReadStatusDto> readStatusDtoList = readStatusesList.stream()
-        .map(readStatusMapper::toReadStatusDto)
-        .toList();
+    UserDto user = userService.findUserDtoByUserId(userId);
+    List<ReadStatusDto> readStatusDtoList =
+        readStatusService.findReadStatuseDtoListByUserId(user.id());
 
     return ResponseEntity.ok(readStatusDtoList);
   }
@@ -64,10 +55,9 @@ public class ReadStatusController implements SwaggerReadStatusController {
       )
       @PathVariable("readStatusId") UUID readStatusId,
       @RequestBody ReadStatusUpdateRequest readStatusUpdateRequest) {
-    ReadStatus updateReadStatus = readStatusService.updateReadStatusByReadStatusId(
+    ReadStatusDto updateReadStatusDto = readStatusService.updateReadStatusByReadStatusId(
         readStatusId, readStatusUpdateRequest);
 
-    ReadStatusDto readStatusDto = readStatusMapper.toReadStatusDto(updateReadStatus);
-    return ResponseEntity.ok(readStatusDto);
+    return ResponseEntity.ok(updateReadStatusDto);
   }
 }

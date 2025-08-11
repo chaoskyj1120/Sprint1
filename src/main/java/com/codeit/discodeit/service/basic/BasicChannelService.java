@@ -4,13 +4,17 @@ import com.codeit.discodeit.dto.channel_service_dto.*;
 import com.codeit.discodeit.entity.*;
 import com.codeit.discodeit.exception.ErrorCode;
 import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.mapper.ChannelMapper;
+import com.codeit.discodeit.mapper.UserMapper;
 import com.codeit.discodeit.repository.ChannelRepository;
+import com.codeit.discodeit.repository.MessageRepository;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.ReadStatusService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +26,15 @@ public class BasicChannelService implements ChannelService {
   private final ChannelRepository channelRepository;
   private final UserRepository userRepository;
   private final ReadStatusService readStatusService;
+  private final ChannelMapper channelMapper;
+  private final MessageRepository messageRepository;
+  private final UserMapper userMapper;
 
   @Override
   @Transactional
-  public Channel createPublicChannel(Channel channel) {
+  public ChannelDto createPublicChannel(CreatePublicChannelRequestDto createPublicChannelRequestDto) {
+
+    Channel channel = channelMapper.toPublicChannel(createPublicChannelRequestDto);
 
     validateChannelName(channel.getName());
     channelRepository.createChannel(channel);
@@ -35,12 +44,13 @@ public class BasicChannelService implements ChannelService {
       readStatusService.createReadStatus(user,channel);
     }
 
-    return channel;
+    return toChannelDto(channel);
   }
 
   @Override
   @Transactional
-  public Channel createPrivateChannel(Channel channel, List<UUID> userIdList) {
+  public ChannelDto createPrivateChannel(List<UUID> userIdList) {
+    Channel channel = channelMapper.toPrivateChannel();
     channelRepository.createChannel(channel);
     List<User> userList = userRepository.findUserListByUserIdList(userIdList);
 
@@ -48,7 +58,7 @@ public class BasicChannelService implements ChannelService {
       readStatusService.createReadStatus(user,channel);
     }
 
-    return channel;
+    return toChannelDto(channel);
   }
 
   @Override
@@ -60,22 +70,22 @@ public class BasicChannelService implements ChannelService {
 
   @Override
   @Transactional
-  public Channel updatePublicChannel(UUID channelId,
+  public ChannelDto updatePublicChannel(UUID channelId,
       PublicChannelUpdateRequest publicChannelUpdateRequest) {
     Channel channel = findChannelByChannelId(channelId);
     channel.setName(publicChannelUpdateRequest.getNewName());
     channel.setDescription(publicChannelUpdateRequest.getNewDescription());
 
     channelRepository.updateChannel(channel);
-    return channel;
+    return toChannelDto(channel);
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<Channel> findChannelListByUserId(UUID userId){
+  public List<ChannelDto> findChannelListByUserId(UUID userId){
     List<ReadStatus> readStatusList = readStatusService.findReadStatusesByUserId(userId);
-    return readStatusList.stream().map(ReadStatus::getChannel)
-        .toList();
+    List<Channel> channelList = readStatusList.stream().map(ReadStatus::getChannel).toList();
+    return channelList.stream().map(this::toChannelDto).collect(Collectors.toList());
   }
 
   @Override
@@ -92,4 +102,13 @@ public class BasicChannelService implements ChannelService {
     }
   }
 
+  private Optional<Message> findLastMessageInChannel(UUID channelId){
+    return messageRepository.findLastMessageInChannel(channelId);
+  }
+
+  private ChannelDto toChannelDto(Channel channel) {
+    Optional<Message> lastMessage = findLastMessageInChannel(channel.getId());
+    List<ReadStatus> readStatuses = readStatusService.findReadStatusesByChannelId(channel);
+    return channelMapper.toChannelDto(channel, lastMessage, readStatuses, userMapper);
+  }
 }

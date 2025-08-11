@@ -1,9 +1,9 @@
 package com.codeit.discodeit.service;
 
 import com.codeit.discodeit.dto.auth_service_dto.LoginRequestDto;
-import com.codeit.discodeit.entity.User;
+import com.codeit.discodeit.dto.user_service_dto.UserDto;
 
 public interface AuthService {
 
-  User logInUser(LoginRequestDto loginRequestDTO);
+  UserDto logInUser(LoginRequestDto loginRequestDTO);
 }

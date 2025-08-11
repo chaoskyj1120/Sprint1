@@ -70,8 +70,7 @@ public class BasicUserService implements UserService {
 
   @Override
   @Transactional
-  public UserDto updateUser(UserUpdateRequest userUpdateRequest, BinaryContent newProfileImage, byte[] profileImgBytes)
-      throws IOException {
+  public UserDto updateUser(UserUpdateRequest userUpdateRequest, BinaryContent newProfileImage, byte[] profileImgBytes) {
     User targetUser = findUserByUserId(userUpdateRequest.getUserId());
 
     // 사용자 기본 정보 수정
@@ -134,7 +133,9 @@ public class BasicUserService implements UserService {
     return userMapper.toUserDto(user.get());
   }
 
-  private User findUserByUserId(UUID userId) {
+  @Override
+  @Transactional(readOnly = true)
+  public User findUserByUserId(UUID userId) {
     Optional<User> user = userRepository.findUserByUserId(userId);
     if (user.isEmpty()) {
       throw new BusinessException(ErrorCode.NO_FIND_USER);

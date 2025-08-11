@@ -1,9 +1,5 @@
 package com.codeit.discodeit.controller;
 
-import com.codeit.discodeit.entity.BinaryContent;
-import com.codeit.discodeit.entity.Channel;
-import com.codeit.discodeit.entity.User;
-import com.codeit.discodeit.mapper.BinaryContentMapper;
 import com.codeit.discodeit.mapper.MessageMapper;
 import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
@@ -11,7 +7,6 @@ import com.codeit.discodeit.dto.message_service_dto.MessageDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequest;
 import com.codeit.discodeit.dto.response.PageResponse;
 import com.codeit.discodeit.dto.response.Pageable;
-import com.codeit.discodeit.entity.Message;
 import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.MessageService;
 import com.codeit.discodeit.service.UserService;
@@ -46,35 +41,8 @@ public class MessageController implements SwaggerMessageController {
       @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
       @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
   ) throws IOException {
-    User user = userService.findUserDtoByUserId(messageCreateRequest.getAuthorId());
-    Channel channel = channelService.findChannelByChannelId(messageCreateRequest.getChannelId());
 
-    List<BinaryContent> binaryContents = null;
-    List<byte[]> attachmentBytes = null;
-    if (attachments != null && !attachments.isEmpty()) {
-      binaryContents = attachments.stream()
-          .map(attachment -> {
-            try {
-              return BinaryContentMapper.attachmentToBinaryContent(attachment);
-            } catch (IOException e) {
-              throw new RuntimeException(e);
-            }
-          })
-          .toList();
-
-      attachmentBytes = attachments.stream().map(attachment -> {
-        try {
-          return attachment.getBytes();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      }).toList();
-    }
-
-    Message message = messageService.createMessage(
-        messageMapper.toMessage(messageCreateRequest.getContent(), user, channel, binaryContents),
-        attachmentBytes);
-    MessageDto messageDto = messageMapper.toMessageDto(message);
+    MessageDto messageDto = messageService.createMessage(messageCreateRequest, attachments);
     return ResponseEntity.status(HttpStatus.CREATED).body(messageDto);
   }
 
@@ -82,21 +50,8 @@ public class MessageController implements SwaggerMessageController {
   public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
       @RequestParam("channelId") UUID channelId,
       @PageableDefault(size = 50, page = 0, sort = "createdAt", direction = Direction.DESC) Pageable pageable) {
-    PageResponse<Message> pageResponse = messageService.findMessagesPerPage(channelId, pageable);
-
-    List<MessageDto> messageDtoList = pageResponse.getContent().stream()
-        .map(messageMapper::toMessageDto)
-        .toList();
-
-    PageResponse<MessageDto> dtoPageResponse = new PageResponse<>(
-        messageDtoList,
-        pageResponse.getNumber(),
-        pageResponse.getSize(),
-        pageResponse.isHasNext(),
-        pageResponse.getTotalElements()
-    );
-
-    return ResponseEntity.ok(dtoPageResponse);
+    PageResponse<MessageDto> pageResponse = messageService.findMessagesPerPage(channelId, pageable);
+    return ResponseEntity.ok(pageResponse);
   }
 
   @DeleteMapping("/{messageId}")
@@ -113,9 +68,8 @@ public class MessageController implements SwaggerMessageController {
   public ResponseEntity<MessageDto> updateMessage(
       @PathVariable("messageId") UUID messageId,
       @RequestBody MessageUpdateRequest messageUpdateRequest) {
-    Message message = messageService.updateMessage(messageId, messageUpdateRequest);
-    MessageDto updatedMessageDto = messageMapper.toMessageDto(message);
+    MessageDto messageDto = messageService.updateMessage(messageId, messageUpdateRequest);
 
-    return ResponseEntity.ok(updatedMessageDto);
+    return ResponseEntity.ok(messageDto);
   }
 }

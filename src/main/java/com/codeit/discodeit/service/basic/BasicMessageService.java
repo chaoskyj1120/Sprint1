@@ -1,24 +1,33 @@
 package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
+import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
+import com.codeit.discodeit.dto.message_service_dto.MessageDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequest;
 import com.codeit.discodeit.dto.response.PageResponse;
 import com.codeit.discodeit.dto.response.Pageable;
 import com.codeit.discodeit.entity.*;
 import com.codeit.discodeit.exception.ErrorCode;
 import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.mapper.BinaryContentMapper;
+import com.codeit.discodeit.mapper.MessageMapper;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.MessageRepository;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.service.BinaryContentService;
+import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.MessageService;
+import com.codeit.discodeit.service.UserService;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @RequiredArgsConstructor
 @Service
@@ -28,24 +37,34 @@ public class BasicMessageService implements MessageService {
   private final ChannelRepository channelRepository;
   private final MessageRepository messageRepository;
   private final BinaryContentService binaryContentService;
+  private final MessageMapper messageMapper;
+  private final UserService userService;
+  private final ChannelService channelService;
 
   @Override
   @Transactional
-  public Message createMessage(Message message, List<byte[]> attachmentsBytes) throws IOException {
+  public MessageDto createMessage(MessageCreateRequest messageCreateRequest, List<MultipartFile> attachmentsList) throws IOException {
 
-    findUserByUserId(message.getAuthor().getId());
-    findChannelByChannelId(message.getChannel().getId());
+    User user = userService.findUserByUserId(messageCreateRequest.getAuthorId());
+    Channel channel = channelService.findChannelByChannelId(messageCreateRequest.getChannelId());
+    List<BinaryContent> binaryContentList = new ArrayList<>();
+
+    for (MultipartFile multipartFile : attachmentsList) {
+      binaryContentList.add(BinaryContentMapper.attachmentToBinaryContent(multipartFile));
+    }
+
+    Message message = messageMapper.toMessage(messageCreateRequest.getContent(), user, channel, binaryContentList);
     messageRepository.createMessage(message);
 
     if (message.getAttachments() != null) {
       for (int i = 0 ; i < message.getAttachments().size(); i++) {
         BinaryContent binaryContent = message.getAttachments().get(i);
-        binaryContentService.createByteFile(binaryContent, attachmentsBytes.get(i));
+        binaryContentService.createByteFile(binaryContent, attachmentsList.get(i).getBytes());
         // 데이터를 바이트 파일로 저장
       }
     }
 
-    return message;
+    return messageMapper.toMessageDto(message);
   }
 
   @Override
@@ -57,17 +76,17 @@ public class BasicMessageService implements MessageService {
 
   @Override
   @Transactional
-  public Message updateMessage(UUID messageId, MessageUpdateRequest messageUpdateRequest) {
+  public MessageDto updateMessage(UUID messageId, MessageUpdateRequest messageUpdateRequest) {
     Message message = findMessageByMessageId(messageId);
     message.setContent(messageUpdateRequest.getNewContent());
 
     messageRepository.updateMessage(message);
-    return message;
+    return messageMapper.toMessageDto(message);
   }
 
   @Override
   @Transactional(readOnly = true)
-  public PageResponse<Message> findMessagesPerPage(UUID channelId, Pageable pageable) {
+  public PageResponse<MessageDto> findMessagesPerPage(UUID channelId, Pageable pageable) {
     List<Message> messageList = messageRepository.findMessagesByChannelId(channelId);
 
 
@@ -82,16 +101,11 @@ public class BasicMessageService implements MessageService {
     }
 
     int toIndex = Math.min(fromIndex + size, messageList.size());
-    List<Message> pageContent = messageList.subList(fromIndex, toIndex);
+    List<MessageDto> pageContent = messageList.subList(fromIndex, toIndex).stream().map(messageMapper::toMessageDto).collect(
+        Collectors.toList());
     boolean hasNext = page + 1 < totalPages;
 
     return new PageResponse<>(pageContent, page, size, hasNext, totalElements);
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public Optional<Message> findLastMessageInChannel(UUID channelId){
-    return messageRepository.findLastMessageInChannel(channelId);
   }
 
   @Override

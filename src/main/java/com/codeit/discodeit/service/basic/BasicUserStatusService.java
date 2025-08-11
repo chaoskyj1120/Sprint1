@@ -1,8 +1,10 @@
 package com.codeit.discodeit.service.basic;
 
+import com.codeit.discodeit.dto.user_status_dto.UserStatusDto;
 import com.codeit.discodeit.entity.*;
 import com.codeit.discodeit.exception.ErrorCode;
 import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.mapper.UserStatusMapper;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.repository.UserStatusRepository;
 import com.codeit.discodeit.service.UserStatusService;
@@ -18,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BasicUserStatusService implements UserStatusService {
 
   private final UserStatusRepository userStatusRepository;
-  private final UserRepository userRepository;
+  private final UserStatusMapper userStatusMapper;
 
   @Override
   @Transactional
@@ -32,7 +34,7 @@ public class BasicUserStatusService implements UserStatusService {
 
   @Override
   @Transactional
-  public UserStatus updateUserStatus(UUID userId, Instant newLastAt) {
+  public UserStatusDto updateUserStatus(UUID userId, Instant newLastAt) {
     Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(userId);
     
     if (userStatus.isEmpty()) {
@@ -44,6 +46,6 @@ public class BasicUserStatusService implements UserStatusService {
     updateUserStatus.setLastActiveAt(newLastAt);
     userStatusRepository.updateUserStatus(updateUserStatus);
 
-    return updateUserStatus;
+    return userStatusMapper.toUserStatusDto(updateUserStatus);
   }
 }

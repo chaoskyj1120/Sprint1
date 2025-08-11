@@ -26,8 +26,7 @@ public class AuthController implements SwaggerAuthController {
   @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<UserDto> loginUser(@RequestBody LoginRequestDto loginRequestDto) {
 
-    User loginUser = authService.logInUser(loginRequestDto);
-    UserDto userDto = userMapper.toUserDto(loginUser);
-    return ResponseEntity.ok(userDto);
+    UserDto loginUserDto = authService.logInUser(loginRequestDto);
+    return ResponseEntity.ok(loginUserDto);
   }
 }

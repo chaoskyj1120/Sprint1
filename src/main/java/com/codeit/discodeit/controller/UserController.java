@@ -74,8 +74,7 @@ public class UserController implements SwaggerUserController {
   @PatchMapping("/{userId}/userStatus")
   public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
       @PathVariable UUID userId,
-      @RequestBody UserStatusUpdateRequest request
-  ) {
+      @RequestBody UserStatusUpdateRequest request) {
     UserStatusDto updatedStatus = userStatusService.updateUserStatus(userId,
         request.getNewLastActiveAt());
 

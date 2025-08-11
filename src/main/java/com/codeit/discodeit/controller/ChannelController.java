@@ -1,12 +1,6 @@
 package com.codeit.discodeit.controller;
 
-
-import com.codeit.discodeit.mapper.ChannelMapper;
 import com.codeit.discodeit.dto.channel_service_dto.*;
-import com.codeit.discodeit.entity.Channel;
-import com.codeit.discodeit.entity.Message;
-import com.codeit.discodeit.entity.ReadStatus;
-import com.codeit.discodeit.mapper.UserMapper;
 import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.MessageService;
 import com.codeit.discodeit.service.ReadStatusService;
@@ -30,14 +24,11 @@ public class ChannelController implements SwaggerChannelController {
   private final ChannelService channelService;
   private final MessageService messageService;
   private final ReadStatusService readStatusService;
-  private final ChannelMapper channelMapper;
-  private final UserMapper userMapper;
 
   @PostMapping(value = "/public", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<ChannelDto> createPublicChannel(
       @RequestBody CreatePublicChannelRequestDto createPublicChannelRequestDto) {
-    Channel channel = channelService.createPublicChannel(channelMapper.toPublicChannel(createPublicChannelRequestDto));
-    ChannelDto channelDto = toChannelDto(channel);
+    ChannelDto channelDto = channelService.createPublicChannel(createPublicChannelRequestDto);
     return ResponseEntity.status(HttpStatus.CREATED).body(channelDto);
   }
 
@@ -45,8 +36,7 @@ public class ChannelController implements SwaggerChannelController {
   @PostMapping(value = "/private", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<ChannelDto> createPrivateChannel(
       @RequestBody PrivateChannelCreateRequest privateChannelCreateRequest) {
-    Channel channel = channelService.createPrivateChannel(channelMapper.toPrivateChannel(), privateChannelCreateRequest.getParticipantIds());
-    ChannelDto channelDto = toChannelDto(channel);
+    ChannelDto channelDto = channelService.createPrivateChannel(privateChannelCreateRequest.getParticipantIds());
     return ResponseEntity.status(HttpStatus.CREATED).body(channelDto);
   }
 
@@ -60,21 +50,13 @@ public class ChannelController implements SwaggerChannelController {
   public ResponseEntity<ChannelDto> updateChannel(
       @PathVariable UUID channelId,
       @RequestBody PublicChannelUpdateRequest updateRequest) {
-    Channel channel = channelService.updatePublicChannel(channelId, updateRequest);
-    ChannelDto updatedChannelDto = toChannelDto(channel);
+    ChannelDto updatedChannelDto = channelService.updatePublicChannel(channelId, updateRequest);
     return ResponseEntity.ok(updatedChannelDto);
   }
 
   @GetMapping
   public ResponseEntity<List<ChannelDto>> getAllChannelsByUserId(@RequestParam("userId") UUID userId) {
-    List<Channel> channelList = channelService.findChannelListByUserId(userId);
-    List<ChannelDto> channelDtoList = channelList.stream().map(this::toChannelDto).toList();
+    List<ChannelDto> channelDtoList = channelService.findChannelListByUserId(userId);
     return ResponseEntity.ok(channelDtoList);
-  }
-
-  private ChannelDto toChannelDto(Channel channel) {
-    Optional<Message> lastMessage = messageService.findLastMessageInChannel(channel.getId());
-    List<ReadStatus> readStatuses = readStatusService.findReadStatusesByChannelId(channel);
-    return channelMapper.toChannelDto(channel, lastMessage, readStatuses, userMapper);
   }
 }

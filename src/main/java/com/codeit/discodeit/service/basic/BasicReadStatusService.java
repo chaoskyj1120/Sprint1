@@ -1,18 +1,20 @@
 package com.codeit.discodeit.service.basic;
 
+import com.codeit.discodeit.dto.readstatus_dto.ReadStatusDto;
 import com.codeit.discodeit.dto.readstatus_dto.ReadStatusUpdateRequest;
 import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.entity.ReadStatus;
 import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.exception.ErrorCode;
 import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.mapper.ReadStatusMapper;
 import com.codeit.discodeit.repository.ReadStatusRepository;
 import com.codeit.discodeit.service.ReadStatusService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BasicReadStatusService implements ReadStatusService {
 
   private final ReadStatusRepository readStatusRepository;
+  private final ReadStatusMapper readStatusMapper;
 
   @Override
   @Transactional
@@ -33,7 +36,7 @@ public class BasicReadStatusService implements ReadStatusService {
 
   @Override
   @Transactional
-  public ReadStatus updateReadStatusByReadStatusId(UUID readStatusId,
+  public ReadStatusDto updateReadStatusByReadStatusId(UUID readStatusId,
       ReadStatusUpdateRequest readStatusUpdateRequest) {
     ReadStatus readStatus = findReadStatusByReadStatusId(readStatusId);
 
@@ -44,7 +47,14 @@ public class BasicReadStatusService implements ReadStatusService {
     readStatus.setLastReadAt(readStatusUpdateRequest.getNewLastReadAt());
     readStatusRepository.updateReadStatus(readStatus);
 
-    return readStatus;
+    return readStatusMapper.toReadStatusDto(readStatus);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ReadStatusDto> findReadStatuseDtoListByUserId(UUID userId) {
+    return readStatusRepository.findReadStatusesByUserId(userId).stream().map(readStatusMapper::toReadStatusDto).collect(
+        Collectors.toList());
   }
 
   @Override
@@ -55,13 +65,13 @@ public class BasicReadStatusService implements ReadStatusService {
 
   @Override
   @Transactional(readOnly = true)
-  public ReadStatus findReadStatusByUserIdAndChannelId(UUID userId, UUID channelId) {
+  public ReadStatusDto findReadStatusByUserIdAndChannelId(UUID userId, UUID channelId) {
     Optional<ReadStatus> readStatus = readStatusRepository.findReadStatusesByUserIdAndChannelId(userId, channelId);
     if (readStatus.isEmpty()) {
       throw new BusinessException(ErrorCode.NO_FIND_READ_STATUS);
     }
 
-    return readStatus.get();
+    return readStatusMapper.toReadStatusDto(readStatus.get());
   }
 
   @Override

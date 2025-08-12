@@ -1,6 +1,4 @@
-package com.codeit.discodeit.exception.basic;
-
-import lombok.Getter;
+package com.codeit.discodeit.exception.global;
 
 public interface ErrorCode {
   int getStatus();

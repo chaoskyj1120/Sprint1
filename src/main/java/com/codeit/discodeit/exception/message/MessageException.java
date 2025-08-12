@@ -1,7 +1,7 @@
 package com.codeit.discodeit.exception.message;
 
-import com.codeit.discodeit.exception.basic.DiscodeitException;
-import com.codeit.discodeit.exception.basic.ErrorCode;
+import com.codeit.discodeit.exception.global.DiscodeitException;
+import com.codeit.discodeit.exception.global.ErrorCode;
 import java.time.Instant;
 import java.util.Map;
 import lombok.Getter;

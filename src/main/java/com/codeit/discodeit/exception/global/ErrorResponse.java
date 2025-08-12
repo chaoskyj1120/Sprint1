@@ -1,4 +1,4 @@
-package com.codeit.discodeit.exception.basic;
+package com.codeit.discodeit.exception.global;
 
 import java.time.Instant;
 import java.util.Map;

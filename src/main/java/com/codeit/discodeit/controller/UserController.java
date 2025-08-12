@@ -42,7 +42,7 @@ public class UserController implements SwaggerUserController {
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> createUser(
-      @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
+      @Valid @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
       @RequestPart(value = "profile", required = false) MultipartFile profile) throws IOException {
 
     log.info("[POST /api/users] 요청 수신 - userCreateRequest={}, profileFileName={}, profileSize={}",

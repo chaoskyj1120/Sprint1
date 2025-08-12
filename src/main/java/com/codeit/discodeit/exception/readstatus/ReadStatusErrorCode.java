@@ -1,6 +1,6 @@
 package com.codeit.discodeit.exception.readstatus;
 
-import com.codeit.discodeit.exception.basic.ErrorCode;
+import com.codeit.discodeit.exception.global.ErrorCode;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 

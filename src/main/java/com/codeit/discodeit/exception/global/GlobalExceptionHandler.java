@@ -1,4 +1,4 @@
-package com.codeit.discodeit.exception.basic;
+package com.codeit.discodeit.exception.global;
 
 import com.codeit.discodeit.exception.binarycontent.BinaryContentException;
 import com.codeit.discodeit.exception.binarycontentstorage.BinaryContentStorageException;
@@ -7,7 +7,6 @@ import com.codeit.discodeit.exception.message.MessageException;
 import com.codeit.discodeit.exception.readstatus.ReadStatusException;
 import com.codeit.discodeit.exception.user.UserException;
 import java.util.Map;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

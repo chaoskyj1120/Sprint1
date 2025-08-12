@@ -1,6 +1,5 @@
 package com.codeit.discodeit.exception.user;
 
-import com.codeit.discodeit.exception.basic.ErrorCode;
 import java.time.Instant;
 import java.util.Map;
 

@@ -1,5 +1,6 @@
 package com.codeit.discodeit.dto.channel_service_dto;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class PublicChannelUpdateRequest {
 
+  @NotEmpty
   private String newName;
+
+  @NotEmpty
   private String newDescription;
 }

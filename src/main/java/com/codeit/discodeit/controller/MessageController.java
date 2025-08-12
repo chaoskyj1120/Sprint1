@@ -1,6 +1,5 @@
 package com.codeit.discodeit.controller;
 
-import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
 import com.codeit.discodeit.dto.message_service_dto.MessageDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequest;
@@ -9,6 +8,7 @@ import com.codeit.discodeit.dto.response.Pageable;
 import com.codeit.discodeit.service.MessageService;
 import com.codeit.discodeit.swagger.SwaggerMessageController;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class MessageController implements SwaggerMessageController {
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<MessageDto> createMessage(
-      @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
+      @Valid @RequestPart("messageCreateRequest") MessageCreateRequest messageCreateRequest,
       @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
   ) throws IOException {
     log.info("[POST /api/messages] 메시지 생성 요청 수신: content={}, attachmentsCount={}",
@@ -52,9 +52,7 @@ public class MessageController implements SwaggerMessageController {
       @PathVariable("messageId") UUID messageId) {
     log.info("[DELETE /api/messages/{}] 삭제 요청 수신", messageId);
 
-    DeleteMessageRequestDto requestDto = new DeleteMessageRequestDto();
-    requestDto.setMessageId(messageId);
-    messageService.deleteMessage(requestDto);
+    messageService.deleteMessage(messageId);
 
     log.info("[DELETE /api/messages/{}] 삭제 완료", messageId);
     return ResponseEntity.noContent().build();
@@ -63,7 +61,7 @@ public class MessageController implements SwaggerMessageController {
   @PatchMapping("/{messageId}")
   public ResponseEntity<MessageDto> updateMessage(
       @PathVariable("messageId") UUID messageId,
-      @RequestBody MessageUpdateRequest messageUpdateRequest) {
+      @Valid @RequestBody MessageUpdateRequest messageUpdateRequest) {
     log.info("[PATCH /api/messages/{}] 수정 요청 수신: {}", messageId, messageUpdateRequest);
 
     MessageDto messageDto = messageService.updateMessage(messageId, messageUpdateRequest);

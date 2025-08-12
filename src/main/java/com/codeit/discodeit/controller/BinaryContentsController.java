@@ -26,11 +26,6 @@ public class BinaryContentsController implements SwaggerBinaryContentController 
 
   @GetMapping
   public ResponseEntity<List<BinaryContent>> findAllBinaryContents(
-      @Parameter(
-          name = "binaryContentIds",
-          description = "조회할 첨부 파일 ID 목록",
-          required = true
-      )
       @RequestParam List<UUID> binaryContentIds) {
     List<BinaryContent> binaryContentResponseList =
         binaryContentService.findBinaryContentsByBinaryContentIds(binaryContentIds);
@@ -39,7 +34,6 @@ public class BinaryContentsController implements SwaggerBinaryContentController 
 
   @GetMapping(value = "/{binaryContentId}")
   public ResponseEntity<BinaryContent> findBinaryContentById(
-      @Parameter(description = "조회할 첨부 파일 ID", required = true)
       @PathVariable("binaryContentId") UUID binaryContentId) {
 
     BinaryContent binaryContent = binaryContentService.findBinaryContentByBinaryContentId(

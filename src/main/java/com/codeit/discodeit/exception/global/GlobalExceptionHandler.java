@@ -6,41 +6,47 @@ import com.codeit.discodeit.exception.channel.ChannelException;
 import com.codeit.discodeit.exception.message.MessageException;
 import com.codeit.discodeit.exception.readstatus.ReadStatusException;
 import com.codeit.discodeit.exception.user.UserException;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
   @ExceptionHandler(UserException.class)
-  public ResponseEntity<ErrorResponse> handleBusinessException(UserException userException) {
+  public ResponseEntity<ErrorResponse> handleBusinessException(UserException ex) {
 
     ErrorResponse errorResponse = new ErrorResponse(
-        userException.getTimestamp(),
-        userException.getErrorCode().getName(),
-        userException.getErrorCode().getMessage(),
-        userException.getDetails(),
-        "UserException",
-        userException.getErrorCode().getStatus()
+        ex.getTimestamp(),
+        ex.getErrorCode().getName(),
+        ex.getErrorCode().getMessage(),
+        ex.getDetails(),
+        ex.getClass().getSimpleName(),
+        ex.getErrorCode().getStatus()
     );
-
-    return ResponseEntity
-        .status(errorResponse.status())
-        .body(errorResponse);
+    log.warn("유저 오류: {}", errorResponse);
+    return ResponseEntity.status(errorResponse.status()).body(errorResponse);
   }
 
   @ExceptionHandler(BinaryContentException.class)
-  public ResponseEntity<ErrorResponse> handleBinaryContentException(BinaryContentException binaryContentException) {
+  public ResponseEntity<ErrorResponse> handleBinaryContentException(BinaryContentException ex) {
     ErrorResponse errorResponse = new ErrorResponse(
-        binaryContentException.getTimestamp(),
-        binaryContentException.getErrorCode().getName(),
-        binaryContentException.getErrorCode().getMessage(),
-        binaryContentException.getDetails(),
-        "BinaryContentException",
-        binaryContentException.getErrorCode().getStatus()
+        ex.getTimestamp(),
+        ex.getErrorCode().getName(),
+        ex.getErrorCode().getMessage(),
+        ex.getDetails(),
+        ex.getClass().getSimpleName(),
+        ex.getErrorCode().getStatus()
     );
+    log.warn("바이너리 컨텐츠 오류: {}", errorResponse);
     return ResponseEntity.status(errorResponse.status())
         .body(errorResponse);
   }
@@ -52,9 +58,10 @@ public class GlobalExceptionHandler {
         ex.getErrorCode().getName(),
         ex.getErrorCode().getMessage(),
         ex.getDetails(),
-        "ChannelException",
+        ex.getClass().getSimpleName(),
         ex.getErrorCode().getStatus()
     );
+    log.warn("채널 오류: {}", errorResponse);
     return ResponseEntity.status(errorResponse.status()).body(errorResponse);
   }
 
@@ -65,9 +72,10 @@ public class GlobalExceptionHandler {
         ex.getErrorCode().getName(),
         ex.getErrorCode().getMessage(),
         ex.getDetails(),
-        "MessageException",
+        ex.getClass().getSimpleName(),
         ex.getErrorCode().getStatus()
     );
+    log.warn("메세지 오류: {}", errorResponse);
     return ResponseEntity.status(errorResponse.status()).body(errorResponse);
   }
 
@@ -78,9 +86,10 @@ public class GlobalExceptionHandler {
         ex.getErrorCode().getName(),
         ex.getErrorCode().getMessage(),
         ex.getDetails(),
-        "BinaryContentStorageException",
+        ex.getClass().getSimpleName(),
         ex.getErrorCode().getStatus()
     );
+    log.warn("바이너리 컨텐츠 저장소 오류: {}", errorResponse);
     return ResponseEntity.status(errorResponse.status()).body(errorResponse);
   }
 
@@ -91,10 +100,36 @@ public class GlobalExceptionHandler {
         ex.getErrorCode().getName(),
         ex.getErrorCode().getMessage(),
         ex.getDetails(),
-        "ReadStatusException",
+        ex.getClass().getSimpleName(),
         ex.getErrorCode().getStatus()
     );
+    log.warn("읽기 상태 오류: {}", errorResponse);
     return ResponseEntity.status(errorResponse.status()).body(errorResponse);
+  }
+
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ErrorResponse> handleValidationExceptions(
+      MethodArgumentNotValidException ex) {
+    Map<String, String> errors = new HashMap<>();
+
+    ex.getBindingResult().getAllErrors().forEach(error -> {
+      String fieldName = ((FieldError) error).getField();
+      String errorMessage = error.getDefaultMessage();
+      errors.put(fieldName, errorMessage);
+    });
+
+    ErrorResponse errorResponse = new ErrorResponse(
+        Instant.now(),
+        "FILED_VALIDATION_ERROR",
+        "검증이 필요한 필드가 검증에 실패했습니다.",
+        Map.of("fieldErrors", errors),
+        ex.getClass().getSimpleName(),
+        HttpStatus.BAD_REQUEST.value()
+    );
+
+    log.warn("필드 검증 오류: {}", errorResponse);
+
+    return ResponseEntity.status(ex.getStatusCode()).body(errorResponse);
   }
 
   @ExceptionHandler(RuntimeException.class)

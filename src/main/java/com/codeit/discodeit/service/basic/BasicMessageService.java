@@ -1,6 +1,5 @@
 package com.codeit.discodeit.service.basic;
 
-import com.codeit.discodeit.dto.message_service_dto.DeleteMessageRequestDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageCreateRequest;
 import com.codeit.discodeit.dto.message_service_dto.MessageDto;
 import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequest;
@@ -82,11 +81,11 @@ public class BasicMessageService implements MessageService {
 
   @Override
   @Transactional
-  public void deleteMessage(DeleteMessageRequestDto deleteMessageRequestDTO) {
-    log.info("[deleteMessage] 삭제 요청: messageId={}", deleteMessageRequestDTO.getMessageId());
-    Message message = findMessageByMessageId(deleteMessageRequestDTO.getMessageId());
+  public void deleteMessage(UUID messageId) {
+    log.info("[deleteMessage] 삭제 요청: messageId={}", messageId);
+    Message message = findMessageByMessageId(messageId);
     messageRepository.deleteMessage(message);
-    log.info("[deleteMessage] 메시지 삭제 완료: messageId={}", deleteMessageRequestDTO.getMessageId());
+    log.info("[deleteMessage] 메시지 삭제 완료: messageId={}", message.getId());
   }
 
   @Override

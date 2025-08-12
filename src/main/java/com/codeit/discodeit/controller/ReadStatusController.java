@@ -9,6 +9,7 @@ import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.swagger.SwaggerReadStatusController;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +28,7 @@ public class ReadStatusController implements SwaggerReadStatusController {
 
   @PostMapping
   public ResponseEntity<ReadStatusDto> createReadStatus(
-      @RequestBody ReadStatusCreateRequest readStatusCreateRequest) {
+      @Valid @RequestBody ReadStatusCreateRequest readStatusCreateRequest) {
 
     ReadStatusDto readStatusDto = readStatusService
         .findReadStatusByUserIdAndChannelId(readStatusCreateRequest.getUserId(), readStatusCreateRequest.getChannelId());
@@ -48,13 +49,8 @@ public class ReadStatusController implements SwaggerReadStatusController {
 
   @PatchMapping("/{readStatusId}")
   public ResponseEntity<ReadStatusDto> update(
-      @Parameter(
-          name = "readStatusId",
-          description = "수정할 읽음 상태 ID",
-          required = true
-      )
       @PathVariable("readStatusId") UUID readStatusId,
-      @RequestBody ReadStatusUpdateRequest readStatusUpdateRequest) {
+      @Valid @RequestBody ReadStatusUpdateRequest readStatusUpdateRequest) {
     ReadStatusDto updateReadStatusDto = readStatusService.updateReadStatusByReadStatusId(
         readStatusId, readStatusUpdateRequest);
 

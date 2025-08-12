@@ -1,5 +1,6 @@
 package com.codeit.discodeit.dto.channel_service_dto;
 
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -15,5 +16,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PrivateChannelCreateRequest {
 
+  @NotNull
   public List<UUID> participantIds;
 }

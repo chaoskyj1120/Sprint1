@@ -69,7 +69,7 @@ public class UserController implements SwaggerUserController {
   @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> updateUser(
       @PathVariable UUID userId,
-      @RequestPart("userUpdateRequest") @Valid UserUpdateRequest userUpdateRequest,
+      @Valid @RequestPart("userUpdateRequest") UserUpdateRequest userUpdateRequest,
       @RequestPart(value = "profile", required = false) MultipartFile profileImage) throws IOException {
 
     log.info("[PATCH /api/users/{}] 요청 수신 - userUpdateRequest={}, profileFileName={}, profileSize={}",
@@ -90,7 +90,7 @@ public class UserController implements SwaggerUserController {
   @PatchMapping("/{userId}/userStatus")
   public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
       @PathVariable UUID userId,
-      @RequestBody UserStatusUpdateRequest request) {
+      @Valid @RequestBody UserStatusUpdateRequest request) {
     UserStatusDto updatedStatus = userStatusService.updateUserStatus(userId, request.getNewLastActiveAt());
     return ResponseEntity.ok(updatedStatus);
   }

@@ -2,8 +2,8 @@ package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.dto.channel_service_dto.*;
 import com.codeit.discodeit.entity.*;
-import com.codeit.discodeit.exception.ErrorCode;
-import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.exception.channel.ChannelNameDuplicateException;
+import com.codeit.discodeit.exception.channel.ChannelNotFoundException;
 import com.codeit.discodeit.mapper.ChannelMapper;
 import com.codeit.discodeit.mapper.UserMapper;
 import com.codeit.discodeit.repository.ChannelRepository;
@@ -12,6 +12,7 @@ import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.ReadStatusService;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -112,7 +113,10 @@ public class BasicChannelService implements ChannelService {
   @Transactional(readOnly = true)
   public Channel findChannelByChannelId(UUID channelId) {
     return channelRepository.findChannelByChannelId(channelId)
-        .orElseThrow(() -> new BusinessException(ErrorCode.NO_FIND_CHANNEL));
+        .orElseThrow(() -> {
+          Map<String, Object> details = Map.of("이유", "채널 없음");
+          return new ChannelNotFoundException(details);
+        });
   }
 
   private void validateChannelNameDuplicated(String channelName) {
@@ -120,7 +124,8 @@ public class BasicChannelService implements ChannelService {
     Optional<Channel> channel = channelRepository.findChannelByChannelName(channelName);
     if (channel.isPresent()) {
       log.debug("[validateChannelNameDuplicated] 채널 이름 중복 발견: channelName={}", channelName);
-      throw new BusinessException(ErrorCode.DUPLICATE_CHANNEL);
+      Map<String, Object> details = Map.of("이유", "채널 이름 중복");
+      throw new ChannelNameDuplicateException(details);
     }
     log.info("[validateChannelNameDuplicated] 채널 이름 중복 확인 종료: channelName={}", channelName);
   }

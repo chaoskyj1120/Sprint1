@@ -7,13 +7,10 @@ import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequest;
 import com.codeit.discodeit.dto.response.PageResponse;
 import com.codeit.discodeit.dto.response.Pageable;
 import com.codeit.discodeit.entity.*;
-import com.codeit.discodeit.exception.ErrorCode;
-import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.exception.message.MessageNotFoundException;
 import com.codeit.discodeit.mapper.BinaryContentMapper;
 import com.codeit.discodeit.mapper.MessageMapper;
-import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.MessageRepository;
-import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.service.ChannelService;
 import com.codeit.discodeit.service.MessageService;
@@ -22,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +33,6 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class BasicMessageService implements MessageService {
 
-  private final UserRepository userRepository;
-  private final ChannelRepository channelRepository;
   private final MessageRepository messageRepository;
 
   private final MessageMapper messageMapper;
@@ -135,6 +131,11 @@ public class BasicMessageService implements MessageService {
   public Message findMessageByMessageId(UUID messageId) {
     return messageRepository.findMessageByMessageId(messageId)
         .orElseThrow(
-            () -> new BusinessException(ErrorCode.NO_FIND_MESSAGE));
+            () -> {
+              Map<String, Object> details = Map.of(
+                  "이유", "메세지 없음"
+              );
+              return new MessageNotFoundException(details);
+            });
   }
 }

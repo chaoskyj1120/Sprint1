@@ -2,12 +2,12 @@ package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.dto.binary_contents_dto.BinaryContentDto;
 import com.codeit.discodeit.entity.BinaryContent;
-import com.codeit.discodeit.exception.ErrorCode;
-import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.codeit.discodeit.repository.BinaryContentRepository;
 import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.storage.BinaryContentStorage;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +44,10 @@ public class BasicBinaryContentService implements BinaryContentService {
     Optional<BinaryContent> binaryContent = binaryContentRepository.findBinaryContentByBinaryContentId(
         binaryContentId);
     if (binaryContent.isEmpty()) {
-      throw new BusinessException(ErrorCode.NO_FIND_BINARY_CONTENT);
+      Map<String, Object> details = Map.of(
+          "이유", "바이너리 컨텐츠 없음"
+      );
+      throw new BinaryContentNotFoundException(details);
     }
     return binaryContent.get();
   }

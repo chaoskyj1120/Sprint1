@@ -5,12 +5,12 @@ import com.codeit.discodeit.dto.readstatus_dto.ReadStatusUpdateRequest;
 import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.entity.ReadStatus;
 import com.codeit.discodeit.entity.User;
-import com.codeit.discodeit.exception.ErrorCode;
-import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.exception.readstatus.ReadStatusNotFoundException;
 import com.codeit.discodeit.mapper.ReadStatusMapper;
 import com.codeit.discodeit.repository.ReadStatusRepository;
 import com.codeit.discodeit.service.ReadStatusService;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -41,7 +41,10 @@ public class BasicReadStatusService implements ReadStatusService {
     ReadStatus readStatus = findReadStatusByReadStatusId(readStatusId);
 
     if (readStatus == null) {
-      throw new BusinessException(ErrorCode.NO_FIND_READ_STATUS);
+      Map<String, Object> details = Map.of(
+          "이유", "읽기 상태 없음"
+      );
+      throw new ReadStatusNotFoundException(details);
     }
 
     readStatus.setLastReadAt(readStatusUpdateRequest.getNewLastReadAt());
@@ -68,7 +71,10 @@ public class BasicReadStatusService implements ReadStatusService {
   public ReadStatusDto findReadStatusByUserIdAndChannelId(UUID userId, UUID channelId) {
     Optional<ReadStatus> readStatus = readStatusRepository.findReadStatusesByUserIdAndChannelId(userId, channelId);
     if (readStatus.isEmpty()) {
-      throw new BusinessException(ErrorCode.NO_FIND_READ_STATUS);
+      Map<String, Object> details = Map.of(
+          "이유", "읽기 상태 없음"
+      );
+      throw new ReadStatusNotFoundException(details);
     }
 
     return readStatusMapper.toReadStatusDto(readStatus.get());
@@ -82,6 +88,11 @@ public class BasicReadStatusService implements ReadStatusService {
 
   private ReadStatus findReadStatusByReadStatusId(UUID readStatusId) {
     return readStatusRepository.findReadStatusesByReadStatusId(readStatusId)
-        .orElseThrow(() -> new BusinessException(ErrorCode.NO_FIND_READ_STATUS));
+        .orElseThrow(() -> {
+          Map<String, Object> details = Map.of(
+              "이유", "읽기 상태 없음"
+          );
+          return new ReadStatusNotFoundException(details);
+        });
   }
 }

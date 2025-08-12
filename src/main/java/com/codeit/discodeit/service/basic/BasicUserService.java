@@ -2,8 +2,8 @@ package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.dto.user_service_dto.*;
 import com.codeit.discodeit.entity.*;
-import com.codeit.discodeit.exception.ErrorCode;
-import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.exception.user.UserNameEmailDuplicateException;
+import com.codeit.discodeit.exception.user.UserNotFoundException;
 import com.codeit.discodeit.mapper.BinaryContentMapper;
 import com.codeit.discodeit.mapper.UserMapper;
 import com.codeit.discodeit.repository.ChannelRepository;
@@ -13,6 +13,7 @@ import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.service.ReadStatusService;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.service.UserStatusService;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -158,7 +159,10 @@ public class BasicUserService implements UserService {
   public UserDto findUserDtoByUserId(UUID userId) {
     Optional<User> user = userRepository.findUserByUserId(userId);
     if (user.isEmpty()) {
-      throw new BusinessException(ErrorCode.NO_FIND_USER);
+      Map<String, Object> details = Map.of(
+          "이유", "유저 없음"
+      );
+      throw new UserNotFoundException(details);
     }
     return userMapper.toUserDto(user.get());
   }
@@ -168,7 +172,10 @@ public class BasicUserService implements UserService {
   public User findUserByUserId(UUID userId) {
     Optional<User> user = userRepository.findUserByUserId(userId);
     if (user.isEmpty()) {
-      throw new BusinessException(ErrorCode.NO_FIND_USER);
+      Map<String, Object> details = Map.of(
+          "이유", "유저 없음"
+      );
+      throw new UserNotFoundException(details);
     }
     return user.get();
   }
@@ -177,7 +184,10 @@ public class BasicUserService implements UserService {
     log.info("[validateUserNameNotDuplicated] 유저 네임 중복 확인 시작: userName={}", userName);
     if (userRepository.findUserByUserName(userName).isPresent()) {
       log.debug("[validateUserNameNotDuplicated] 유저 네임 중복이 발견: userName={}", userName);
-      throw new BusinessException(ErrorCode.DUPLICATE_USER);
+      Map<String, Object> details = Map.of(
+          "이유", "중복"
+      );
+      throw new UserNameEmailDuplicateException(details);
     }
     log.info("[validateUserNameNotDuplicated] 유저 네임 중복 확인 종료: userName={}", userName);
   }
@@ -186,7 +196,10 @@ public class BasicUserService implements UserService {
     log.info("[validateUserEmailNotDuplicated] 유저 이메일 중복 확인 시작: userEmail={}", userEmail);
     if (userRepository.findUserByEmail(userEmail).isPresent()) {
       log.debug("[validateUserEmailNotDuplicated] 유저 이메일 중복이 발견: userEmail={}", userEmail);
-      throw new BusinessException(ErrorCode.DUPLICATE_USER);
+      Map<String, Object> details = Map.of(
+          "이유", "중복"
+      );
+      throw new UserNameEmailDuplicateException(details);
     }
     log.info("[validateUserEmailNotDuplicated] 유저 이메일 중복 확인 종료: userEmail={}", userEmail);
   }

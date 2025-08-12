@@ -2,13 +2,12 @@ package com.codeit.discodeit.service.basic;
 
 import com.codeit.discodeit.dto.user_status_dto.UserStatusDto;
 import com.codeit.discodeit.entity.*;
-import com.codeit.discodeit.exception.ErrorCode;
-import com.codeit.discodeit.exception.exception.BusinessException;
+import com.codeit.discodeit.exception.user.UserStatusNotFoundException;
 import com.codeit.discodeit.mapper.UserStatusMapper;
-import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.repository.UserStatusRepository;
 import com.codeit.discodeit.service.UserStatusService;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +37,10 @@ public class BasicUserStatusService implements UserStatusService {
     Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(userId);
     
     if (userStatus.isEmpty()) {
-      throw new BusinessException(ErrorCode.NO_FIND_USER_STATUS);
+      Map<String, Object> details = Map.of(
+          "이유", "유저 상태 없음"
+      );
+      throw new UserStatusNotFoundException(details);
     }
 
     UserStatus updateUserStatus = userStatus.get();

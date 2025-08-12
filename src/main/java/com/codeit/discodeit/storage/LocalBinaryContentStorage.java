@@ -1,9 +1,12 @@
 package com.codeit.discodeit.storage;
 
 import com.codeit.discodeit.dto.binary_contents_dto.BinaryContentDto;
-import com.codeit.discodeit.exception.exception.BinaryContentNotFoundException;
-import com.codeit.discodeit.exception.exception.BinaryContentStorageException;
+import com.codeit.discodeit.exception.binarycontent.BinaryContentNotFoundException;
+import com.codeit.discodeit.exception.binarycontentstorage.BinaryContentStorageFailDownloadFileException;
+import com.codeit.discodeit.exception.binarycontentstorage.BinaryContentStorageFailReadFileException;
+import com.codeit.discodeit.exception.binarycontentstorage.BinaryContentStorageFailSaveFileException;
 import jakarta.annotation.PostConstruct;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ByteArrayResource;
@@ -49,7 +52,8 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
       Files.write(path, bytes);
       return binaryContentId;
     } catch (IOException e) {
-      throw new BinaryContentStorageException("Failed to store binary content with ID: " + binaryContentId, e);
+      Map<String, Object> details = Map.of("이유", "파일 저장 실패");
+      throw new BinaryContentStorageFailSaveFileException(details);
     }
   }
 
@@ -60,9 +64,11 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
       return Files.newInputStream(path);
     } catch (IOException e) {
       if (!Files.exists(path)) {
-        throw new BinaryContentNotFoundException(binaryContentId);
+        Map<String, Object> details = Map.of("이유", "파일 없음");
+        throw new BinaryContentNotFoundException(details);
       }
-      throw new BinaryContentStorageException("Failed to read binary content with ID: " + binaryContentId, e);
+      Map<String, Object> details = Map.of("이유", "파일 읽기 실패");
+      throw new BinaryContentStorageFailReadFileException(details);
     }
   }
 
@@ -77,7 +83,8 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
           .contentLength(binaryContentDto.size())
           .body(resource);
     } catch (IOException e) {
-      throw new BinaryContentStorageException("Failed to create download response for ID: " + binaryContentDto.id(), e);
+      Map<String, Object> details = Map.of("이유", "파일 다운로드 실패");
+      throw new BinaryContentStorageFailDownloadFileException(details);
     }
   }
 }

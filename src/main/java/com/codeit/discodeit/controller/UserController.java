@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 @Tag(name = "User", description = "User API")
@@ -44,30 +45,45 @@ public class UserController implements SwaggerUserController {
       @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
       @RequestPart(value = "profile", required = false) MultipartFile profile) throws IOException {
 
+    log.info("[POST /api/users] 요청 수신 - userCreateRequest={}, profileFileName={}, profileSize={}",
+        userCreateRequest,
+        profile != null ? profile.getOriginalFilename() : "없음",
+        profile != null ? profile.getSize() : 0);
+
     userCreateRequest.setProfileImage(profile);
     UserDto createdUser = userService.createUser(userCreateRequest);
 
+    log.info("[POST /api/users] 생성 완료 - createdUserId={}", createdUser.id());
     return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
   }
 
   @DeleteMapping("/{userId}")
   public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
-    userService.findUserDtoByUserId(userId); // 존재하지 않으면 내부에서 예외 발생
+    log.info("[DELETE /api/users/{}] 요청 수신", userId);
+    userService.findUserDtoByUserId(userId);
     userService.deleteUser(userId);
-    return ResponseEntity.noContent().build(); // 204 No Content
+    log.info("[DELETE /api/users/{}] 삭제 완료", userId);
+    return ResponseEntity.noContent().build();
   }
 
   @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> updateUser(
       @PathVariable UUID userId,
       @RequestPart("userUpdateRequest") @Valid UserUpdateRequest userUpdateRequest,
-      @RequestPart(value = "profile", required = false) MultipartFile profileImage)
-      throws IOException {
+      @RequestPart(value = "profile", required = false) MultipartFile profileImage) throws IOException {
+
+    log.info("[PATCH /api/users/{}] 요청 수신 - userUpdateRequest={}, profileFileName={}, profileSize={}",
+        userId,
+        userUpdateRequest,
+        profileImage != null ? profileImage.getOriginalFilename() : "없음",
+        profileImage != null ? profileImage.getSize() : 0);
 
     userUpdateRequest.setUserId(userId);
-
     BinaryContent profileImg = BinaryContentMapper.attachmentToBinaryContent(profileImage);
-    UserDto updatedUser = userService.updateUser(userUpdateRequest, profileImg, profileImage.getBytes());
+    UserDto updatedUser = userService.updateUser(userUpdateRequest, profileImg,
+        profileImage != null ? profileImage.getBytes() : null);
+
+    log.info("[PATCH /api/users/{}] 수정 완료", userId);
     return ResponseEntity.ok(updatedUser);
   }
 
@@ -75,9 +91,7 @@ public class UserController implements SwaggerUserController {
   public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
       @PathVariable UUID userId,
       @RequestBody UserStatusUpdateRequest request) {
-    UserStatusDto updatedStatus = userStatusService.updateUserStatus(userId,
-        request.getNewLastActiveAt());
-
+    UserStatusDto updatedStatus = userStatusService.updateUserStatus(userId, request.getNewLastActiveAt());
     return ResponseEntity.ok(updatedStatus);
   }
 

@@ -13,6 +13,7 @@ import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.service.ReadStatusService;
 import com.codeit.discodeit.service.UserService;
 import com.codeit.discodeit.service.UserStatusService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 @Transactional
@@ -39,6 +41,8 @@ public class BasicUserService implements UserService {
   @Override
   @Transactional
   public UserDto createUser(UserCreateRequest userCreateRequest) throws IOException {
+    log.info("[createUser] 사용자 생성 요청: username={}, email={}",
+        userCreateRequest.getUsername(), userCreateRequest.getEmail());
 
     validateUserNameNotDuplicated(userCreateRequest.getUsername());
     validateUserEmailNotDuplicated(userCreateRequest.getEmail());
@@ -46,12 +50,15 @@ public class BasicUserService implements UserService {
     byte[] profileImgBytes;
     MultipartFile profile = userCreateRequest.getProfileImage();
     if (profile == null || profile.isEmpty()) {
-      profileImgBytes = BinaryContentMapper.getBasicProfileBytes(); // 기본 이미지
+      log.info("[createUser] 프로필 이미지 없음 → 기본 이미지 적용");
+      profileImgBytes = BinaryContentMapper.getBasicProfileBytes();
     } else {
+      log.info("[createUser] 프로필 이미지 업로드됨: name={}, size={}",
+          profile.getOriginalFilename(), profile.getSize());
       profileImgBytes = profile.getBytes();
     }
-    User user = userMapper.toUser(userCreateRequest);
 
+    User user = userMapper.toUser(userCreateRequest);
     userRepository.createUser(user);
     binaryContentService.createByteFile(user.getProfile(), profileImgBytes);
 
@@ -59,38 +66,51 @@ public class BasicUserService implements UserService {
     user.setStatus(userStatus);
     userStatusRepository.createUserStatus(userStatus);
 
-    // 신규 유저 생성시 공용 채널의 readStatus 자동으로 추가
+    // 공용 채널 readStatus 추가
     List<Channel> channels = channelRepository.findAllPublicChannel();
+    log.info("[createUser] 공용 채널 {}개에 readStatus 등록", channels.size());
     for (Channel channel : channels) {
       readStatusService.createReadStatus(user, channel);
     }
 
-    return userMapper.toUserDto(user);
+    UserDto result = userMapper.toUserDto(user);
+    log.info("[createUser] 사용자 생성 완료: userId={}", result.id());
+    return result;
   }
 
   @Override
   @Transactional
-  public UserDto updateUser(UserUpdateRequest userUpdateRequest, BinaryContent newProfileImage, byte[] profileImgBytes) {
+  public UserDto updateUser(UserUpdateRequest userUpdateRequest,
+      BinaryContent newProfileImage,
+      byte[] profileImgBytes) {
+    log.info("[updateUser] 사용자 수정 요청: userId={}", userUpdateRequest.getUserId());
+
     User targetUser = findUserByUserId(userUpdateRequest.getUserId());
 
-    // 사용자 기본 정보 수정
-    if (userUpdateRequest.getNewEmail() != null && !userUpdateRequest.getNewEmail()
-        .equals(targetUser.getEmail())) {
+    // 이메일 변경
+    if (userUpdateRequest.getNewEmail() != null &&
+        !userUpdateRequest.getNewEmail().equals(targetUser.getEmail())) {
+      log.info("[updateUser] 이메일 변경: {} → {}", targetUser.getEmail(), userUpdateRequest.getNewEmail());
       validateUserEmailNotDuplicated(userUpdateRequest.getNewEmail());
       targetUser.setEmail(userUpdateRequest.getNewEmail());
     }
 
-    if (userUpdateRequest.getNewUsername() != null && !userUpdateRequest.getNewUsername()
-        .equals(targetUser.getUsername())) {
+    // 사용자명 변경
+    if (userUpdateRequest.getNewUsername() != null &&
+        !userUpdateRequest.getNewUsername().equals(targetUser.getUsername())) {
+      log.info("[updateUser] 사용자명 변경: {} → {}", targetUser.getUsername(), userUpdateRequest.getNewUsername());
       validateUserNameNotDuplicated(userUpdateRequest.getNewUsername());
       targetUser.setUsername(userUpdateRequest.getNewUsername());
     }
 
-    if (userUpdateRequest.getNewPassword() != null && !userUpdateRequest.getNewPassword()
-        .equals(targetUser.getPassword())) {
+    // 비밀번호 변경
+    if (userUpdateRequest.getNewPassword() != null &&
+        !userUpdateRequest.getNewPassword().equals(targetUser.getPassword())) {
+      log.info("[updateUser] 비밀번호 변경");
       targetUser.setPassword(userUpdateRequest.getNewPassword());
     }
 
+    // 프로필 이미지 변경
     if (newProfileImage != null) {
       BinaryContent oldProfileImg = targetUser.getProfile();
 
@@ -100,20 +120,30 @@ public class BasicUserService implements UserService {
           && oldProfileImg.getFileName().equals(newProfileImage.getFileName());
 
       if (!isSameImage) {
+        log.info("[updateUser] 프로필 이미지 변경됨: {} → {}",
+            oldProfileImg != null ? oldProfileImg.getFileName() : "기본 이미지",
+            newProfileImage.getFileName());
         targetUser.setProfile(newProfileImage);
         userRepository.updateUser(targetUser);
         binaryContentService.createByteFile(targetUser.getProfile(), profileImgBytes);
+      } else {
+        log.info("[updateUser] 동일한 프로필 이미지 → 변경 생략");
       }
     }
+
     userRepository.updateUser(targetUser);
-    return userMapper.toUserDto(targetUser);
+    UserDto result = userMapper.toUserDto(targetUser);
+    log.info("[updateUser] 사용자 수정 완료: userId={}", result.id());
+    return result;
   }
 
   @Override
   @Transactional
   public void deleteUser(UUID userId) {
+    log.info("[deleteUser] 사용자 삭제 요청: userId={}", userId);
     User user = findUserByUserId(userId);
     userRepository.deleteUser(user);
+    log.info("[deleteUser] 사용자 삭제 완료: userId={}", userId);
   }
 
   @Override
@@ -144,14 +174,20 @@ public class BasicUserService implements UserService {
   }
 
   private void validateUserNameNotDuplicated(String userName) {
+    log.info("Validating duplicate username: {}", userName);
     if (userRepository.findUserByUserName(userName).isPresent()) {
+      log.debug("Duplicate username detected: {}", userName);
       throw new BusinessException(ErrorCode.DUPLICATE_USER);
     }
+    log.info("Username is available: {}", userName);
   }
 
   private void validateUserEmailNotDuplicated(String userEmail) {
-    if (userRepository.findUserByUserName(userEmail).isPresent()) {
+    log.info("Validating duplicate email: {}", userEmail);
+    if (userRepository.findUserByEmail(userEmail).isPresent()) {
+      log.debug("Duplicate email detected: {}", userEmail);
       throw new BusinessException(ErrorCode.DUPLICATE_USER);
     }
+    log.info("Email is available: {}", userEmail);
   }
 }

@@ -25,10 +25,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class BasicMessageService implements MessageService {
@@ -36,52 +38,72 @@ public class BasicMessageService implements MessageService {
   private final UserRepository userRepository;
   private final ChannelRepository channelRepository;
   private final MessageRepository messageRepository;
-  private final BinaryContentService binaryContentService;
+
   private final MessageMapper messageMapper;
+
   private final UserService userService;
   private final ChannelService channelService;
+  private final BinaryContentService binaryContentService;
 
   @Override
   @Transactional
   public MessageDto createMessage(MessageCreateRequest messageCreateRequest, List<MultipartFile> attachmentsList) throws IOException {
+    log.info("[createMessage] 메시지 생성 요청: authorId={}, channelId={}, attachmentsCount={}",
+        messageCreateRequest.getAuthorId(),
+        messageCreateRequest.getChannelId(),
+        attachmentsList != null ? attachmentsList.size() : 0);
 
     User user = userService.findUserByUserId(messageCreateRequest.getAuthorId());
     Channel channel = channelService.findChannelByChannelId(messageCreateRequest.getChannelId());
     List<BinaryContent> binaryContentList = new ArrayList<>();
 
-    for (MultipartFile multipartFile : attachmentsList) {
-      binaryContentList.add(BinaryContentMapper.attachmentToBinaryContent(multipartFile));
+    if (attachmentsList != null) {
+      for (MultipartFile multipartFile : attachmentsList) {
+        BinaryContent binaryContent = BinaryContentMapper.attachmentToBinaryContent(multipartFile);
+        binaryContentList.add(binaryContent);
+        log.info("[createMessage] 첨부파일 처리: name={}, size={}",
+            multipartFile.getOriginalFilename(), multipartFile.getSize());
+      }
     }
 
     Message message = messageMapper.toMessage(messageCreateRequest.getContent(), user, channel, binaryContentList);
     messageRepository.createMessage(message);
 
     if (message.getAttachments() != null) {
-      for (int i = 0 ; i < message.getAttachments().size(); i++) {
+      for (int i = 0; i < message.getAttachments().size(); i++) {
         BinaryContent binaryContent = message.getAttachments().get(i);
-        binaryContentService.createByteFile(binaryContent, attachmentsList.get(i).getBytes());
-        // 데이터를 바이트 파일로 저장
+        byte[] bytes = attachmentsList.get(i).getBytes();
+        binaryContentService.createByteFile(binaryContent, bytes);
+        log.info("[createMessage] 바이트 파일 저장: attachmentName={}, size={}",
+            binaryContent.getFileName(), bytes.length);
       }
     }
 
-    return messageMapper.toMessageDto(message);
+    MessageDto result = messageMapper.toMessageDto(message);
+    log.info("[createMessage] 메시지 생성 완료: messageId={}", result.id());
+    return result;
   }
 
   @Override
   @Transactional
   public void deleteMessage(DeleteMessageRequestDto deleteMessageRequestDTO) {
+    log.info("[deleteMessage] 삭제 요청: messageId={}", deleteMessageRequestDTO.getMessageId());
     Message message = findMessageByMessageId(deleteMessageRequestDTO.getMessageId());
     messageRepository.deleteMessage(message);
+    log.info("[deleteMessage] 메시지 삭제 완료: messageId={}", deleteMessageRequestDTO.getMessageId());
   }
 
   @Override
   @Transactional
   public MessageDto updateMessage(UUID messageId, MessageUpdateRequest messageUpdateRequest) {
+    log.info("[updateMessage] 수정 요청: messageId={}, newContent={}", messageId, messageUpdateRequest.getNewContent());
     Message message = findMessageByMessageId(messageId);
     message.setContent(messageUpdateRequest.getNewContent());
 
     messageRepository.updateMessage(message);
-    return messageMapper.toMessageDto(message);
+    MessageDto result = messageMapper.toMessageDto(message);
+    log.info("[updateMessage] 메시지 수정 완료: messageId={}", messageId);
+    return result;
   }
 
   @Override
@@ -114,16 +136,5 @@ public class BasicMessageService implements MessageService {
     return messageRepository.findMessageByMessageId(messageId)
         .orElseThrow(
             () -> new BusinessException(ErrorCode.NO_FIND_MESSAGE));
-  }
-
-  private void findChannelByChannelId(UUID channelId) {
-    channelRepository.findChannelByChannelId(channelId)
-        .orElseThrow(
-            () -> new BusinessException(ErrorCode.NO_FIND_CHANNEL));
-  }
-
-  private void findUserByUserId(UUID userId) {
-    userRepository.findUserByUserId(userId)
-        .orElseThrow(() -> new BusinessException(ErrorCode.NO_FIND_USER));
   }
 }

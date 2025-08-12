@@ -11,10 +11,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class BasicBinaryContentService implements BinaryContentService {
@@ -25,7 +27,9 @@ public class BasicBinaryContentService implements BinaryContentService {
   @Override
   @Transactional
   public void createByteFile(BinaryContent binaryContent, byte[] bytes) {
+    log.info("[createByteFile] 파일 저장 시작: binaryContentId={}, size={}", binaryContent.getId(), bytes.length);
     binaryContentStorage.put(binaryContent.getId(), bytes);
+    log.info("[createByteFile] 파일 저장 완료: binaryContentId={}", binaryContent.getId());
   }
 
   @Override
@@ -48,6 +52,12 @@ public class BasicBinaryContentService implements BinaryContentService {
   @Override
   @Transactional(readOnly = true)
   public ResponseEntity<?> download(BinaryContentDto binaryContentDto) {
-    return binaryContentStorage.download(binaryContentDto);
+    log.info("[download] 다운로드 시작: binaryContentId={}, fileName={}",
+        binaryContentDto.id(), binaryContentDto.fileName());
+
+    ResponseEntity<?> response = binaryContentStorage.download(binaryContentDto);
+
+    log.info("[download] 다운로드 완료: binaryContentId={}", binaryContentDto.id());
+    return response;
   }
 }

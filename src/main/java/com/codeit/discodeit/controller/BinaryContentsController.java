@@ -8,11 +8,13 @@ import com.codeit.discodeit.swagger.SwaggerBinaryContentController;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "BinaryContent", description = "첨부파일 API")
@@ -47,9 +49,15 @@ public class BinaryContentsController implements SwaggerBinaryContentController 
 
   @GetMapping("/{binaryContentId}/download")
   public ResponseEntity<?> download(@PathVariable UUID binaryContentId) {
+    log.info("[GET /{binaryContentId}/download] 다운로드 요청 수신: binaryContentId={}", binaryContentId);
+
     BinaryContent binaryContent = binaryContentService.findBinaryContentByBinaryContentId(binaryContentId);
     BinaryContentDto binaryContentDto = binaryContentMapper.toBinaryContentDto(binaryContent);
 
-    return binaryContentService.download(binaryContentDto);
+    ResponseEntity<?> response = binaryContentService.download(binaryContentDto);
+
+    log.info("[GET /{binaryContentId}/download] 다운로드 처리 완료: binaryContentId={}", binaryContentId);
+    return response;
   }
+
 }

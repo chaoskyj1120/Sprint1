@@ -16,9 +16,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class BasicChannelService implements ChannelService {
@@ -33,6 +35,7 @@ public class BasicChannelService implements ChannelService {
   @Override
   @Transactional
   public ChannelDto createPublicChannel(CreatePublicChannelRequestDto createPublicChannelRequestDto) {
+    log.info("[createPublicChannel] 요청 수신: {}", createPublicChannelRequestDto);
 
     Channel channel = channelMapper.toPublicChannel(createPublicChannelRequestDto);
 
@@ -41,43 +44,60 @@ public class BasicChannelService implements ChannelService {
 
     List<User> users = userRepository.loadUsers();
     for (User user : users) {
-      readStatusService.createReadStatus(user,channel);
+      readStatusService.createReadStatus(user, channel);
     }
 
-    return toChannelDto(channel);
+    ChannelDto result = toChannelDto(channel);
+    log.info("[createPublicChannel] 채널 생성 완료: channelId={}", result.getId());
+    return result;
   }
 
   @Override
   @Transactional
   public ChannelDto createPrivateChannel(List<UUID> userIdList) {
+    log.info("[createPrivateChannel] 요청 수신: userIds={}", userIdList);
+
     Channel channel = channelMapper.toPrivateChannel();
     channelRepository.createChannel(channel);
-    List<User> userList = userRepository.findUserListByUserIdList(userIdList);
 
+    List<User> userList = userRepository.findUserListByUserIdList(userIdList);
     for (User user : userList) {
-      readStatusService.createReadStatus(user,channel);
+      readStatusService.createReadStatus(user, channel);
     }
 
-    return toChannelDto(channel);
+    ChannelDto result = toChannelDto(channel);
+    log.info("[createPrivateChannel] 채널 생성 완료: channelId={}", result.getId());
+    return result;
   }
 
   @Override
   @Transactional
   public void deleteChannel(UUID channelId) {
+    log.info("[deleteChannel] 요청 수신: channelId={}", channelId);
     Optional<Channel> channel = channelRepository.findChannelByChannelId(channelId);
-    channel.ifPresent(channelRepository::deleteChannel);
+    if (channel.isPresent()) {
+      channelRepository.deleteChannel(channel.get());
+      log.info("[deleteChannel] 채널 삭제 완료: channelId={}", channelId);
+    } else {
+      log.debug("[deleteChannel] 삭제 실패 - 채널을 찾을 수 없음: channelId={}", channelId);
+    }
   }
 
   @Override
   @Transactional
-  public ChannelDto updatePublicChannel(UUID channelId,
-      PublicChannelUpdateRequest publicChannelUpdateRequest) {
+  public ChannelDto updatePublicChannel(UUID channelId, PublicChannelUpdateRequest publicChannelUpdateRequest) {
+    log.info("[updatePublicChannel] 요청 수신: channelId={}, newName={}, newDescription={}",
+        channelId, publicChannelUpdateRequest.getNewName(), publicChannelUpdateRequest.getNewDescription());
+
     Channel channel = findChannelByChannelId(channelId);
     channel.setName(publicChannelUpdateRequest.getNewName());
     channel.setDescription(publicChannelUpdateRequest.getNewDescription());
 
     channelRepository.updateChannel(channel);
-    return toChannelDto(channel);
+
+    ChannelDto result = toChannelDto(channel);
+    log.info("[updatePublicChannel] 채널 수정 완료: channelId={}", result.getId());
+    return result;
   }
 
   @Override
@@ -96,10 +116,13 @@ public class BasicChannelService implements ChannelService {
   }
 
   private void validateChannelName(String channelName) {
+    log.info("Validating duplicate channel name: {}", channelName);
     Optional<Channel> channel = channelRepository.findChannelByChannelName(channelName);
     if (channel.isPresent()) {
+      log.debug("Duplicate channel name detected, throwing BusinessException: {}", channelName);
       throw new BusinessException(ErrorCode.DUPLICATE_CHANNEL);
     }
+    log.info("Channel name is available: {}", channelName);
   }
 
   private Optional<Message> findLastMessageInChannel(UUID channelId){

@@ -53,7 +53,7 @@ public class BasicUserService implements UserService {
       log.info("[createUser] 프로필 이미지 없음 → 기본 이미지 적용");
       profileImgBytes = BinaryContentMapper.getBasicProfileBytes();
     } else {
-      log.info("[createUser] 프로필 이미지 업로드됨: name={}, size={}",
+      log.info("[createUser] 프로필 이미지 업로드됨: fileName={}, size={}",
           profile.getOriginalFilename(), profile.getSize());
       profileImgBytes = profile.getBytes();
     }
@@ -174,20 +174,20 @@ public class BasicUserService implements UserService {
   }
 
   private void validateUserNameNotDuplicated(String userName) {
-    log.info("Validating duplicate username: {}", userName);
+    log.info("[validateUserNameNotDuplicated] 유저 네임 중복 확인 시작: userName={}", userName);
     if (userRepository.findUserByUserName(userName).isPresent()) {
-      log.debug("Duplicate username detected: {}", userName);
+      log.debug("[validateUserNameNotDuplicated] 유저 네임 중복이 발견: userName={}", userName);
       throw new BusinessException(ErrorCode.DUPLICATE_USER);
     }
-    log.info("Username is available: {}", userName);
+    log.info("[validateUserNameNotDuplicated] 유저 네임 중복 확인 종료: userName={}", userName);
   }
 
   private void validateUserEmailNotDuplicated(String userEmail) {
-    log.info("Validating duplicate email: {}", userEmail);
+    log.info("[validateUserEmailNotDuplicated] 유저 이메일 중복 확인 시작: userEmail={}", userEmail);
     if (userRepository.findUserByEmail(userEmail).isPresent()) {
-      log.debug("Duplicate email detected: {}", userEmail);
+      log.debug("[validateUserEmailNotDuplicated] 유저 이메일 중복이 발견: userEmail={}", userEmail);
       throw new BusinessException(ErrorCode.DUPLICATE_USER);
     }
-    log.info("Email is available: {}", userEmail);
+    log.info("[validateUserEmailNotDuplicated] 유저 이메일 중복 확인 종료: userEmail={}", userEmail);
   }
 }

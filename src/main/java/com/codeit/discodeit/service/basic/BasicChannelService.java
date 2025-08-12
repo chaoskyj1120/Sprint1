@@ -35,11 +35,11 @@ public class BasicChannelService implements ChannelService {
   @Override
   @Transactional
   public ChannelDto createPublicChannel(CreatePublicChannelRequestDto createPublicChannelRequestDto) {
-    log.info("[createPublicChannel] 요청 수신: {}", createPublicChannelRequestDto);
+    log.info("[createPublicChannel] 요청 수신");
 
     Channel channel = channelMapper.toPublicChannel(createPublicChannelRequestDto);
 
-    validateChannelName(channel.getName());
+    validateChannelNameDuplicated(channel.getName());
     channelRepository.createChannel(channel);
 
     List<User> users = userRepository.loadUsers();
@@ -115,14 +115,14 @@ public class BasicChannelService implements ChannelService {
         .orElseThrow(() -> new BusinessException(ErrorCode.NO_FIND_CHANNEL));
   }
 
-  private void validateChannelName(String channelName) {
-    log.info("Validating duplicate channel name: {}", channelName);
+  private void validateChannelNameDuplicated(String channelName) {
+    log.info("[validateChannelNameDuplicated] 채널 이름 중복 확인 시작: channelName={}", channelName);
     Optional<Channel> channel = channelRepository.findChannelByChannelName(channelName);
     if (channel.isPresent()) {
-      log.debug("Duplicate channel name detected, throwing BusinessException: {}", channelName);
+      log.debug("[validateChannelNameDuplicated] 채널 이름 중복 발견: channelName={}", channelName);
       throw new BusinessException(ErrorCode.DUPLICATE_CHANNEL);
     }
-    log.info("Channel name is available: {}", channelName);
+    log.info("[validateChannelNameDuplicated] 채널 이름 중복 확인 종료: channelName={}", channelName);
   }
 
   private Optional<Message> findLastMessageInChannel(UUID channelId){

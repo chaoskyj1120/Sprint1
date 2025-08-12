@@ -61,7 +61,7 @@ public class BasicMessageService implements MessageService {
       for (MultipartFile multipartFile : attachmentsList) {
         BinaryContent binaryContent = BinaryContentMapper.attachmentToBinaryContent(multipartFile);
         binaryContentList.add(binaryContent);
-        log.info("[createMessage] 첨부파일 처리: name={}, size={}",
+        log.info("[createMessage] 첨부파일 처리: fileName={}, size={}",
             multipartFile.getOriginalFilename(), multipartFile.getSize());
       }
     }

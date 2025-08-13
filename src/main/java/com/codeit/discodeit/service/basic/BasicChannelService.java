@@ -28,9 +28,9 @@ public class BasicChannelService implements ChannelService {
 
   private final ChannelRepository channelRepository;
   private final UserRepository userRepository;
+  private final MessageRepository messageRepository;
   private final ReadStatusService readStatusService;
   private final ChannelMapper channelMapper;
-  private final MessageRepository messageRepository;
   private final UserMapper userMapper;
 
   @Override

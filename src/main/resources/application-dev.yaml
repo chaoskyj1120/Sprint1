@@ -5,10 +5,48 @@ spring:
     password: discodeit1234
     driver-class-name: org.postgresql.Driver
 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
 server:
   port: 8080
 
 logging:
   level:
     root: debug
-    com.something.discodeit: debug  # 우리 프로젝트 로그
+    com.something.discodeit: debug
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, loggers
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Discodeit
+    version: 1.7.0
+    java:
+      version: 17
+    spring:
+      boot:
+        version: 3.4.0
+
+storage:
+  type: local
+  path: /data/files
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html

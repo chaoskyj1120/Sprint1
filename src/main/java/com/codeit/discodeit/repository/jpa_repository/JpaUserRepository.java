@@ -19,13 +19,15 @@ public class JpaUserRepository implements UserRepository {
   private EntityManager em;
 
   @Override
-  public void createUser(User user){
+  public User createUser(User user){
     em.persist(user);
+    return user;
   }
 
   @Override
-  public void updateUser(User user){
+  public User updateUser(User user){
     em.merge(user);
+    return user;
   }
 
   @Override

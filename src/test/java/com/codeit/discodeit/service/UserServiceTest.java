@@ -22,42 +22,35 @@ import java.util.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
 
+  @Mock
   private UserRepository mockUserRepository;
+
+  @Mock
   private ChannelRepository mockChannelRepository;
+
+  @Mock
   private UserStatusRepository mockUserStatusRepository;
 
-  private ReadStatusService readStatusService;
+  @Mock
   private UserStatusService userStatusService;
+
+  @Mock
   private BinaryContentService binaryContentService;
+
+  @Mock
   private UserMapper userMapper;
 
+  @InjectMocks
   private BasicUserService userService;
-
-  @BeforeEach
-  void setUp() {
-    mockUserRepository = mock(UserRepository.class);
-    mockChannelRepository = mock(ChannelRepository.class);
-    mockUserStatusRepository = mock(UserStatusRepository.class);
-
-    readStatusService = mock(ReadStatusService.class);
-    userStatusService = mock(UserStatusService.class);
-    binaryContentService = mock(BinaryContentService.class);
-    userMapper = mock(UserMapper.class);
-
-    userService = new BasicUserService(
-        mockUserRepository,
-        mockChannelRepository,
-        readStatusService,
-        userStatusService,
-        binaryContentService,
-        mockUserStatusRepository,
-        userMapper
-    );
-  }
 
   @Test
   void 유저_생성_성공_테스트() throws IOException {

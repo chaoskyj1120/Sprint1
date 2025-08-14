@@ -12,6 +12,7 @@ import com.codeit.discodeit.entity.ReadStatus;
 import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.exception.channel.ChannelNameDuplicateException;
 import com.codeit.discodeit.exception.channel.ChannelNotFoundException;
+import com.codeit.discodeit.exception.channel.NoParticipantsChannelException;
 import com.codeit.discodeit.exception.user.UserNotFoundException;
 import com.codeit.discodeit.mapper.ChannelMapper;
 import com.codeit.discodeit.mapper.UserMapper;
@@ -24,40 +25,37 @@ import com.codeit.discodeit.service.basic.BasicChannelService;
 import java.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class ChannelServiceTest {
 
+  @Mock
   private UserRepository mockUserRepository;
+
+  @Mock
   private ChannelRepository mockChannelRepository;
+
+  @Mock
   private MessageRepository mockMessageRepository;
 
+  @Mock
   private ReadStatusService readStatusService;
+
+  @Mock
   private ChannelMapper channelMapper;
+
+  @Mock
   private UserMapper userMapper;
 
+  @InjectMocks
   private BasicChannelService channelService;
 
-  @BeforeEach
-  void setUp() {
-    mockUserRepository = mock(UserRepository.class);
-    mockChannelRepository = mock(ChannelRepository.class);
-    mockMessageRepository = mock(MessageRepository.class);
-
-    readStatusService = mock(ReadStatusService.class);
-    channelMapper = mock(ChannelMapper.class);
-    userMapper = mock(UserMapper.class);
-
-    channelService = new BasicChannelService(
-        mockChannelRepository,
-        mockUserRepository,
-        mockMessageRepository,
-        readStatusService,
-        channelMapper,
-        userMapper
-    );
-  }
 
   @Test
   void 공용_채널_생성_성공_테스트() {
@@ -129,21 +127,11 @@ public class ChannelServiceTest {
     // given
     List<UUID> userIdList = List.of();
 
-    Channel mockChannel = new Channel();
-    mockChannel.setId(UUID.randomUUID());
-    mockChannel.setType(ChannelType.PRIVATE);
-
-    ChannelDto mockDto = new ChannelDto();
-    mockDto.setId(UUID.randomUUID());
-
-    given(channelMapper.toPrivateChannel()).willReturn(mockChannel);
-    given(channelMapper.toChannelDto(any(Channel.class), any(), any(), eq(userMapper))).willReturn(mockDto);
-
     // when
-    ChannelDto result = channelService.createPrivateChannel(userIdList);
+    Executable action = () -> channelService.createPrivateChannel(userIdList);
 
     // then
-    then(mockChannelRepository).should(never()).createChannel(any());
+    assertThrows(NoParticipantsChannelException.class, action);
   }
 
   @Test

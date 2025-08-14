@@ -4,6 +4,7 @@ import com.codeit.discodeit.dto.channel_service_dto.*;
 import com.codeit.discodeit.entity.*;
 import com.codeit.discodeit.exception.channel.ChannelNameDuplicateException;
 import com.codeit.discodeit.exception.channel.ChannelNotFoundException;
+import com.codeit.discodeit.exception.channel.NoParticipantsChannelException;
 import com.codeit.discodeit.exception.user.UserNotFoundException;
 import com.codeit.discodeit.mapper.ChannelMapper;
 import com.codeit.discodeit.mapper.UserMapper;
@@ -61,7 +62,8 @@ public class BasicChannelService implements ChannelService {
 
     if (userIdList == null || userIdList.isEmpty()) {
       log.info("[createPrivateChannel] 참여 유저가 없어서 채널 생성 실패: userIds={}", userIdList);
-      return null;
+      Map<String, Object> details = Map.of("이유", "참여 유저 없음");
+      throw new NoParticipantsChannelException(details);
     }
 
     Channel channel = channelMapper.toPrivateChannel();

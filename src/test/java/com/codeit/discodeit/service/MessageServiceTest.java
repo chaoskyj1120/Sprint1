@@ -25,43 +25,36 @@ import java.util.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
+@ExtendWith(MockitoExtension.class)
 public class MessageServiceTest {
 
-  private MessageService messageService;
+  @Mock
   private MessageRepository mockMessageRepository;
+
+  @Mock
   private ChannelRepository mockChannelRepository;
 
+  @Mock
   private MessageMapper messageMapper;
+
+  @Mock
   private UserService userService;
+
+  @Mock
   private ChannelService channelService;
+
+  @Mock
   private BinaryContentService binaryContentService;
 
-  @BeforeEach
-  void setUp() {
-    // Mock Repository 생성
-    mockMessageRepository = mock(MessageRepository.class);
-    mockChannelRepository = mock(ChannelRepository.class);
-
-    // Mock Service 생성
-    userService = mock(UserService.class);
-    channelService = mock(ChannelService.class);
-    binaryContentService = mock(BinaryContentService.class);
-
-    messageMapper = mock(MessageMapper.class);
-
-    // 테스트 대상 서비스 생성
-    messageService = new BasicMessageService(
-        mockMessageRepository,
-        mockChannelRepository,
-        messageMapper,
-        userService,
-        channelService,
-        binaryContentService
-    );
-  }
+  @InjectMocks
+  private BasicMessageService messageService;
 
   @Test
   void 메시지_생성_성공_테스트() throws Exception {
@@ -249,18 +242,22 @@ public class MessageServiceTest {
       msg.setContent("Message " + i);
       msg.setChannel(channel);
       messages.add(msg);
-
-      MessageDto dto = new MessageDto(
-          msg.getId(),
-          msg.getCreatedAt(),
-          msg.getUpdatedAt(),
-          msg.getContent(),
-          msg.getChannel().getId(),
-          null,
-          null
-      );
-      given(messageMapper.toMessageDto(msg)).willReturn(dto);
     }
+
+    // messageMapper의 스텁은 한 번만 설정
+    given(messageMapper.toMessageDto(any(Message.class)))
+        .willAnswer(invocation -> {
+          Message m = invocation.getArgument(0);
+          return new MessageDto(
+              m.getId(),
+              m.getCreatedAt(),
+              m.getUpdatedAt(),
+              m.getContent(),
+              m.getChannel().getId(),
+              null,
+              null
+          );
+        });
 
     given(mockMessageRepository.findMessagesByChannelId(channelId))
         .willReturn(messages);
@@ -276,13 +273,14 @@ public class MessageServiceTest {
     assertEquals(3, response.getContent().size());
     assertEquals(0, response.getNumber());
     assertEquals(3, response.getSize());
-    assertEquals(true, response.isHasNext());
+    assertTrue(response.isHasNext());
     assertEquals(5L, response.getTotalElements());
 
     then(mockChannelRepository).should().findChannelByChannelId(channelId);
     then(mockMessageRepository).should().findMessagesByChannelId(channelId);
     messages.subList(0, 3).forEach(msg -> then(messageMapper).should().toMessageDto(msg));
   }
+
 
   @Test
   void 채널별_메시지_조회_실패_테스트() {

@@ -4,6 +4,7 @@ import com.codeit.discodeit.dto.channel_service_dto.*;
 import com.codeit.discodeit.entity.*;
 import com.codeit.discodeit.exception.channel.ChannelNameDuplicateException;
 import com.codeit.discodeit.exception.channel.ChannelNotFoundException;
+import com.codeit.discodeit.exception.user.UserNotFoundException;
 import com.codeit.discodeit.mapper.ChannelMapper;
 import com.codeit.discodeit.mapper.UserMapper;
 import com.codeit.discodeit.repository.ChannelRepository;
@@ -38,9 +39,9 @@ public class BasicChannelService implements ChannelService {
   public ChannelDto createPublicChannel(CreatePublicChannelRequestDto createPublicChannelRequestDto) {
     log.info("[createPublicChannel] 요청 수신");
 
-    Channel channel = channelMapper.toPublicChannel(createPublicChannelRequestDto);
+    validateChannelNameDuplicated(createPublicChannelRequestDto.getName());
 
-    validateChannelNameDuplicated(channel.getName());
+    Channel channel = channelMapper.toPublicChannel(createPublicChannelRequestDto);
     channelRepository.createChannel(channel);
 
     List<User> users = userRepository.loadUsers();
@@ -57,6 +58,11 @@ public class BasicChannelService implements ChannelService {
   @Transactional
   public ChannelDto createPrivateChannel(List<UUID> userIdList) {
     log.info("[createPrivateChannel] 요청 수신: userIds={}", userIdList);
+
+    if (userIdList == null || userIdList.isEmpty()) {
+      log.info("[createPrivateChannel] 참여 유저가 없어서 채널 생성 실패: userIds={}", userIdList);
+      return null;
+    }
 
     Channel channel = channelMapper.toPrivateChannel();
     channelRepository.createChannel(channel);
@@ -81,6 +87,8 @@ public class BasicChannelService implements ChannelService {
       log.info("[deleteChannel] 채널 삭제 완료: channelId={}", channelId);
     } else {
       log.debug("[deleteChannel] 삭제 실패 - 채널을 찾을 수 없음: channelId={}", channelId);
+      Map<String, Object> details = Map.of("이유", "채널 없음");
+      throw new ChannelNotFoundException(details);
     }
   }
 
@@ -104,6 +112,11 @@ public class BasicChannelService implements ChannelService {
   @Override
   @Transactional(readOnly = true)
   public List<ChannelDto> findChannelListByUserId(UUID userId){
+    Optional<User> user = userRepository.findUserByUserId(userId);
+    if (user.isEmpty()) {
+      Map<String, Object> details = Map.of("이유", "유저 없음");
+      throw new UserNotFoundException(details);
+    }
     List<ReadStatus> readStatusList = readStatusService.findReadStatusesByUserId(userId);
     List<Channel> channelList = readStatusList.stream().map(ReadStatus::getChannel).toList();
     return channelList.stream().map(this::toChannelDto).collect(Collectors.toList());

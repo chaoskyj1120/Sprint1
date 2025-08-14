@@ -6,9 +6,11 @@ import com.codeit.discodeit.dto.message_service_dto.MessageUpdateRequest;
 import com.codeit.discodeit.dto.response.PageResponse;
 import com.codeit.discodeit.dto.response.Pageable;
 import com.codeit.discodeit.entity.*;
+import com.codeit.discodeit.exception.channel.ChannelNotFoundException;
 import com.codeit.discodeit.exception.message.MessageNotFoundException;
 import com.codeit.discodeit.mapper.BinaryContentMapper;
 import com.codeit.discodeit.mapper.MessageMapper;
+import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.MessageRepository;
 import com.codeit.discodeit.service.BinaryContentService;
 import com.codeit.discodeit.service.ChannelService;
@@ -33,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class BasicMessageService implements MessageService {
 
   private final MessageRepository messageRepository;
+  private final ChannelRepository channelRepository;
 
   private final MessageMapper messageMapper;
 
@@ -104,8 +107,11 @@ public class BasicMessageService implements MessageService {
   @Override
   @Transactional(readOnly = true)
   public PageResponse<MessageDto> findMessagesPerPage(UUID channelId, Pageable pageable) {
+    if (channelRepository.findChannelByChannelId(channelId).isEmpty()) {
+      Map<String, Object> details = Map.of("이유", "채널 없음");
+      throw new ChannelNotFoundException(details);
+    }
     List<Message> messageList = messageRepository.findMessagesByChannelId(channelId);
-
 
     int page = pageable.getPage();
     int size = pageable.getSize();

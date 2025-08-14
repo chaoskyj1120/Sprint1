@@ -15,9 +15,6 @@ import com.codeit.discodeit.mapper.UserMapper;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.UserRepository;
 import com.codeit.discodeit.repository.UserStatusRepository;
-import com.codeit.discodeit.service.BinaryContentService;
-import com.codeit.discodeit.service.ReadStatusService;
-import com.codeit.discodeit.service.UserStatusService;
 import com.codeit.discodeit.service.basic.BasicUserService;
 
 import java.io.IOException;

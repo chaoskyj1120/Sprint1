@@ -19,11 +19,7 @@ import com.codeit.discodeit.exception.user.UserNotFoundException;
 import com.codeit.discodeit.mapper.MessageMapper;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.MessageRepository;
-import com.codeit.discodeit.service.MessageService;
 import com.codeit.discodeit.service.basic.BasicMessageService;
-import com.codeit.discodeit.service.UserService;
-import com.codeit.discodeit.service.ChannelService;
-import com.codeit.discodeit.service.BinaryContentService;
 
 import java.util.*;
 

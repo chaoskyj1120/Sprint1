@@ -98,7 +98,7 @@ public class UserServiceTest {
   }
 
   @Test
-  void 유저네임이_중복될_때_유저_생성_실패_테스트() throws IOException {
+  void 유저네임이_중복될_때_유저_생성_실패_테스트(){
     // given
     UserCreateRequest request = new UserCreateRequest("kwon1", "pw1", "kown1@email.com", null);
     given(mockUserRepository.findUserByUserName("kwon1")).willReturn(Optional.of(new User()));
@@ -111,7 +111,7 @@ public class UserServiceTest {
   }
 
   @Test
-  void 이메일이_중복될_때_유저_생성_실패_테스트() throws IOException {
+  void 이메일이_중복될_때_유저_생성_실패_테스트(){
     // given
     UserCreateRequest request = new UserCreateRequest("kwon1", "pw1", "kwon1@email.com", null);
     given(mockUserRepository.findUserByEmail("kwon1@email.com")).willReturn(Optional.of(new User()));

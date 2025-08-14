@@ -4,20 +4,12 @@ import com.codeit.discodeit.entity.Message;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface MessageRepository {
+public interface MessageRepository extends JpaRepository<Message, UUID> {
 
-  void createMessage(Message message);
+  List<Message> findByChannelId(UUID channelId);
 
-  void deleteMessage(Message message);
-
-  void updateMessage(Message message);
-
-  Optional<Message> findMessageByMessageId(UUID id);
-
-  List<Message> findMessagesByChannelId(UUID channelId);
-
-  Optional<Message> findLastMessageInChannel(UUID channelId);
+  Optional<Message> findFirstByChannelIdOrderByCreatedAtDesc(UUID channelId);
 }

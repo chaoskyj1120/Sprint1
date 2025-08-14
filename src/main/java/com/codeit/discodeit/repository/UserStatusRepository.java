@@ -3,14 +3,9 @@ package com.codeit.discodeit.repository;
 import com.codeit.discodeit.entity.UserStatus;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UserStatusRepository {
-    void createUserStatus(UserStatus userStatus);
+public interface UserStatusRepository extends JpaRepository<UserStatus, UUID> {
 
-    void updateUserStatus(UserStatus userStatus);
-
-    Optional<UserStatus> findUserStatusByUserStatusId(UUID userStatusId);
-
-    Optional<UserStatus> findUserStatusByUserId (UUID userId);
-
+    Optional<UserStatus> findByUserId(UUID userId);
 }

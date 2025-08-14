@@ -19,17 +19,14 @@ import com.codeit.discodeit.mapper.UserMapper;
 import com.codeit.discodeit.repository.ChannelRepository;
 import com.codeit.discodeit.repository.MessageRepository;
 import com.codeit.discodeit.repository.UserRepository;
-import com.codeit.discodeit.service.ReadStatusService;
 import com.codeit.discodeit.service.basic.BasicChannelService;
 
 import java.util.*;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -75,14 +72,14 @@ public class ChannelServiceTest {
 
     given(channelMapper.toPublicChannel(any(CreatePublicChannelRequestDto.class))).willReturn(mockChannel);
     given(channelMapper.toChannelDto(any(Channel.class), any(), any(), eq(userMapper))).willReturn(mockDto);
-    given(mockUserRepository.loadUsers()).willReturn(List.of());
+    given(mockUserRepository.findAll()).willReturn(List.of());
 
     // when
     ChannelDto result = channelService.createPublicChannel(createDto);
 
     // then
-    then(mockChannelRepository).should().createChannel(mockChannel);
-    then(mockUserRepository).should().loadUsers();
+    then(mockChannelRepository).should().save(mockChannel);
+    then(mockUserRepository).should().findAll();
     then(readStatusService).should().findReadStatusesByChannelId(any());
   }
 
@@ -90,7 +87,7 @@ public class ChannelServiceTest {
   void 중복_이름_공용_채널_생성_실패_테스트() {
     // given
     CreatePublicChannelRequestDto createDto = new CreatePublicChannelRequestDto("testName", "testDescription");
-    given(mockChannelRepository.findChannelByChannelName(any())).willReturn(Optional.of(new Channel()));
+    given(mockChannelRepository.findByName(any())).willReturn(Optional.of(new Channel()));
 
     // when
     Executable action = () -> channelService.createPublicChannel(createDto);
@@ -118,7 +115,7 @@ public class ChannelServiceTest {
     ChannelDto result = channelService.createPrivateChannel(userIdList);
 
     // then
-    then(mockChannelRepository).should().createChannel(mockChannel);
+    then(mockChannelRepository).should().save(mockChannel);
     then(readStatusService).should().findReadStatusesByChannelId(any());
   }
 
@@ -146,7 +143,7 @@ public class ChannelServiceTest {
     mockChannel.setDescription("oldDescription");
     mockChannel.setType(ChannelType.PUBLIC);
 
-    given(mockChannelRepository.findChannelByChannelId(channelId)).willReturn(Optional.of(mockChannel));
+    given(mockChannelRepository.findById(channelId)).willReturn(Optional.of(mockChannel));
     given(channelMapper.toChannelDto(any(Channel.class), any(), any(), eq(userMapper)))
         .willAnswer(invocation -> {
           Channel c = invocation.getArgument(0);
@@ -163,7 +160,7 @@ public class ChannelServiceTest {
     // then
     assertEquals(updateRequest.getNewName(), result.getName());
     assertEquals(updateRequest.getNewDescription(), result.getDescription());
-    then(mockChannelRepository).should().updateChannel(mockChannel);
+    then(mockChannelRepository).should().save(mockChannel);
   }
 
   @Test
@@ -189,13 +186,13 @@ public class ChannelServiceTest {
     mockChannel.setDescription("oldDescription");
     mockChannel.setType(ChannelType.PUBLIC);
 
-    given(mockChannelRepository.findChannelByChannelId(channelId)).willReturn(Optional.of(mockChannel));
+    given(mockChannelRepository.findById(channelId)).willReturn(Optional.of(mockChannel));
 
     // when
     channelService.deleteChannel(channelId);
 
     // then
-    then(mockChannelRepository).should().deleteChannel(mockChannel);
+    then(mockChannelRepository).should().delete(mockChannel);
   }
 
   @Test
@@ -243,7 +240,7 @@ public class ChannelServiceTest {
               null               // lastMessageAt
           );
         });
-    given(mockUserRepository.findUserByUserId(userId)).willReturn(Optional.of(new User()));
+    given(mockUserRepository.findById(userId)).willReturn(Optional.of(new User()));
 
     // when
     List<ChannelDto> result = channelService.findChannelListByUserId(userId);
@@ -257,7 +254,7 @@ public class ChannelServiceTest {
   void 유저별_채널_검색_실패_테스트() {
     // given
     UUID userId = UUID.randomUUID();
-    given(mockUserRepository.findUserByUserId(userId)).willReturn(Optional.empty());
+    given(mockUserRepository.findById(userId)).willReturn(Optional.empty());
 
     // when
     Executable action = () -> channelService.findChannelListByUserId(userId);

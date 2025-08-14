@@ -43,9 +43,9 @@ public class BasicChannelService implements ChannelService {
     validateChannelNameDuplicated(createPublicChannelRequestDto.getName());
 
     Channel channel = channelMapper.toPublicChannel(createPublicChannelRequestDto);
-    channelRepository.createChannel(channel);
+    channelRepository.save(channel);
 
-    List<User> users = userRepository.loadUsers();
+    List<User> users = userRepository.findAll();
     for (User user : users) {
       readStatusService.createReadStatus(user, channel);
     }
@@ -67,9 +67,9 @@ public class BasicChannelService implements ChannelService {
     }
 
     Channel channel = channelMapper.toPrivateChannel();
-    channelRepository.createChannel(channel);
+    channelRepository.save(channel);
 
-    List<User> userList = userRepository.findUserListByUserIdList(userIdList);
+    List<User> userList = userRepository.findAllById(userIdList);
     for (User user : userList) {
       readStatusService.createReadStatus(user, channel);
     }
@@ -83,9 +83,9 @@ public class BasicChannelService implements ChannelService {
   @Transactional
   public void deleteChannel(UUID channelId) {
     log.info("[deleteChannel] 요청 수신: channelId={}", channelId);
-    Optional<Channel> channel = channelRepository.findChannelByChannelId(channelId);
+    Optional<Channel> channel = channelRepository.findById(channelId);
     if (channel.isPresent()) {
-      channelRepository.deleteChannel(channel.get());
+      channelRepository.delete(channel.get());
       log.info("[deleteChannel] 채널 삭제 완료: channelId={}", channelId);
     } else {
       log.debug("[deleteChannel] 삭제 실패 - 채널을 찾을 수 없음: channelId={}", channelId);
@@ -104,7 +104,7 @@ public class BasicChannelService implements ChannelService {
     channel.setName(publicChannelUpdateRequest.getNewName());
     channel.setDescription(publicChannelUpdateRequest.getNewDescription());
 
-    channelRepository.updateChannel(channel);
+    channelRepository.save(channel);
 
     ChannelDto result = toChannelDto(channel);
     log.info("[updatePublicChannel] 채널 수정 완료: channelId={}", result.getId());
@@ -114,7 +114,7 @@ public class BasicChannelService implements ChannelService {
   @Override
   @Transactional(readOnly = true)
   public List<ChannelDto> findChannelListByUserId(UUID userId){
-    Optional<User> user = userRepository.findUserByUserId(userId);
+    Optional<User> user = userRepository.findById(userId);
     if (user.isEmpty()) {
       Map<String, Object> details = Map.of("이유", "유저 없음");
       throw new UserNotFoundException(details);
@@ -127,7 +127,7 @@ public class BasicChannelService implements ChannelService {
   @Override
   @Transactional(readOnly = true)
   public Channel findChannelByChannelId(UUID channelId) {
-    return channelRepository.findChannelByChannelId(channelId)
+    return channelRepository.findById(channelId)
         .orElseThrow(() -> {
           Map<String, Object> details = Map.of("이유", "채널 없음");
           return new ChannelNotFoundException(details);
@@ -136,7 +136,7 @@ public class BasicChannelService implements ChannelService {
 
   private void validateChannelNameDuplicated(String channelName) {
     log.info("[validateChannelNameDuplicated] 채널 이름 중복 확인 시작: channelName={}", channelName);
-    Optional<Channel> channel = channelRepository.findChannelByChannelName(channelName);
+    Optional<Channel> channel = channelRepository.findByName(channelName);
     if (channel.isPresent()) {
       log.debug("[validateChannelNameDuplicated] 채널 이름 중복 발견: channelName={}", channelName);
       Map<String, Object> details = Map.of("이유", "채널 이름 중복");
@@ -146,7 +146,7 @@ public class BasicChannelService implements ChannelService {
   }
 
   private Optional<Message> findLastMessageInChannel(UUID channelId){
-    return messageRepository.findLastMessageInChannel(channelId);
+    return messageRepository.findFirstByChannelIdOrderByCreatedAtDesc(channelId);
   }
 
   private ChannelDto toChannelDto(Channel channel) {

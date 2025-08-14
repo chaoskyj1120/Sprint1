@@ -7,6 +7,7 @@ import com.codeit.discodeit.dto.user_service_dto.UserCreateRequest;
 import com.codeit.discodeit.dto.user_service_dto.UserDto;
 import com.codeit.discodeit.dto.user_service_dto.UserUpdateRequest;
 import com.codeit.discodeit.entity.BinaryContent;
+import com.codeit.discodeit.entity.ChannelType;
 import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.entity.UserStatus;
 import com.codeit.discodeit.exception.user.UserNameEmailDuplicateException;
@@ -20,7 +21,6 @@ import com.codeit.discodeit.service.basic.BasicUserService;
 import java.io.IOException;
 import java.util.*;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
@@ -74,19 +74,19 @@ public class UserServiceTest {
     UserDto mockDto = new UserDto(mockUser.getId(), mockUser.getUsername(), mockUser.getEmail(), null, true);
     given(userMapper.toUserDto(any(User.class))).willReturn(mockDto);
 
-    given(mockUserRepository.findUserByUserName("kwon1")).willReturn(Optional.empty());
+    given(mockUserRepository.findUserByUsername("kwon1")).willReturn(Optional.empty());
     given(mockUserRepository.findUserByEmail("kwon1@email.com")).willReturn(Optional.empty());
-    given(mockChannelRepository.findAllPublicChannel()).willReturn(List.of());
+    given(mockChannelRepository.findAllByType(ChannelType.PUBLIC)).willReturn(List.of());
 
     // when
     UserDto result = userService.createUser(request);
 
     // then
-    then(mockUserRepository).should().createUser(any(User.class));
+    then(mockUserRepository).should().save(any(User.class));
     then(userStatusService).should().createUserStatus(any(User.class));
-    then(mockUserStatusRepository).should().createUserStatus(any(UserStatus.class));
+    then(mockUserStatusRepository).should().save(any(UserStatus.class));
     then(binaryContentService).should().createByteFile(any(), any());
-    then(mockChannelRepository).should().findAllPublicChannel();
+    then(mockChannelRepository).should().findAllByType(ChannelType.PUBLIC);
     assertEquals("kwon1", result.username());
   }
 
@@ -94,7 +94,7 @@ public class UserServiceTest {
   void 유저네임이_중복될_때_유저_생성_실패_테스트(){
     // given
     UserCreateRequest request = new UserCreateRequest("kwon1", "pw1", "kown1@email.com", null);
-    given(mockUserRepository.findUserByUserName("kwon1")).willReturn(Optional.of(new User()));
+    given(mockUserRepository.findUserByUsername("kwon1")).willReturn(Optional.of(new User()));
 
     // when
     Executable action = () -> userService.createUser(request);
@@ -128,7 +128,7 @@ public class UserServiceTest {
 
     UserUpdateRequest request = new UserUpdateRequest(userId, "newUsername", "new@email.com", "newPassword");
 
-    given(mockUserRepository.findUserByUserId(userId)).willReturn(Optional.of(targetUser));
+    given(mockUserRepository.findById(userId)).willReturn(Optional.of(targetUser));
     given(userMapper.toUserDto(any(User.class))).willAnswer(i -> {
       User u = i.getArgument(0);
       return new UserDto(u.getId(), u.getUsername(), u.getEmail(), null, true);
@@ -138,7 +138,7 @@ public class UserServiceTest {
     UserDto result = userService.updateUser(request, null, null);
 
     // then
-    then(mockUserRepository).should().updateUser(targetUser);
+    then(mockUserRepository).should().save(targetUser);
   }
 
   @Test
@@ -159,7 +159,7 @@ public class UserServiceTest {
 
     UserUpdateRequest request = new UserUpdateRequest(userId, "user", "email", "pw");
 
-    given(mockUserRepository.findUserByUserId(userId)).willReturn(Optional.of(targetUser));
+    given(mockUserRepository.findById(userId)).willReturn(Optional.of(targetUser));
     given(userMapper.toUserDto(any(User.class))).willAnswer(i -> {
       User u = i.getArgument(0);
       return new UserDto(u.getId(), u.getUsername(), u.getEmail(), null, true);
@@ -172,7 +172,7 @@ public class UserServiceTest {
 
     // then
     then(binaryContentService).should().createByteFile(any(), eq(dummyBytes));
-    then(mockUserRepository).should(times(2)).updateUser(targetUser);
+    then(mockUserRepository).should(times(2)).save(targetUser);
   }
 
   @Test
@@ -181,7 +181,7 @@ public class UserServiceTest {
     UUID userId = UUID.randomUUID();
     UserUpdateRequest request = new UserUpdateRequest(userId, "user", "email", "pw");
 
-    given(mockUserRepository.findUserByUserId(userId)).willReturn(Optional.empty());
+    given(mockUserRepository.findById(userId)).willReturn(Optional.empty());
 
     // when
     Executable action = () -> userService.updateUser(request, null, null);
@@ -200,20 +200,20 @@ public class UserServiceTest {
     targetUser.setEmail("old@email.com");
     targetUser.setPassword("oldPassword");
 
-    given(mockUserRepository.findUserByUserId(userId)).willReturn(Optional.of(targetUser));
+    given(mockUserRepository.findById(userId)).willReturn(Optional.of(targetUser));
 
     // when
     userService.deleteUser(userId);
 
     // then
-    then(mockUserRepository).should().deleteUser(targetUser);
+    then(mockUserRepository).should().delete(targetUser);
   }
 
   @Test
   void 유저가_없을_때_유저_삭제_실패_테스트() {
     // given
     UUID userId = UUID.randomUUID();
-    given(mockUserRepository.findUserByUserId(userId)).willReturn(Optional.empty());
+    given(mockUserRepository.findById(userId)).willReturn(Optional.empty());
 
     // when
     Executable action = () -> userService.deleteUser(userId);

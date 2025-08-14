@@ -35,13 +35,13 @@ public class BasicBinaryContentService implements BinaryContentService {
   @Override
   @Transactional(readOnly = true)
   public List<BinaryContent> findBinaryContentsByBinaryContentIds(List<UUID> binaryContentIds) {
-    return binaryContentRepository.findBinaryContentListByBinaryContentIds(binaryContentIds);
+    return binaryContentRepository.findAllById(binaryContentIds);
   }
 
   @Override
   @Transactional(readOnly = true)
   public BinaryContent findBinaryContentByBinaryContentId(UUID binaryContentId) {
-    Optional<BinaryContent> binaryContent = binaryContentRepository.findBinaryContentByBinaryContentId(
+    Optional<BinaryContent> binaryContent = binaryContentRepository.findById(
         binaryContentId);
     if (binaryContent.isEmpty()) {
       Map<String, Object> details = Map.of(

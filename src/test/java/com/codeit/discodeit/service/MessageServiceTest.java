@@ -23,7 +23,6 @@ import com.codeit.discodeit.service.basic.BasicMessageService;
 
 import java.util.*;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
@@ -106,7 +105,7 @@ public class MessageServiceTest {
     MessageDto result = messageService.createMessage(request, filesList);
 
     // then
-    then(mockMessageRepository).should().createMessage(mockMessage);
+    then(mockMessageRepository).should().save(mockMessage);
     then(binaryContentService).shouldHaveNoInteractions();
     assertEquals("Hello World!", result.content());
   }
@@ -167,14 +166,14 @@ public class MessageServiceTest {
     request.setNewContent("new Test message");
 
     Message existingMessage = new Message();
-    given(mockMessageRepository.findMessageByMessageId(messageId))
+    given(mockMessageRepository.findById(messageId))
         .willReturn(Optional.of(existingMessage));
 
     // when
     messageService.updateMessage(messageId, request);
 
     // then
-    then(mockMessageRepository).should().updateMessage(existingMessage);
+    then(mockMessageRepository).should().save(existingMessage);
   }
 
   @Test
@@ -184,7 +183,7 @@ public class MessageServiceTest {
     MessageUpdateRequest request = new MessageUpdateRequest();
     request.setNewContent("new Test message");
 
-    given(mockMessageRepository.findMessageByMessageId(messageId))
+    given(mockMessageRepository.findById(messageId))
         .willThrow(MessageNotFoundException.class);
 
     // when
@@ -199,21 +198,21 @@ public class MessageServiceTest {
     // given
     UUID messageId = UUID.randomUUID();
     Message message = new Message();
-    given(mockMessageRepository.findMessageByMessageId(messageId))
+    given(mockMessageRepository.findById(messageId))
         .willReturn(Optional.of(message));
 
     // when
     messageService.deleteMessage(messageId);
 
     // then
-    then(mockMessageRepository).should().deleteMessage(message);
+    then(mockMessageRepository).should().delete(message);
   }
 
   @Test
   void 메시지_삭제_실패_테스트() {
     // given
     UUID messageId = UUID.randomUUID();
-    given(mockMessageRepository.findMessageByMessageId(messageId))
+    given(mockMessageRepository.findById(messageId))
         .willReturn(Optional.empty());
 
     // when
@@ -232,7 +231,7 @@ public class MessageServiceTest {
     channel.setName("general");
     channel.setType(ChannelType.PUBLIC);
 
-    given(mockChannelRepository.findChannelByChannelId(channelId))
+    given(mockChannelRepository.findById(channelId))
         .willReturn(Optional.of(channel));
 
     List<Message> messages = new ArrayList<>();
@@ -259,7 +258,7 @@ public class MessageServiceTest {
           );
         });
 
-    given(mockMessageRepository.findMessagesByChannelId(channelId))
+    given(mockMessageRepository.findByChannelId(channelId))
         .willReturn(messages);
 
     Pageable pageable = new Pageable();
@@ -276,8 +275,8 @@ public class MessageServiceTest {
     assertTrue(response.isHasNext());
     assertEquals(5L, response.getTotalElements());
 
-    then(mockChannelRepository).should().findChannelByChannelId(channelId);
-    then(mockMessageRepository).should().findMessagesByChannelId(channelId);
+    then(mockChannelRepository).should().findById(channelId);
+    then(mockMessageRepository).should().findByChannelId(channelId);
     messages.subList(0, 3).forEach(msg -> then(messageMapper).should().toMessageDto(msg));
   }
 
@@ -288,7 +287,7 @@ public class MessageServiceTest {
     UUID channelId = UUID.randomUUID();
     Pageable pageable = new Pageable();
 
-    given(mockChannelRepository.findChannelByChannelId(channelId))
+    given(mockChannelRepository.findById(channelId))
         .willReturn(Optional.empty());
 
     // when

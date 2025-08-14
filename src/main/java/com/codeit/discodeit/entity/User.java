@@ -40,6 +40,7 @@ public class User extends BaseUpdatableEntity {
   private BinaryContent profile;
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "user_id")
   private UserStatus status;
 
   public void setStatus(UserStatus status) {

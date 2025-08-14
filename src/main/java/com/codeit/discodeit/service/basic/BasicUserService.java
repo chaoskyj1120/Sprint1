@@ -60,15 +60,15 @@ public class BasicUserService implements UserService {
     }
 
     User user = userMapper.toUser(userCreateRequest);
-    userRepository.createUser(user);
+    userRepository.save(user);
     binaryContentService.createByteFile(user.getProfile(), profileImgBytes);
 
     UserStatus userStatus = userStatusService.createUserStatus(user);
     user.setStatus(userStatus);
-    userStatusRepository.createUserStatus(userStatus);
+    userStatusRepository.save(userStatus);
 
     // 공용 채널 readStatus 추가
-    List<Channel> channels = channelRepository.findAllPublicChannel();
+    List<Channel> channels = channelRepository.findAllByType(ChannelType.PUBLIC);
     log.info("[createUser] 공용 채널 {}개에 readStatus 등록", channels.size());
     for (Channel channel : channels) {
       readStatusService.createReadStatus(user, channel);
@@ -125,14 +125,14 @@ public class BasicUserService implements UserService {
             oldProfileImg != null ? oldProfileImg.getFileName() : "기본 이미지",
             newProfileImage.getFileName());
         targetUser.setProfile(newProfileImage);
-        userRepository.updateUser(targetUser);
+        userRepository.save(targetUser);
         binaryContentService.createByteFile(targetUser.getProfile(), profileImgBytes);
       } else {
         log.info("[updateUser] 동일한 프로필 이미지 → 변경 생략");
       }
     }
 
-    userRepository.updateUser(targetUser);
+    userRepository.save(targetUser);
     UserDto result = userMapper.toUserDto(targetUser);
     log.info("[updateUser] 사용자 수정 완료: userId={}", result.id());
     return result;
@@ -143,21 +143,21 @@ public class BasicUserService implements UserService {
   public void deleteUser(UUID userId) {
     log.info("[deleteUser] 사용자 삭제 요청: userId={}", userId);
     User user = findUserByUserId(userId);
-    userRepository.deleteUser(user);
+    userRepository.delete(user);
     log.info("[deleteUser] 사용자 삭제 완료: userId={}", userId);
   }
 
   @Override
   @Transactional(readOnly = true)
   public List<UserDto> findAllUser() {
-    List<User> userList = userRepository.loadUsers();
+    List<User> userList = userRepository.findAll();
     return userList.stream().map(userMapper::toUserDto).toList();
   }
 
   @Override
   @Transactional(readOnly = true)
   public UserDto findUserDtoByUserId(UUID userId) {
-    Optional<User> user = userRepository.findUserByUserId(userId);
+    Optional<User> user = userRepository.findById(userId);
     if (user.isEmpty()) {
       Map<String, Object> details = Map.of(
           "이유", "유저 없음"
@@ -170,7 +170,7 @@ public class BasicUserService implements UserService {
   @Override
   @Transactional(readOnly = true)
   public User findUserByUserId(UUID userId) {
-    Optional<User> user = userRepository.findUserByUserId(userId);
+    Optional<User> user = userRepository.findById(userId);
     if (user.isEmpty()) {
       Map<String, Object> details = Map.of(
           "이유", "유저 없음"
@@ -182,7 +182,7 @@ public class BasicUserService implements UserService {
 
   private void validateUserNameNotDuplicated(String userName) {
     log.info("[validateUserNameNotDuplicated] 유저 네임 중복 확인 시작: userName={}", userName);
-    if (userRepository.findUserByUserName(userName).isPresent()) {
+    if (userRepository.findUserByUsername(userName).isPresent()) {
       log.debug("[validateUserNameNotDuplicated] 유저 네임 중복이 발견: userName={}", userName);
       Map<String, Object> details = Map.of(
           "이유", "중복"

@@ -65,7 +65,7 @@ public class BasicMessageService implements MessageService {
     }
 
     Message message = messageMapper.toMessage(messageCreateRequest.getContent(), user, channel, binaryContentList);
-    messageRepository.createMessage(message);
+    messageRepository.save(message);
 
     if (message.getAttachments() != null) {
       for (int i = 0; i < message.getAttachments().size(); i++) {
@@ -87,7 +87,7 @@ public class BasicMessageService implements MessageService {
   public void deleteMessage(UUID messageId) {
     log.info("[deleteMessage] 삭제 요청: messageId={}", messageId);
     Message message = findMessageByMessageId(messageId);
-    messageRepository.deleteMessage(message);
+    messageRepository.delete(message);
     log.info("[deleteMessage] 메시지 삭제 완료: messageId={}", message.getId());
   }
 
@@ -98,7 +98,7 @@ public class BasicMessageService implements MessageService {
     Message message = findMessageByMessageId(messageId);
     message.setContent(messageUpdateRequest.getNewContent());
 
-    messageRepository.updateMessage(message);
+    messageRepository.save(message);
     MessageDto result = messageMapper.toMessageDto(message);
     log.info("[updateMessage] 메시지 수정 완료: messageId={}", messageId);
     return result;
@@ -107,11 +107,11 @@ public class BasicMessageService implements MessageService {
   @Override
   @Transactional(readOnly = true)
   public PageResponse<MessageDto> findMessagesPerPage(UUID channelId, Pageable pageable) {
-    if (channelRepository.findChannelByChannelId(channelId).isEmpty()) {
+    if (channelRepository.findById(channelId).isEmpty()) {
       Map<String, Object> details = Map.of("이유", "채널 없음");
       throw new ChannelNotFoundException(details);
     }
-    List<Message> messageList = messageRepository.findMessagesByChannelId(channelId);
+    List<Message> messageList = messageRepository.findByChannelId(channelId);
 
     int page = pageable.getPage();
     int size = pageable.getSize();
@@ -134,7 +134,7 @@ public class BasicMessageService implements MessageService {
   @Override
   @Transactional(readOnly = true)
   public Message findMessageByMessageId(UUID messageId) {
-    return messageRepository.findMessageByMessageId(messageId)
+    return messageRepository.findById(messageId)
         .orElseThrow(
             () -> {
               Map<String, Object> details = Map.of(

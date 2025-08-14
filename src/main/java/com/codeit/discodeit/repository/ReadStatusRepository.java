@@ -6,15 +6,11 @@ import com.codeit.discodeit.entity.ReadStatus;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ReadStatusRepository {
+public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
 
-    void createReadStatus(ReadStatus readStatus);
-    void updateReadStatus(ReadStatus readStatus);
-
-    Optional<ReadStatus> findReadStatusesByReadStatusId(UUID readStatusId);
-    Optional<ReadStatus> findReadStatusesByUserIdAndChannelId(UUID userId, UUID channelId);
-
-    List<ReadStatus> findReadStatusesByUserId(UUID userId);
-    List<ReadStatus> findReadStatusByChannel(Channel channel);
+    Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID channelId);
+    List<ReadStatus> findAllByUserId(UUID userId);
+    List<ReadStatus> findByChannel(Channel channel);
 }

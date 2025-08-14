@@ -37,7 +37,7 @@ public class BasicAuthService implements AuthService {
   }
 
   private User findUserByUserName(String userName) {
-    return userRepository.findUserByUserName(userName)
+    return userRepository.findUserByUsername(userName)
         .orElseThrow(() -> {
           Map<String, Object> details = Map.of(
               "이유", "없음"

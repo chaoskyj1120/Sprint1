@@ -31,7 +31,7 @@ public class BasicReadStatusService implements ReadStatusService {
     ReadStatus readStatus = new ReadStatus();
     readStatus.setChannel(channel);
     readStatus.setUser(user);
-    readStatusRepository.createReadStatus(readStatus);
+    readStatusRepository.save(readStatus);
   }
 
   @Override
@@ -48,7 +48,7 @@ public class BasicReadStatusService implements ReadStatusService {
     }
 
     readStatus.setLastReadAt(readStatusUpdateRequest.getNewLastReadAt());
-    readStatusRepository.updateReadStatus(readStatus);
+    readStatusRepository.save(readStatus);
 
     return readStatusMapper.toReadStatusDto(readStatus);
   }
@@ -56,20 +56,20 @@ public class BasicReadStatusService implements ReadStatusService {
   @Override
   @Transactional(readOnly = true)
   public List<ReadStatusDto> findReadStatuseDtoListByUserId(UUID userId) {
-    return readStatusRepository.findReadStatusesByUserId(userId).stream().map(readStatusMapper::toReadStatusDto).collect(
+    return readStatusRepository.findAllByUserId(userId).stream().map(readStatusMapper::toReadStatusDto).collect(
         Collectors.toList());
   }
 
   @Override
   @Transactional(readOnly = true)
   public List<ReadStatus> findReadStatusesByUserId(UUID userId) {
-    return readStatusRepository.findReadStatusesByUserId(userId);
+    return readStatusRepository.findAllByUserId(userId);
   }
 
   @Override
   @Transactional(readOnly = true)
   public ReadStatusDto findReadStatusByUserIdAndChannelId(UUID userId, UUID channelId) {
-    Optional<ReadStatus> readStatus = readStatusRepository.findReadStatusesByUserIdAndChannelId(userId, channelId);
+    Optional<ReadStatus> readStatus = readStatusRepository.findByUserIdAndChannelId(userId, channelId);
     if (readStatus.isEmpty()) {
       Map<String, Object> details = Map.of(
           "이유", "읽기 상태 없음"
@@ -83,11 +83,11 @@ public class BasicReadStatusService implements ReadStatusService {
   @Override
   @Transactional(readOnly = true)
   public List<ReadStatus> findReadStatusesByChannelId(Channel channel){
-    return readStatusRepository.findReadStatusByChannel(channel);
+    return readStatusRepository.findByChannel(channel);
   }
 
   private ReadStatus findReadStatusByReadStatusId(UUID readStatusId) {
-    return readStatusRepository.findReadStatusesByReadStatusId(readStatusId)
+    return readStatusRepository.findById(readStatusId)
         .orElseThrow(() -> {
           Map<String, Object> details = Map.of(
               "이유", "읽기 상태 없음"

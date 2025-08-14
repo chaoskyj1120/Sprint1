@@ -34,7 +34,7 @@ public class BasicUserStatusService implements UserStatusService {
   @Override
   @Transactional
   public UserStatusDto updateUserStatus(UUID userId, Instant newLastAt) {
-    Optional<UserStatus> userStatus = userStatusRepository.findUserStatusByUserId(userId);
+    Optional<UserStatus> userStatus = userStatusRepository.findByUserId(userId);
     
     if (userStatus.isEmpty()) {
       Map<String, Object> details = Map.of(
@@ -46,7 +46,7 @@ public class BasicUserStatusService implements UserStatusService {
     UserStatus updateUserStatus = userStatus.get();
 
     updateUserStatus.setLastActiveAt(newLastAt);
-    userStatusRepository.updateUserStatus(updateUserStatus);
+    userStatusRepository.save(updateUserStatus);
 
     return userStatusMapper.toUserStatusDto(updateUserStatus);
   }

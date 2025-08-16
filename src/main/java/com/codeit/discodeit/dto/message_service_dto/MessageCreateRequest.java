@@ -18,9 +18,9 @@ public class MessageCreateRequest {
   @NotEmpty
   private String content;
 
-  @NotBlank
+  @NotNull
   private UUID channelId;
 
-  @NotBlank
+  @NotNull
   private UUID authorId;
 }

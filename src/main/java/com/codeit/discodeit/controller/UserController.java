@@ -34,12 +34,6 @@ public class UserController implements SwaggerUserController {
   private final UserService userService;
   private final UserStatusService userStatusService;
 
-  @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<List<UserDto>> findAll() {
-    List<UserDto> users = userService.findAllUser();
-    return ResponseEntity.ok(users);
-  }
-
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserDto> createUser(
       @Valid @RequestPart("userCreateRequest") UserCreateRequest userCreateRequest,
@@ -55,6 +49,12 @@ public class UserController implements SwaggerUserController {
 
     log.info("[POST /api/users] 생성 완료 - createdUserId={}", createdUser.id());
     return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+  }
+
+  @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<List<UserDto>> findAll() {
+    List<UserDto> users = userService.findAllUser();
+    return ResponseEntity.ok(users);
   }
 
   @DeleteMapping("/{userId}")

@@ -120,7 +120,7 @@ public class GlobalExceptionHandler {
 
     ErrorResponse errorResponse = new ErrorResponse(
         Instant.now(),
-        "FILED_VALIDATION_ERROR",
+        "FAILED_VALIDATION_ERROR",
         "검증이 필요한 필드가 검증에 실패했습니다.",
         Map.of("fieldErrors", errors),
         ex.getClass().getSimpleName(),

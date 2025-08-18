@@ -4,6 +4,10 @@ spring:
     username: prod_user
     password: prod_pass
     driver-class-name: org.postgresql.Driver
+  boot:
+    admin:
+      client:
+        url: ${SPRING_BOOT_ADMIN_CLIENT_URL}
 
 server:
   port: 80

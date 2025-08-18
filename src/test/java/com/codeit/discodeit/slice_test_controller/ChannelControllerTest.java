@@ -1,6 +1,7 @@
 package com.codeit.discodeit.slice_test_controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -32,7 +33,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 @WebMvcTest(controllers = ChannelController.class)
 @Import({GlobalExceptionHandler.class, ChannelConfig.class})
-@ActiveProfiles("testcontroller")
+@ActiveProfiles("test")
 class ChannelControllerTest {
 
   @Autowired
@@ -144,14 +145,14 @@ class ChannelControllerTest {
 
     ChannelDto updatedChannelDto = new ChannelDto(channelId, null, updateRequest.getNewName(), updateRequest.getNewDescription(), null, null);
 
-    given(channelService.updatePublicChannel(channelId, updateRequest))
+    given(channelService.updatePublicChannel(
+        eq(channelId), any(PublicChannelUpdateRequest.class)))
         .willReturn(updatedChannelDto);
 
     // when
     ResultActions resultActions = mockMvc.perform(patch("/api/channels/{channelId}", channelId)
         .contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(updateRequest)));
-
 
     // then
     resultActions.andExpect(status().isOk())

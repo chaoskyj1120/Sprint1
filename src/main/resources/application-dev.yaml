@@ -13,7 +13,10 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 20MB
-
+  boot:
+    admin:
+      client:
+        url: http://localhost:9090
 server:
   port: 8080
 

@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = UserController.class)
 @Import({GlobalExceptionHandler.class, UserConfig.class})
-@ActiveProfiles("testcontroller")
+@ActiveProfiles("test")
 class UserControllerTest {
 
   @Autowired

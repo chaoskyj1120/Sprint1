@@ -41,7 +41,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 @WebMvcTest(controllers = MessageController.class)
 @Import({GlobalExceptionHandler.class, MessageConfig.class})
-@ActiveProfiles("testcontroller")
+@ActiveProfiles("test")
 class MessageControllerTest {
 
   @Autowired

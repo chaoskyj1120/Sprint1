@@ -17,6 +17,13 @@ spring:
     active: local
   server:
     port: 8080
+  application:
+    name: discodeit
+  boot:
+    admin:
+      client:
+        instance:
+          name: discodeit
 
 discodeit:
   storage:

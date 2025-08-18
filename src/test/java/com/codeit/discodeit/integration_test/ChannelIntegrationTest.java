@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.codeit.discodeit.auditing_config.AuditingConfig;
 import com.codeit.discodeit.dto.channel_service_dto.ChannelDto;
 import com.codeit.discodeit.dto.channel_service_dto.CreatePublicChannelRequestDto;
 import com.codeit.discodeit.dto.channel_service_dto.PrivateChannelCreateRequest;
@@ -25,6 +26,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -35,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
+@Import(AuditingConfig.class)
 class ChannelIntegrationTest extends IntegrationTestBasic {
 
   @Autowired
@@ -54,7 +58,6 @@ class ChannelIntegrationTest extends IntegrationTestBasic {
 
     channelRepository.save(defaultChannel); // 저장 후 ID 자동 할당
   }
-
 
   @Test
   void 공용_채널_생성_성공_테스트() throws Exception {

@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.codeit.discodeit.auditing_config.AuditingConfig;
 import com.codeit.discodeit.dto.channel_service_dto.CreatePublicChannelRequestDto;
 import com.codeit.discodeit.dto.channel_service_dto.PrivateChannelCreateRequest;
 import com.codeit.discodeit.dto.channel_service_dto.PublicChannelUpdateRequest;
@@ -28,11 +29,13 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.multipart.MultipartFile;
 
+@Import(AuditingConfig.class)
 class MessageIntegrationTest extends IntegrationTestBasic {
 
   @Autowired

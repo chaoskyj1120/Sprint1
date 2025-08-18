@@ -1,4 +1,5 @@
 package com.codeit.discodeit.slice_test_repository;
+import com.codeit.discodeit.auditing_config.AuditingConfig;
 import com.codeit.discodeit.entity.User;
 import com.codeit.discodeit.repository.UserRepository;
 import java.util.Optional;
@@ -17,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ActiveProfiles("test") // yaml 파일을 test로
-//@EnableJpaAuditing // Main에 이미 적용되어서 주석처리를 통해 Bean 중복 등록을 피함
+@Import(AuditingConfig.class)
 class UserRepositoryTest {
 
   @Autowired

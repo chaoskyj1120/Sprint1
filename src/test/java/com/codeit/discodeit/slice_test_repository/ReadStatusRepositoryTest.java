@@ -2,6 +2,7 @@ package com.codeit.discodeit.slice_test_repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.codeit.discodeit.auditing_config.AuditingConfig;
 import com.codeit.discodeit.entity.Channel;
 import com.codeit.discodeit.entity.ChannelType;
 import com.codeit.discodeit.entity.ReadStatus;
@@ -17,11 +18,12 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 @DataJpaTest
 @ActiveProfiles("test") // yaml 파일을 test로
-//@EnableJpaAuditing // Main에 이미 적용되어서 주석처리를 통해 Bean 중복 등록을 피함
+@Import(AuditingConfig.class)
 class ReadStatusRepositoryTest {
 
   @Autowired

@@ -1,6 +1,9 @@
 package com.codeit.discodeit8.config;
 
+import com.codeit.discodeit8.storage.BinaryContentStorage;
+import com.codeit.discodeit8.storage.s3.S3BinaryContentStorage;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -10,6 +13,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
+
+@ConditionalOnProperty(name = "discodeit.storage.type", havingValue = "s3")
 @Configuration
 public class S3Config {
 
@@ -56,5 +61,15 @@ public class S3Config {
                 : DefaultCredentialsProvider.create()
         )
         .build();
+  }
+
+  @Bean
+  public BinaryContentStorage binaryContentStorage() {
+    return new S3BinaryContentStorage(
+        props.getCredentials().getAccessKey(),
+        props.getCredentials().getSecretKey(),
+        props.getRegion(),
+        props.getS3().getBucket()   // AwsProperties에 s3.bucket 바인딩되어있다고 가정
+    );
   }
 }

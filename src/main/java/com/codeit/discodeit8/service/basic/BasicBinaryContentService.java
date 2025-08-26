@@ -27,6 +27,7 @@ public class BasicBinaryContentService implements BinaryContentService {
   @Override
   @Transactional
   public void createByteFile(BinaryContent binaryContent, byte[] bytes) {
+    log.info("[DEBUG] BinaryContentStorage bean = {}", binaryContentStorage.getClass().getName());
     log.info("[createByteFile] 파일 저장 시작: binaryContentId={}, size={}", binaryContent.getId(),
         bytes.length);
     binaryContentStorage.put(binaryContent.getId(), bytes);

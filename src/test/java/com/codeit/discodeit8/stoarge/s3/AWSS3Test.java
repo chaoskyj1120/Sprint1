@@ -20,7 +20,9 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+    "discodeit.storage.type=s3"
+})
 class AWSS3Test {
 
   @Autowired

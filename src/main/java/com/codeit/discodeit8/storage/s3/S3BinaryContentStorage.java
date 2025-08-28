@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +52,9 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
   @Getter
   private final S3Client s3Client;
 
+
+  private final S3Presigner presigner;
+
   private final String prefix ="uploads/";
 
   public S3BinaryContentStorage(String accessKey, String secretKey, String region, String bucket) {
@@ -63,6 +67,11 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
         .region(Region.of(region))
         .credentialsProvider(creds())
         .build();
+
+    this.presigner = S3Presigner.builder()
+        .region(Region.of(region))
+        .credentialsProvider(creds())
+        .build();
   }
 
   // aws 자격 증명
@@ -72,7 +81,7 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
         : DefaultCredentialsProvider.create();
   }
 
-  // 파일 업로드 
+  // 파일 업로드
   public UUID put(UUID binaryContentId, byte[] bytes) {
     // key 설정
     String key = prefix+binaryContentId.toString();
@@ -108,15 +117,37 @@ public class S3BinaryContentStorage implements BinaryContentStorage {
     }
   }
 
-
-
   @Override
   public InputStream get(UUID binaryContentId) {
-    return null;
+    return null; // 여기선 무슨 기능을 해야하지?
   }
 
   @Override
   public ResponseEntity<?> download(BinaryContentDto dto) {
-    return null;
+    String rawKey = dto.id().toString();
+    String contentType = dto.contentType();
+    String url = generatePresignedUrl(rawKey, contentType);
+    return ResponseEntity.status(302)
+        .header(HttpHeaders.LOCATION, url)
+        .build();
+  }
+
+  private String generatePresignedUrl(String key, String contentType) {
+    String objectKey = prefix + key;
+    String ct = (contentType == null || contentType.isBlank())
+        ? "application/octet-stream" : contentType;
+
+    GetObjectRequest getReq = GetObjectRequest.builder()
+        .bucket(bucket)
+        .key(objectKey)
+        .responseContentType(ct)
+        .build();
+
+    GetObjectPresignRequest psReq = GetObjectPresignRequest.builder()
+        .getObjectRequest(getReq)
+        .signatureDuration(Duration.ofMinutes(10))
+        .build();
+
+    return presigner.presignGetObject(psReq).url().toString();
   }
 }

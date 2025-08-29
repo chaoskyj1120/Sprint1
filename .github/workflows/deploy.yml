@@ -1,0 +1,91 @@
+name: CD - Deploy to ECS
+
+on:
+  push:
+    branches: ["release"]  # release 브랜치로 push되면 실행
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker to Public ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Public ECR 푸시는 us-east-1 권장
+      - name: Configure AWS Credentials for Public ECR (us-east-1)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR Public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 멀티 플랫폼 제외, x86_64만 (ECS와 동일 아키텍처)
+      - name: Build & Push (linux/amd64 only)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ vars.ECR_REPOSITORY_URI }}:latest
+            ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
+
+  deploy:
+    name: Update ECS Service
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials for ECS region
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}   # ex) ap-northeast-2
+
+      - name: Fetch current task definition
+        env:
+          FAMILY: ${{ vars.ECS_TASK_DEFINITION }}   # 예: discodeit-task
+        run: |
+          aws ecs describe-task-definition --task-definition "$FAMILY" --query 'taskDefinition' > td.json
+
+      - name: Prepare new task definition with new image
+        env:
+          IMAGE_URI: ${{ vars.ECR_REPOSITORY_URI }}:${{ github.sha }}
+        run: |
+          # 컨테이너가 여러 개면 이름으로 선택하도록 수정 가능(예시 주석 하단 참고)
+          NEW_TD=$(jq --arg IMAGE "$IMAGE_URI" '
+            .containerDefinitions[0].image = $IMAGE
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)
+          ' td.json)
+          echo "$NEW_TD" > new-td.json
+          aws ecs register-task-definition --cli-input-json file://new-td.json > reg.out
+          NEW_ARN=$(jq -r '.taskDefinition.taskDefinitionArn' reg.out)
+          echo "NEW_TD_ARN=$NEW_ARN" >> $GITHUB_ENV
+
+      # 프리티어 고려: 기존 서비스 일시 중단 후 재기동
+      - name: Scale service to 0 (free tier friendly)
+        run: |
+          aws ecs update-service --cluster "${{ vars.ECS_CLUSTER }}" --service "${{ vars.ECS_SERVICE }}" --desired-count 0
+          aws ecs wait services-stable --cluster "${{ vars.ECS_CLUSTER }}" --services "${{ vars.ECS_SERVICE }}"
+
+      - name: Update service to new task definition and scale up
+        run: |
+          aws ecs update-service \
+            --cluster "${{ vars.ECS_CLUSTER }}" \
+            --service "${{ vars.ECS_SERVICE }}" \
+            --task-definition "$NEW_TD_ARN" \
+            --desired-count 1
+          aws ecs wait services-stable --cluster "${{ vars.ECS_CLUSTER }}" --services "${{ vars.ECS_SERVICE }}"

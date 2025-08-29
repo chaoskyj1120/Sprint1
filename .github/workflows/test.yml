@@ -1,8 +1,8 @@
 name: CI - Test & Coverage
 
 on:
-  push:
-    branches: ["sprint8"]
+  pull_request:
+    branches: ["main"]
 jobs:
   test:
     runs-on: ubuntu-latest

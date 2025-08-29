@@ -1,9 +1,8 @@
 name: CI - Test & Coverage
 
 on:
-  pull_request:
-    branches: ["sprint8"]   # main 브랜치로 PR 생성/업데이트 시 실행
-
+  push:
+    branches: ["sprint8"]
 jobs:
   test:
     runs-on: ubuntu-latest

@@ -43,9 +43,9 @@ class AWSS3Test {
 
   @DynamicPropertySource
   static void loadEnvProperties(DynamicPropertyRegistry registry) {
-    registry.add("aws.credentials.access-key", () -> dotenv.get("AWS_S3_ACCESS_KEY"));
-    registry.add("aws.credentials.secret-key", () -> dotenv.get("AWS_S3_SECRET_KEY"));
-    registry.add("aws.region", () -> dotenv.get("AWS_S3_REGION"));
+    registry.add("aws.credentials.access-key", () -> dotenv.get("AWS_ACCESS_KEY"));
+    registry.add("aws.credentials.secret-key", () -> dotenv.get("AWS_SECRET_KEY"));
+    registry.add("aws.region", () -> dotenv.get("AWS_REGION"));
     registry.add("aws.s3.bucket", () -> dotenv.get("AWS_S3_BUCKET"));
   }
 

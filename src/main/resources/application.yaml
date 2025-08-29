@@ -8,6 +8,8 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
+    auditing:
+      enabled: true
   datasource:
     url: jdbc:postgresql://localhost:5432/discodeit
     username: discodeit_user
@@ -22,6 +24,7 @@ spring:
       client:
         instance:
           name: discodeit
+
 
 discodeit:
   storage:

@@ -1,10 +1,12 @@
 package com.sprint.mission.discodeit.config;
 
+import com.sprint.mission.discodeit.handler.LoginFailureHandler;
+import com.sprint.mission.discodeit.handler.LoginSuccessHandler;
+import com.sprint.mission.discodeit.handler.SpaCsrfTokenRequestHandler;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -14,20 +16,11 @@ import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
+@RequiredArgsConstructor
 @Configuration
 public class SecurityConfig {
-  @Bean
-  public UserDetailsManager userDetailsService() {
-    // (1)
-    UserDetails userDetails =
-        User.withDefaultPasswordEncoder()    // (1-1)
-            .username("kwon@email.com") // (1-2)
-            .password("1111")            // (1-3)
-            .roles("USER")               // (1-4)
-            .build();
-
-    return new InMemoryUserDetailsManager(userDetails);
-  }
+  private final LoginSuccessHandler loginSuccessHandler;
+  private final LoginFailureHandler loginFailureHandler;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -35,7 +28,13 @@ public class SecurityConfig {
         .csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
-        .formLogin(Customizer.withDefaults());
+        .formLogin(login -> login
+            .loginProcessingUrl("/api/auth/login")
+            .usernameParameter("username")
+            .passwordParameter("password")
+            .successHandler(loginSuccessHandler)
+            .failureHandler(loginFailureHandler)
+        );
     return http.build();
   }
 

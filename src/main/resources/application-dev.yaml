@@ -20,7 +20,7 @@ logging:
       springframework:
         orm:
           jpa: DEBUG
-        #security: trace
+        security: DEBUG
 
 management:
   endpoint:

@@ -6,12 +6,18 @@ import com.sprint.mission.discodeit.service.AuthService;
 import com.sprint.mission.discodeit.service.DiscodeitUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,10 +44,11 @@ public class AuthController{
     return ResponseEntity.ok(userDto);
   }
 
-  @PatchMapping("/role")
-  public ResponseEntity<UserDto> patchRole(UserRoleUpdateRequest updateRequest) {
-
-    UserDto userDto = authService.patchRole(updateRequest);
+  @PutMapping(value = "/role", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<UserDto> updateRole(@RequestBody UserRoleUpdateRequest userUpdateRequest) {
+    log.debug("권한 수정 요청: {}", userUpdateRequest.newRole());
+    UserDto userDto = authService.patchRole(userUpdateRequest);
     return ResponseEntity.ok(userDto);
   }
 }

@@ -1,13 +1,16 @@
 package com.sprint.mission.discodeit.controller;
 
+import com.sprint.mission.discodeit.dto.data.UserDto;
+import com.sprint.mission.discodeit.dto.request.UserRoleUpdateRequest;
 import com.sprint.mission.discodeit.service.AuthService;
+import com.sprint.mission.discodeit.service.DiscodeitUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import lombok.extern.slf4j.Slf4j;
@@ -26,5 +29,19 @@ public class AuthController{
     log.debug("CSRF 토큰 요청: {}", tokenValue);
 
     return ResponseEntity.status(HttpStatus.NON_AUTHORITATIVE_INFORMATION).body(null);//203
+  }
+
+  @GetMapping("/me")
+  public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal DiscodeitUserDetails userDetails) {
+    // JSSON ID가 저장되어 있는데 거기사 ID를 가져와 userDetails를 가져옴
+    UserDto userDto = userDetails.getUserDto();
+    return ResponseEntity.ok(userDto);
+  }
+
+  @PatchMapping("/role")
+  public ResponseEntity<UserDto> patchRole(UserRoleUpdateRequest updateRequest) {
+
+    UserDto userDto = authService.patchRole(updateRequest);
+    return ResponseEntity.ok(userDto);
   }
 }

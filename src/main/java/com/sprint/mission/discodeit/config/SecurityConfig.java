@@ -1,26 +1,45 @@
 package com.sprint.mission.discodeit.config;
 
+import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.handler.LoginFailureHandler;
 import com.sprint.mission.discodeit.handler.LoginSuccessHandler;
+import com.sprint.mission.discodeit.handler.LogoutSuccessHandler;
 import com.sprint.mission.discodeit.handler.SpaCsrfTokenRequestHandler;
+import com.sprint.mission.discodeit.repository.UserRepository;
+import jakarta.servlet.http.HttpServletResponse;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+
+import com.sprint.mission.discodeit.entity.User;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.stereotype.Component;
 
+@Slf4j
 @RequiredArgsConstructor
 @Configuration
 public class SecurityConfig {
   private final LoginSuccessHandler loginSuccessHandler;
   private final LoginFailureHandler loginFailureHandler;
+  private final LogoutSuccessHandler logoutSuccessHandler;
+  private final UserRepository userRepository;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -28,18 +47,73 @@ public class SecurityConfig {
         .csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll() // 정적 자원에 대한 접근 허용
+            .requestMatchers("/assets/**", "/favicon.ico").permitAll()  // 정적 자원에 대한 접근 허용
+            .requestMatchers("/.well-known/**").permitAll() // DevTools/브라우저가 치는 well-known 요청 허용
+            .requestMatchers(HttpMethod.GET, "/", "/index.html", "/api/auth/csrf-token").permitAll()
+            .requestMatchers(HttpMethod.POST,
+                "/api/auth/login",
+                "/api/auth/logout",
+                "/api/users").permitAll()
+            .anyRequest().authenticated())
         .formLogin(login -> login
             .loginProcessingUrl("/api/auth/login")
             .usernameParameter("username")
             .passwordParameter("password")
             .successHandler(loginSuccessHandler)
             .failureHandler(loginFailureHandler)
+        )
+        .logout(logout -> logout
+            .logoutUrl("/api/auth/logout")
+            .logoutSuccessHandler(logoutSuccessHandler))
+        .exceptionHandling(e -> e
+            .defaultAuthenticationEntryPointFor(
+                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                new AntPathRequestMatcher("/api/**")
+            )
+            .accessDeniedHandler((req, res, ex) -> res.sendError(HttpServletResponse.SC_FORBIDDEN))
         );
+
+
+    //Csrf Token GET
+    //회원가입  Post
+    //로그인   Post
+    //로그아웃 POST
+    //API가 아닌 요청(Swagger, Actuator 등)
     return http.build();
   }
 
   @Bean
   public PasswordEncoder passwordEncoder() {
     return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+  }
+
+  @Bean
+  public ApplicationRunner adminInitializer(PasswordEncoder passwordEncoder) {
+    return args -> {
+      boolean adminExists = userRepository.existsByRole(Role.ADMIN);
+      if (adminExists) {
+        log.info("[AdminInit] ADMIN 계정이 이미 존재합니다. 초기화를 건너뜁니다.");
+        return;
+      }
+
+      String email = "admin@email.com";
+      String name = "admin";
+      String rawPw = "admin";
+
+      if (userRepository.existsByEmail(email)) {
+        log.warn("[AdminInit] 설정된 이메일({}) 사용자가 이미 있어 ADMIN 생성/변경을 건너뜁니다.", email);
+        return;
+      }
+
+      User admin = new User(name, email, passwordEncoder.encode(rawPw), null, Role.ADMIN);
+      Instant now = Instant.now();
+      UserStatus userStatus = new UserStatus(admin, now);
+      userRepository.save(admin);
+
+
+      log.info("[AdminInit] ADMIN 계정을 생성했습니다. email={}", email);
+    };
   }
 }

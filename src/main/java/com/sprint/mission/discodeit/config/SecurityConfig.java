@@ -19,7 +19,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 
 import com.sprint.mission.discodeit.entity.User;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -35,6 +41,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @RequiredArgsConstructor
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
   private final LoginSuccessHandler loginSuccessHandler;
   private final LoginFailureHandler loginFailureHandler;
@@ -56,6 +63,12 @@ public class SecurityConfig {
                 "/api/auth/login",
                 "/api/auth/logout",
                 "/api/users").permitAll()
+            .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll() // actuator
+            .requestMatchers(
+                "/swagger-ui.html",
+                "/swagger-ui/**",
+                "/v3/api-docs/**"
+            ).permitAll() // 스웨거 문서
             .anyRequest().authenticated())
         .formLogin(login -> login
             .loginProcessingUrl("/api/auth/login")
@@ -115,5 +128,19 @@ public class SecurityConfig {
 
       log.info("[AdminInit] ADMIN 계정을 생성했습니다. email={}", email);
     };
+  }
+
+  @Bean
+  public RoleHierarchy roleHierarchy() {
+    RoleHierarchyImpl hierarchy = new RoleHierarchyImpl();
+    hierarchy.setHierarchy("ROLE_ADMIN > ROLE_CHANNEL_MANAGER > ROLE_USER");
+    return hierarchy;
+  }
+
+  @Bean
+  public MethodSecurityExpressionHandler methodSecurityExpressionHandler(RoleHierarchy roleHierarchy) {
+    DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+    handler.setRoleHierarchy(roleHierarchy);
+    return handler;
   }
 }

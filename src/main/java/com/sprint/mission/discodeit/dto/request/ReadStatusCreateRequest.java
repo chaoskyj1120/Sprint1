@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record ReadStatusCreateRequest(
-    @NotNull(message = "사용자 ID는 필수입니다")
+    @NotNull(message = " ID는 필수입니다")
     UUID userId,
     
     @NotNull(message = "채널 ID는 필수입니다")

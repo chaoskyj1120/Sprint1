@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.service.UserStatusService;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,9 @@ public abstract class ChannelMapper {
   @Autowired
   private UserMapper userMapper;
 
+  @Autowired
+  private UserStatusService userStatusService;
+
   @Mapping(target = "participants", expression = "java(resolveParticipants(channel))")
   @Mapping(target = "lastMessageAt", expression = "java(resolveLastMessageAt(channel))")
   abstract public ChannelDto toDto(Channel channel);
@@ -40,7 +44,7 @@ public abstract class ChannelMapper {
       readStatusRepository.findAllByChannelIdWithUser(channel.getId())
           .stream()
           .map(ReadStatus::getUser)
-          .map(userMapper::toDto)
+          .map(user -> userMapper.toDto(user, userStatusService.isOnline(user.getId())))
           .forEach(participants::add);
     }
     return participants;

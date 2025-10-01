@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.entity.Role;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -19,7 +20,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class DiscodeitUserDetails implements UserDetails {
   private final UserDto userDto;
   private final String password;
-  private final Collection<? extends GrantedAuthority> authorities;
 
   @Override
   public String getPassword() {
@@ -29,6 +29,19 @@ public class DiscodeitUserDetails implements UserDetails {
   @Override
   public String getUsername() {
     return userDto.username();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DiscodeitUserDetails that = (DiscodeitUserDetails) o;
+    return Objects.equals(this.userDto.id(), that.userDto.id());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(this.userDto.id());
   }
 
   @Override

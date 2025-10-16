@@ -12,6 +12,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -74,6 +75,7 @@ public class ChannelController implements ChannelApi {
   }
 
   @GetMapping
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<List<ChannelDto>> findAll(@RequestParam("userId") UUID userId) {
     log.info("사용자별 채널 목록 조회 요청: userId={}", userId);
     List<ChannelDto> channels = channelService.findAllByUserId(userId);

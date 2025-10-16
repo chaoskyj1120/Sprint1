@@ -1,20 +1,22 @@
 package com.sprint.mission.discodeit.config;
 
 import com.sprint.mission.discodeit.entity.Role;
+import com.sprint.mission.discodeit.entity.UserStatus;
 import com.sprint.mission.discodeit.handler.LoginFailureHandler;
 import com.sprint.mission.discodeit.handler.LoginSuccessHandler;
 import com.sprint.mission.discodeit.handler.LogoutSuccessHandler;
 import com.sprint.mission.discodeit.handler.SpaCsrfTokenRequestHandler;
 import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.service.DiscodeitUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
@@ -24,17 +26,17 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
+
 import com.sprint.mission.discodeit.entity.User;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
+import org.springframework.stereotype.Component;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -47,8 +49,7 @@ public class SecurityConfig {
   private final UserRepository userRepository;
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http,
-      DiscodeitUserDetailsService discodeitUserDetailsService) throws Exception {
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
         .csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -84,21 +85,15 @@ public class SecurityConfig {
                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
                 new AntPathRequestMatcher("/api/**")
             )
-            .accessDeniedHandler((req, res, ex) -> res.sendError(HttpServletResponse.SC_FORBIDDEN)))
-        .sessionManagement(mgmt -> mgmt
-            .sessionConcurrency(concurrency -> concurrency
-                .maximumSessions(1)                 // 동시 세션 1개로 제한
-                .maxSessionsPreventsLogin(false)    // true: 두 번째 로그인 "거부"
-                .sessionRegistry(sessionRegistry())
-            ))
-        .rememberMe(remember -> remember
-            .key("my-remember-key") // 쿠키 생성 시 사용되는 고정 키
-            .tokenValiditySeconds(7 * 24 * 60 * 60) // 쿠키 만료 시간 (7일)
-            .rememberMeParameter("remember-me") // 로그인 폼에서 사용하는 파라미터명
-            .userDetailsService(discodeitUserDetailsService)
-        )
-    ;
+            .accessDeniedHandler((req, res, ex) -> res.sendError(HttpServletResponse.SC_FORBIDDEN))
+        );
 
+
+    //Csrf Token GET
+    //회원가입  Post
+    //로그인   Post
+    //로그아웃 POST
+    //API가 아닌 요청(Swagger, Actuator 등)
     return http.build();
   }
 
@@ -127,6 +122,7 @@ public class SecurityConfig {
 
       User admin = new User(name, email, passwordEncoder.encode(rawPw), null, Role.ADMIN);
       Instant now = Instant.now();
+      UserStatus userStatus = new UserStatus(admin, now);
       userRepository.save(admin);
 
 
@@ -146,15 +142,5 @@ public class SecurityConfig {
     DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
     handler.setRoleHierarchy(roleHierarchy);
     return handler;
-  }
-
-  @Bean
-  public SessionRegistry sessionRegistry() {
-    return new SessionRegistryImpl();
-  }
-
-  @Bean
-  public static HttpSessionEventPublisher httpSessionEventPublisher() {
-    return new HttpSessionEventPublisher();
   }
 }

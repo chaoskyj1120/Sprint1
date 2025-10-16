@@ -75,6 +75,16 @@ CREATE TABLE read_statuses
     UNIQUE (user_id, channel_id)
 );
 
+-- RefreshToken
+CREATE TABLE refresh_token (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- UUID 기본 키
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone,
+    token VARCHAR(255) NOT NULL UNIQUE,            -- 토큰 문자열 (유니크)
+    user_id UUID NOT NULL,                         -- 사용자 ID (UUID)
+    expired_at timestamp with time zone NOT NULL,
+    rotated BOOLEAN NOT NULL DEFAULT FALSE         -- 회전 여부
+);
 
 -- 제약 조건
 -- User (1) -> BinaryContent (1)

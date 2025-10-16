@@ -32,8 +32,13 @@ public enum ErrorCode {
     INVALID_REQUEST("잘못된 요청입니다."),
 
     // Login 실패 에러 코드
-    AUTH_FAILURE("로그인에 실패했습니다.");
-    ;
+    AUTH_FAILURE("로그인에 실패했습니다."),
+
+    // JWT
+    REFRESH_TOKEN_NOT_FOUND("리프레쉬 토큰을 찾을 수 없습니다."),
+    REFRESH_TOKEN_EMPTY("리프레시 토큰이 비어 있습니다."),
+    REFRESH_TOKEN_ROTATED("이미 회전된 리프레시 토큰입니다."),
+    REFRESH_TOKEN_EXPIRED("이미 만료된 리프레시 토큰입니다.");
 
     private final String message;
 

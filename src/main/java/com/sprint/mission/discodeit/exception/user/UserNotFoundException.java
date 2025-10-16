@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.exception.user;
 
+import com.sprint.mission.discodeit.exception.jwt.RefreshTokenNotFoundException;
 import java.util.UUID;
 
 import com.sprint.mission.discodeit.exception.ErrorCode;
@@ -18,6 +19,12 @@ public class UserNotFoundException extends UserException {
     public static UserNotFoundException withUsername(String username) {
         UserNotFoundException exception = new UserNotFoundException();
         exception.addDetail("username", username);
+        return exception;
+    }
+
+    public static RefreshTokenNotFoundException withToken(String tokenValue) {
+        RefreshTokenNotFoundException exception = new RefreshTokenNotFoundException();
+        exception.addDetail("token", tokenValue);
         return exception;
     }
 } 

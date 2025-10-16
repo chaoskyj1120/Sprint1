@@ -19,15 +19,15 @@ import org.springframework.stereotype.Service;
 public class DiscodeitUserDetailsService implements UserDetailsService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
-  private final UserStatusService userStatusService;
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     User user = userRepository.findByUsername(username)
-        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        .orElseThrow();
 
-    UserDto userDto = userMapper.toDto(user, userStatusService.isOnline(user.getId()));
+    UserDto userDto = userMapper.toDto(user);
+    Collection<? extends GrantedAuthority> authorities = null; // 어떤 권한이 들어갈지느 아직 미정
 
-    return new DiscodeitUserDetails(userDto, user.getPassword());
+    return new DiscodeitUserDetails(userDto, user.getPassword(), authorities);
   }
 }

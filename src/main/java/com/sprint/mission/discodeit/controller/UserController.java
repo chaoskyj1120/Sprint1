@@ -98,7 +98,7 @@ public class UserController implements UserApi {
   public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
       @PathVariable("userId") UUID userId,
       @RequestBody @Valid UserStatusUpdateRequest request) {
-    UserStatusDto updatedUserStatus = null;
+    UserStatusDto updatedUserStatus = userStatusService.updateByUserId(userId, request);
     return ResponseEntity
         .status(HttpStatus.OK)
         .body(updatedUserStatus);

@@ -1,24 +1,22 @@
 package com.sprint.mission.discodeit.service;
 
-
+import com.sprint.mission.discodeit.dto.data.UserStatusDto;
+import com.sprint.mission.discodeit.dto.request.UserStatusCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserStatusUpdateRequest;
+import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.stereotype.Service;
 
-@Service
-@RequiredArgsConstructor
-public class UserStatusService {
-  private final SessionRegistry sessionRegistry;
+public interface UserStatusService {
 
-  public boolean isOnline(UUID userId) {
-    for (Object principal : sessionRegistry.getAllPrincipals()) {
-      if (principal instanceof DiscodeitUserDetails discodeitUserDetails &&
-          discodeitUserDetails.getUserDto().id().equals(userId)) {
-        return !sessionRegistry.getAllSessions(principal, false).isEmpty();
-      }
-    }
-    return false;
-  }
+  UserStatusDto create(UserStatusCreateRequest request);
+
+  UserStatusDto find(UUID userStatusId);
+
+  List<UserStatusDto> findAll();
+
+  UserStatusDto update(UUID userStatusId, UserStatusUpdateRequest request);
+
+  UserStatusDto updateByUserId(UUID userId, UserStatusUpdateRequest request);
+
+  void delete(UUID userStatusId);
 }

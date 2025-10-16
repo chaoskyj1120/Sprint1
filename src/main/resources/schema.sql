@@ -1,4 +1,4 @@
-ㅋ``-- 테이블
+-- 테이블
 -- User
 CREATE TABLE users
 (
@@ -8,8 +8,7 @@ CREATE TABLE users
     username   varchar(50) UNIQUE       NOT NULL,
     email      varchar(100) UNIQUE      NOT NULL,
     password   varchar(60)              NOT NULL,
-    profile_id uuid,
-    role varchar(20) NOT NULL
+    profile_id uuid
 );
 
 -- BinaryContent
@@ -30,7 +29,7 @@ CREATE TABLE user_statuses
     created_at     timestamp with time zone NOT NULL,
     updated_at     timestamp with time zone,
     user_id        uuid UNIQUE              NOT NULL,
-    last_active_at timestamp with time zone NOT NULL,
+    last_active_at timestamp with time zone NOT NULL
 );
 
 -- Channel

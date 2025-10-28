@@ -82,6 +82,7 @@ public class UserController implements UserApi {
   @GetMapping
   @Override
   public ResponseEntity<List<UserDto>> findAll() {
+    log.info("사용자 전체 조회");
     List<UserDto> users = userService.findAll();
     return ResponseEntity
         .status(HttpStatus.OK)

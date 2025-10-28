@@ -71,6 +71,21 @@ public class SecurityConfig {
         )
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(
+                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/health"),
+                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/metrics/**"),
+                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/prometheus")
+            ).permitAll()
+
+            // ✅ 인증/회원가입 등 공개 API
+            .requestMatchers(
+                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/api/auth/csrf-token"),
+                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/users"),
+                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/login"),
+                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/refresh"),
+                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/logout")
+            ).permitAll()
+
+            .requestMatchers(
                 AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/api/auth/csrf-token"),
                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/users"),
                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/api/auth/login"),

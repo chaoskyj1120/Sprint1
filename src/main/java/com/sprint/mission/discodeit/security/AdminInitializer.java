@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.security;
 
+import com.sprint.mission.discodeit.config.AdminRegistry;
 import com.sprint.mission.discodeit.dto.data.UserDto;
 import com.sprint.mission.discodeit.dto.request.RoleUpdateRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
@@ -28,6 +29,7 @@ public class AdminInitializer implements ApplicationRunner {
   private String email;
   private final UserService userService;
   private final AuthService authService;
+  private final AdminRegistry adminRegistry;
 
   @Override
   public void run(ApplicationArguments args) {
@@ -36,6 +38,7 @@ public class AdminInitializer implements ApplicationRunner {
     try {
       UserDto admin = userService.create(request, Optional.empty());
       authService.updateRoleInternal(new RoleUpdateRequest(admin.id(), Role.ADMIN));
+      adminRegistry.setAdminId(admin.id()); // ✅ 등록
       log.info("관리자 계정이 성공적으로 생성되었습니다.");
     } catch (UserAlreadyExistsException e) {
       log.warn("관리자 계정이 이미 존재합니다");

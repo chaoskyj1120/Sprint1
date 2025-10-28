@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.security.jwt;
 
+import static com.sprint.mission.discodeit.config.CacheConfig.USERS_ALL;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -7,6 +9,8 @@ import java.util.Arrays;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Component;
@@ -18,6 +22,7 @@ public class JwtLogoutHandler implements LogoutHandler {
 
   private final JwtTokenProvider tokenProvider;
   private final JwtRegistry jwtRegistry;
+  private final CacheManager cacheManager;
 
   @Override
   public void logout(HttpServletRequest request, HttpServletResponse response,
@@ -35,6 +40,11 @@ public class JwtLogoutHandler implements LogoutHandler {
           UUID userId = tokenProvider.getUserId(refreshToken);
           jwtRegistry.invalidateJwtInformationByUserId(userId);
         });
+
+    Cache users = cacheManager.getCache(USERS_ALL);
+    if (users != null) {
+      users.evict("'USER_ALL'"); // findAll()의 @Cacheable key와 반드시 동일!
+    }
 
     log.debug("JWT logout handler executed - refresh token cookie cleared");
   }

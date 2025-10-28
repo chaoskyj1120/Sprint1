@@ -73,7 +73,8 @@ public class SecurityConfig {
             .requestMatchers(
                 AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/health"),
                 AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/metrics/**"),
-                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/prometheus")
+                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/prometheus"),
+                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/actuator/caches")
             ).permitAll()
 
             // ✅ 인증/회원가입 등 공개 API

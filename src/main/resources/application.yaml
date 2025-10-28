@@ -16,6 +16,16 @@ spring:
       - dev
   config:
     import: optional:file:.env[.properties]
+  cache:
+    cache-names:
+      - USERS_ALL
+      - NOTIFICATIONS_BY_USER
+      - CHANNELS_BY_USER
+    caffeine:
+      spec: >
+        maximumSize=100,
+        expireAfterAccess=600s,
+        recordStats
 
 management:
   endpoints:

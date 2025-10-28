@@ -69,9 +69,10 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
   public UUID put(UUID binaryContentId, byte[] bytes) {
     log.info("put() thread={}", Thread.currentThread().getName());
 
+    /*
      double fail = Math.random();
      if (fail < 0.95) { log.warn("임의 실패 발생 (테스트용) — RuntimeException 던짐, fail={}", fail);
-       throw new RuntimeException("Random test failure for retry simulation"); }
+       throw new RuntimeException("Random test failure for retry simulation"); }*/
 
     try {
       log.info("파일 저장 지연 시작");

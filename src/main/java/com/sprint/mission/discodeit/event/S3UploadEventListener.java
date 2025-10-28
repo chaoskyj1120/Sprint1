@@ -17,7 +17,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class BinaryContentCreatedEventListener {
+public class S3UploadEventListener {
   private final BinaryContentStorage binaryContentStorage;
   private final BinaryContentRepository binaryContentRepository;
   private final BinaryContentService binaryContentService;
@@ -25,7 +25,7 @@ public class BinaryContentCreatedEventListener {
   @Async("taskExecutor")
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   @Transactional
-  public void handleBinaryContentCreated(BinaryContentCreatedEvent event) {
+  public void handleBinaryContentCreated(S3UploadEvent event) {
     log.info("listener thread={}", Thread.currentThread().getName());
     BinaryContent binaryContent = binaryContentRepository.findById(event.binaryContentId())
         .orElseThrow(BinaryContentNotFoundException::new);
@@ -33,7 +33,7 @@ public class BinaryContentCreatedEventListener {
     try {
       binaryContentStorage.put(event.binaryContentId(), event.bytes());
       binaryContentService.updateStatus(event.binaryContentId(), BinaryContentStatus.SUCCESS);
-      log.error("BinaryContent 저장 성공: id={}", event.binaryContentId());
+      log.debug("BinaryContent 저장 성공: id={}", event.binaryContentId());
     } catch (Exception e) {
       binaryContentService.updateStatus(event.binaryContentId(), BinaryContentStatus.FAIL);
       log.error("BinaryContent 저장 실패: id={}, error={}", event.binaryContentId(), e.getMessage(), e);

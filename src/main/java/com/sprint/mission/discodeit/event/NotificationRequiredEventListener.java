@@ -23,7 +23,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @RequiredArgsConstructor
 @Setter
-@Component
+//@Component 비활성화를 위한 주석처리, KafkaProduceRequiredEventListener 로 대체
 public class NotificationRequiredEventListener {
   private final NotificationService notificationService;
   private final ReadStatusRepository readStatusRepository;
@@ -54,5 +54,4 @@ public class NotificationRequiredEventListener {
     String content = event.oldRole().toString() + "->" + event.newRole().toString();
     notificationService.create(event.user().getId(), title, content);
   }
-
 }

@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import static com.sprint.mission.discodeit.config.CacheConfig.NOTIFICATIONS_BY_USER;
 import static com.sprint.mission.discodeit.config.CacheConfig.USERS_ALL;
 
 import com.sprint.mission.discodeit.dto.data.UserDto;
@@ -9,7 +8,7 @@ import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.event.BinaryContentCreatedEvent;
+import com.sprint.mission.discodeit.event.S3UploadEvent;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
@@ -65,7 +64,7 @@ public class BasicUserService implements UserService {
           BinaryContent binaryContent = new BinaryContent(fileName, (long) bytes.length,
               contentType);
           binaryContentRepository.save(binaryContent);
-          eventPublisher.publishEvent(new BinaryContentCreatedEvent(binaryContent.getId(), bytes));
+          eventPublisher.publishEvent(new S3UploadEvent(binaryContent.getId(), bytes));
           //binaryContentStorage.put(binaryContent.getId(), bytes);
           return binaryContent;
         })
@@ -138,7 +137,7 @@ public class BasicUserService implements UserService {
           BinaryContent binaryContent = new BinaryContent(fileName, (long) bytes.length,
               contentType);
           binaryContentRepository.save(binaryContent);
-          eventPublisher.publishEvent(new BinaryContentCreatedEvent(binaryContent.getId(), bytes));
+          eventPublisher.publishEvent(new S3UploadEvent(binaryContent.getId(), bytes));
           //binaryContentStorage.put(binaryContent.getId(), bytes);
           return binaryContent;
         })

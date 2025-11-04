@@ -17,15 +17,23 @@ spring:
   config:
     import: optional:file:.env[.properties]
   cache:
+    type: redis
     cache-names:
       - USERS_ALL
       - NOTIFICATIONS_BY_USER
       - CHANNELS_BY_USER
-    caffeine:
-      spec: >
-        maximumSize=100,
-        expireAfterAccess=600s,
-        recordStats
+    #caffeine:
+    #  spec: >
+    #    maximumSize=100,
+    #    expireAfterAccess=600s,
+    #    recordStats
+    redis:
+      enable-statistics: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -95,3 +103,4 @@ discodeit:
 logging:
   level:
     root: info
+    org.springframework.data.redis: debug

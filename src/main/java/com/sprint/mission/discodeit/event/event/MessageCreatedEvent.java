@@ -1,7 +1,6 @@
-package com.sprint.mission.discodeit.event;
+package com.sprint.mission.discodeit.event.event;
 
 import com.sprint.mission.discodeit.entity.Message;
-import java.util.UUID;
 
 public record MessageCreatedEvent(Message message){
 

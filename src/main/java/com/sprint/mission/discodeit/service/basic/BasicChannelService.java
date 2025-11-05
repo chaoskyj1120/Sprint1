@@ -17,6 +17,8 @@ import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.sse.SseRepository;
+import com.sprint.mission.discodeit.sse.SseService;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,13 @@ public class BasicChannelService implements ChannelService {
   private final MessageRepository messageRepository;
   private final UserRepository userRepository;
   private final ChannelMapper channelMapper;
+  private final SseService sseService;
+  private final SseRepository sseRepository;
+  
+  private static final String SSE_CHANNEL_CREATED_EVENT_NAME = "channels.created";
+  private static final String SSE_CHANNEL_UPDATED_EVENT_NAME = "channels.updated";
+  private static final String SSE_CHANNEL_DELETED_EVENT_NAME = "channels.deleted";
+  //현재 연결되어있는 유저들 전부모든 유저에게 메세지 전송?
 
   @CacheEvict(cacheNames = CHANNELS_BY_USER, allEntries = true)
   @PreAuthorize("hasRole('CHANNEL_MANAGER')")
@@ -51,6 +60,10 @@ public class BasicChannelService implements ChannelService {
 
     channelRepository.save(channel);
     log.info("채널 생성 완료: id={}, name={}", channel.getId(), channel.getName());
+    
+    sseService.send(sseRepository.getAllUserId(), SSE_CHANNEL_CREATED_EVENT_NAME, channelMapper.toDto(channel));
+    log.info("채널 생성 후 SSE 발송");
+    
     return channelMapper.toDto(channel);
   }
 
@@ -66,8 +79,11 @@ public class BasicChannelService implements ChannelService {
         .map(user -> new ReadStatus(user, channel, channel.getCreatedAt()))
         .toList();
     readStatusRepository.saveAll(readStatuses);
-
     log.info("채널 생성 완료: id={}, name={}", channel.getId(), channel.getName());
+
+    sseService.send(sseRepository.getAllUserId(), SSE_CHANNEL_CREATED_EVENT_NAME, channelMapper.toDto(channel));
+    log.info("채널 생성 후 SSE 발송");
+
     return channelMapper.toDto(channel);
   }
 
@@ -109,6 +125,10 @@ public class BasicChannelService implements ChannelService {
     }
     channel.update(newName, newDescription);
     log.info("채널 수정 완료: id={}, name={}", channelId, channel.getName());
+
+    sseService.send(sseRepository.getAllUserId(), SSE_CHANNEL_UPDATED_EVENT_NAME, channelMapper.toDto(channel));
+    log.info("채널 수정 후 SSE 발송");
+    
     return channelMapper.toDto(channel);
   }
 
@@ -122,10 +142,17 @@ public class BasicChannelService implements ChannelService {
       throw ChannelNotFoundException.withId(channelId);
     }
 
+    Channel channel = channelRepository.findById(channelId).orElseThrow(ChannelNotFoundException::new);
+    ChannelDto channelDto = channelMapper.toDto(channel);
+
     messageRepository.deleteAllByChannelId(channelId);
     readStatusRepository.deleteAllByChannelId(channelId);
 
     channelRepository.deleteById(channelId);
     log.info("채널 삭제 완료: id={}", channelId);
+
+    sseService.send(sseRepository.getAllUserId(), SSE_CHANNEL_DELETED_EVENT_NAME, channelDto);
+    log.info("채널 삭제 후 SSE 발송");
+
   }
 }

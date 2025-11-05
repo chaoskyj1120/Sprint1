@@ -1,23 +1,16 @@
-package com.sprint.mission.discodeit.event;
+package com.sprint.mission.discodeit.event.listener;
 
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.ReadStatus;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.exception.channel.ChannelNotFoundException;
-import com.sprint.mission.discodeit.exception.readstatus.ReadStatusNotFoundException;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.event.event.MessageCreatedEvent;
+import com.sprint.mission.discodeit.event.event.RoleUpdatedEvent;
 import com.sprint.mission.discodeit.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.basic.NotificationService;
-import jakarta.transaction.Transactional;
 import java.util.List;
-import java.util.UUID;
-import lombok.Locked.Read;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 

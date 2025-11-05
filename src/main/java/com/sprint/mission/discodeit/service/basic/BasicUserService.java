@@ -7,14 +7,17 @@ import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
+import com.sprint.mission.discodeit.entity.Role;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.event.S3UploadEvent;
+import com.sprint.mission.discodeit.event.event.S3UploadEvent;
 import com.sprint.mission.discodeit.exception.user.UserAlreadyExistsException;
 import com.sprint.mission.discodeit.exception.user.UserNotFoundException;
 import com.sprint.mission.discodeit.mapper.UserMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.sse.SseRepository;
+import com.sprint.mission.discodeit.sse.SseService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,6 +41,16 @@ public class BasicUserService implements UserService {
   private final BinaryContentRepository binaryContentRepository;
   private final PasswordEncoder passwordEncoder;
   private final ApplicationEventPublisher eventPublisher;
+  private final SseService sseService;
+  private final SseRepository sseRepository;
+
+  private static final String SSE_USER_CREATED_EVENT_NAME = "users.created";
+  private static final String SSE_USER_UPDATED_EVENT_NAME = "users.updated";
+  private static final String SSE_USER_DELETED_EVENT_NAME = "users.deleted";
+
+  //id	이벤트 고유 ID
+  //name	users.created or updated or deleted
+  //data	UserDto
 
   @CacheEvict(cacheNames = USERS_ALL, key = "'USER_ALL'")
   @Transactional
@@ -56,6 +69,13 @@ public class BasicUserService implements UserService {
       throw UserAlreadyExistsException.withUsername(username);
     }
 
+    String password = userCreateRequest.password();
+    String encodedPassword = passwordEncoder.encode(password);
+
+    User user = new User(username, email, encodedPassword, null);
+    user = userRepository.save(user);
+    UUID userId = user.getId();
+
     BinaryContent nullableProfile = optionalProfileCreateRequest
         .map(profileRequest -> {
           String fileName = profileRequest.fileName();
@@ -64,19 +84,22 @@ public class BasicUserService implements UserService {
           BinaryContent binaryContent = new BinaryContent(fileName, (long) bytes.length,
               contentType);
           binaryContentRepository.save(binaryContent);
-          eventPublisher.publishEvent(new S3UploadEvent(binaryContent.getId(), bytes));
+          eventPublisher.publishEvent(new S3UploadEvent(userId, binaryContent.getId(), bytes));
           //binaryContentStorage.put(binaryContent.getId(), bytes);
           return binaryContent;
         })
         .orElse(null);
-    String password = userCreateRequest.password();
-    String encodedPassword = passwordEncoder.encode(password);
 
-    User user = new User(username, email, encodedPassword, nullableProfile);
+    user.setProfile(nullableProfile);
 
     userRepository.save(user);
     log.info("사용자 생성 완료: id={}, username={}", user.getId(), username);
-    return userMapper.toDto(user);
+
+    UserDto userDto = userMapper.toDto(user);
+    sseService.send(sseRepository.getAllUserId(), SSE_USER_CREATED_EVENT_NAME, userDto);
+    log.info("유저 생성 후 SSE 발송");
+
+    return userDto;
   }
 
   @Transactional(readOnly = true)
@@ -137,7 +160,7 @@ public class BasicUserService implements UserService {
           BinaryContent binaryContent = new BinaryContent(fileName, (long) bytes.length,
               contentType);
           binaryContentRepository.save(binaryContent);
-          eventPublisher.publishEvent(new S3UploadEvent(binaryContent.getId(), bytes));
+          eventPublisher.publishEvent(new S3UploadEvent(userId, binaryContent.getId(), bytes));
           //binaryContentStorage.put(binaryContent.getId(), bytes);
           return binaryContent;
         })
@@ -149,7 +172,12 @@ public class BasicUserService implements UserService {
     user.update(newUsername, newEmail, encodedPassword, nullableProfile);
 
     log.info("사용자 수정 완료: id={}", userId);
-    return userMapper.toDto(user);
+
+    UserDto userDto = userMapper.toDto(user);
+    sseService.send(sseRepository.getAllUserId(), SSE_USER_UPDATED_EVENT_NAME, userDto);
+    log.info("유저 수정 후 SSE 발송");
+
+    return userDto;
   }
 
   @CacheEvict(cacheNames = USERS_ALL, key = "'USER_ALL'")
@@ -163,7 +191,26 @@ public class BasicUserService implements UserService {
       throw UserNotFoundException.withId(userId);
     }
 
-    userRepository.deleteById(userId);
+    User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+    UserDto userDto = userMapper.toDto(user);
+    userRepository.delete(user);
+
+    sseService.send(sseRepository.getAllUserId(), SSE_USER_DELETED_EVENT_NAME, userDto);
+    log.info("유저 삭제 후 SSE 발송");
+
+
     log.info("사용자 삭제 완료: id={}", userId);
+  }
+
+  @CacheEvict(cacheNames = USERS_ALL, key = "'USER_ALL'")
+  @Transactional
+  @Override
+  public void updateUserRoles(UUID userId, Role role) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    user.updateRole(role);
+    User saved = userRepository.save(user);
+    log.info("유저 역할 변경및 저장: id={}, 새 역할={}", saved.getId(), saved.getRole());
   }
 }

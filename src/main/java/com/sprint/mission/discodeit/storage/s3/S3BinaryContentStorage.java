@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.storage.s3;
 
 import com.sprint.mission.discodeit.config.AdminRegistry;
 import com.sprint.mission.discodeit.dto.data.BinaryContentDto;
-import com.sprint.mission.discodeit.event.S3UploadFailedEvent;
+import com.sprint.mission.discodeit.event.event.S3UploadFailedEvent;
 import com.sprint.mission.discodeit.service.basic.NotificationService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import java.io.ByteArrayInputStream;
@@ -11,7 +11,6 @@ import java.time.Duration;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.weaver.ast.Not;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

@@ -4,7 +4,7 @@ import com.sprint.mission.discodeit.dto.data.BinaryContentDto;
 import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
 import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.BinaryContentStatus;
-import com.sprint.mission.discodeit.event.S3UploadEvent;
+import com.sprint.mission.discodeit.event.event.S3UploadEvent;
 import com.sprint.mission.discodeit.exception.binarycontent.BinaryContentNotFoundException;
 import com.sprint.mission.discodeit.mapper.BinaryContentMapper;
 import com.sprint.mission.discodeit.repository.BinaryContentRepository;
@@ -28,7 +28,7 @@ public class BasicBinaryContentService implements BinaryContentService {
 
   @Transactional
   @Override
-  public BinaryContentDto create(BinaryContentCreateRequest request) {
+  public BinaryContentDto create(BinaryContentCreateRequest request, UUID receiverId) {
     log.debug("바이너리 컨텐츠 생성 시작: fileName={}, size={}, contentType={}", 
         request.fileName(), request.bytes().length, request.contentType());
 
@@ -41,7 +41,7 @@ public class BasicBinaryContentService implements BinaryContentService {
         contentType
     );
     binaryContentRepository.save(binaryContent);
-    eventPublisher.publishEvent(new S3UploadEvent(binaryContent.getId(), bytes));
+    eventPublisher.publishEvent(new S3UploadEvent(receiverId, binaryContent.getId(), bytes));
 
     log.info("바이너리 컨텐츠 생성 완료: id={}, fileName={}, size={}", 
         binaryContent.getId(), fileName, bytes.length);

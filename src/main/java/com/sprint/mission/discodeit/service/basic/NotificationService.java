@@ -8,6 +8,8 @@ import com.sprint.mission.discodeit.entity.Notification;
 import com.sprint.mission.discodeit.entity.ReadStatus;
 import com.sprint.mission.discodeit.exception.notification.NotificationNotFoundException;
 import com.sprint.mission.discodeit.repository.NotificationRepository;
+import com.sprint.mission.discodeit.sse.SseService;
+import java.util.Collections;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -26,8 +28,10 @@ import org.springframework.security.access.AccessDeniedException;
 @Service
 public class NotificationService {
   private final NotificationRepository notificationRepository;
+  private final SseService sseService;
 
-  @CachePut(cacheNames = NOTIFICATIONS_BY_USER, key = "#receiverId")
+  private static final String SSE_NOTIFICATION_EVENT_NAME = "notifications.created";
+
   @Transactional
   public void create(UUID receiverId, String title, String content) {
     // 권한 변경시에 사용됨
@@ -36,8 +40,11 @@ public class NotificationService {
     notification.setTitle(title);
     notification.setContent(content);
 
-    notificationRepository.saveAndFlush(notification);
-    log.debug("📬 알림 생성: receiver={}, title={}", receiverId, title);
+    Notification savedNotification = notificationRepository.save(notification);
+    NotificationDto notificationDto = new NotificationDto(savedNotification);
+    sseService.send(Collections.singleton(receiverId), SSE_NOTIFICATION_EVENT_NAME, notificationDto);
+
+    log.debug("알림 생성: receiver={}, title={}", receiverId, title);
   }
 
   @Transactional
@@ -47,7 +54,6 @@ public class NotificationService {
       UUID receiverId = readStatus.getUser().getId();
       create(receiverId, title, content);
     }
-    log.debug("알람 총 개수={}", notificationRepository.count());
   }
 
   @Cacheable(cacheNames = NOTIFICATIONS_BY_USER, key = "#userId")

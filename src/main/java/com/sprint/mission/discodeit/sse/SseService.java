@@ -27,25 +27,38 @@ public class SseService {
   private static final long DEFAULT_TIMEOUT = 1000L * 60 * 30;
 
   public SseEmitter connect(UUID receiverId, UUID lastEventId) {
+    log.info("🔌 [SSE CONNECT 요청] receiverId={}, lastEventId={}", receiverId, lastEventId);
+
     SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
 
     // 저장
     sseRepository.addEmitter(receiverId, emitter);
+    log.info("💾 [Emitter 등록 완료] receiverId={}, 현재 연결된 emitter 수={}",
+        receiverId, sseRepository.getData().get(receiverId).size());
 
     // 끊기면 정리
-    emitter.onCompletion(() -> sseRepository.removeEmitter(receiverId, emitter));
-    emitter.onTimeout(() -> sseRepository.removeEmitter(receiverId, emitter));
+    emitter.onCompletion(() -> {
+      sseRepository.removeEmitter(receiverId, emitter);
+      log.info("🧹 [Emitter 종료] receiverId={} (onCompletion)", receiverId);
+    });
+    emitter.onTimeout(() -> {
+      sseRepository.removeEmitter(receiverId, emitter);
+      log.warn("⏰ [Emitter 타임아웃] receiverId={} (onTimeout)", receiverId);
+    });
 
-    //  연결 직후 더미 이벤트 한 번 보내기
+    // 연결 직후 더미 이벤트 한 번 보내기
     try {
+      String eventId = UUID.randomUUID().toString();
       emitter.send(SseEmitter.event()
-          .id(UUID.randomUUID().toString())
+          .id(eventId)
           .name("connect")
           .data("connected"));
+      log.info("✅ [연결 이벤트 전송] receiverId={}, eventId={}", receiverId, eventId);
     } catch (Exception e) {
-      // 보내다 실패하면 정리
+      log.error("❌ [연결 이벤트 전송 실패] receiverId={}, error={}", receiverId, e.getMessage());
       sseRepository.removeEmitter(receiverId, emitter);
     }
+
     return emitter;
   }
   public void send(Collection<UUID> receiverIds, String eventName, Object data) {

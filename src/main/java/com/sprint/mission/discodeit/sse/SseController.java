@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,11 +21,16 @@ public class SseController {
 
   @GetMapping(value = "/api/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter connect(
-      Authentication authentication,
+      @AuthenticationPrincipal DiscodeitUserDetails user,
       @RequestHeader(name = "Last-Event-ID", required = false) String lastEventIdHeader
   ) {
-    DiscodeitUserDetails user = (DiscodeitUserDetails) authentication.getPrincipal();
-    UUID receiverId = user.getUserDto().id();   // <- 여기서 UUID 가져온다고 가정
+    // 인증 안 된 경우 방어
+    if (user == null) {
+      log.warn("SSE connect called without authenticated user");
+      throw new RuntimeException("Unauthenticated SSE connection");
+    }
+
+    UUID receiverId = user.getUserDto().id();
 
     UUID lastEventId = null;
     if (lastEventIdHeader != null && !lastEventIdHeader.isBlank()) {
@@ -35,9 +41,11 @@ public class SseController {
       }
     }
 
-    log.info("SSE connect: receiverId={}, lastEventId={}", receiverId, lastEventId);
+    log.info("SSE connect start: receiverId={}, lastEventId={}", receiverId, lastEventId);
 
     SseEmitter emitter = sseService.connect(receiverId, lastEventId);
+
+    log.info("SSE connect success: receiverId={}, lastEventId={}", receiverId, lastEventId);
     return emitter;
   }
 }

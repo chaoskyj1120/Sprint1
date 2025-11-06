@@ -4,16 +4,19 @@ import com.sprint.mission.discodeit.entity.Notification;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.aspectj.weaver.ast.Not;
 
 @Getter
 @Setter
+@NoArgsConstructor
 public class NotificationDto {
-  private final UUID id;
-  private final Instant createdAt;
-  private final UUID receiverId;
-  private final String title;
-  private final String content;
+  private UUID id;
+  private Instant createdAt;
+  private UUID receiverId;
+  private String title;
+  private String content;
 
   public NotificationDto(Notification notification) {
     this.id = notification.getId();

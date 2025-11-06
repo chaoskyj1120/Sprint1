@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.storage.s3;
 
-import com.sprint.mission.discodeit.config.AdminRegistry;
+import com.sprint.mission.discodeit.config.registry.AdminRegistry;
 import com.sprint.mission.discodeit.dto.data.BinaryContentDto;
 import com.sprint.mission.discodeit.event.event.S3UploadFailedEvent;
 import com.sprint.mission.discodeit.service.basic.NotificationService;

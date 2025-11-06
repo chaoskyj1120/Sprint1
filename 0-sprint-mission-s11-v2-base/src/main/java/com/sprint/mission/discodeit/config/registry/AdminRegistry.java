@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.config;
+package com.sprint.mission.discodeit.config.registry;
 
 import java.util.UUID;
 import lombok.Setter;

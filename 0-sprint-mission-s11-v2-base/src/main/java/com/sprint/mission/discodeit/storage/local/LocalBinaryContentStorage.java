@@ -1,8 +1,7 @@
 package com.sprint.mission.discodeit.storage.local;
 
-import com.sprint.mission.discodeit.config.AdminRegistry;
+import com.sprint.mission.discodeit.config.registry.AdminRegistry;
 import com.sprint.mission.discodeit.dto.data.BinaryContentDto;
-import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.basic.NotificationService;
 import com.sprint.mission.discodeit.storage.BinaryContentStorage;
 import jakarta.annotation.PostConstruct;

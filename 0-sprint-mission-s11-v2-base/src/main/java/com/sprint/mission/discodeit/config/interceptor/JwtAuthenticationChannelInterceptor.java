@@ -79,4 +79,3 @@ public class JwtAuthenticationChannelInterceptor implements ChannelInterceptor {
     return null;
   }
 }
-// TODO | CONNECT 프레임일 때 엑세스 토큰을 검증하는 JwtAuthenticationChannelInterceptor 구현체를 정의하세요.

@@ -9,16 +9,16 @@ services:
     ports:
       - "3000:80"               # 호스트 3000 -> Nginx 80
     depends_on:
-      - app
+      - backend
     networks:
       - discodeit-network
 
-  app:
+  backend:
     image: discodeit:local
     build:
       context: 0-sprint-mission-s11-v2-base   # 스프링부트 프로젝트 루트
       dockerfile: Dockerfile                  # 그 폴더 안의 Dockerfile
-    container_name: discodeit
+    #container_name: discodeit #replies를 쓰기 위해서 이름을 지움
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/discodeit
@@ -44,7 +44,14 @@ services:
     volumes:
       - binary-content-storage:/app/.discodeit/storage
     networks:
-      - discodeit-network
+      discodeit-network:
+        aliases:
+          - backend
+    deploy:
+      replicas: 2   # backend-1, 2, 3 역할
+      restart_policy:
+        condition: on-failure
+
 
   db:
     image: postgres:16-alpine
